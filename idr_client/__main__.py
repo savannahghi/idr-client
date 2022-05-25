@@ -1,5 +1,12 @@
 from argparse import ArgumentParser
 
+from idr_client.lib import Pipeline
+from idr_client.use_cases.main_pipeline import (
+    CheckChangesFromETL,
+    FetchMetadataFromServer,
+    RunExtraction
+)
+
 
 # =============================================================================
 # HELPERS
@@ -37,6 +44,16 @@ def main() -> None:
 
     parser = argparse_factory()
     parser.parse_args()
+
+    server_url: str = "http://idr.fahariyajamii.org"
+
+    main_pipeline: Pipeline[str, object] = Pipeline(
+        FetchMetadataFromServer(),
+        CheckChangesFromETL(),
+        RunExtraction()
+    )
+
+    main_pipeline.execute(server_url)
 
 
 if __name__ == "__main__":
