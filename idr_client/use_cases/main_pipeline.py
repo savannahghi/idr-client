@@ -1,7 +1,4 @@
 from typing import Tuple
-
-from django import conf
-
 import mysql.connector
 from mysql.connector import Error
 
@@ -32,9 +29,12 @@ class RunExtraction(Task[SQLMetadata, object]):
     """Extract data from a database."""
 
     def execute(self, an_input: SQLMetadata) -> object:
-        # TODO: Add implementation.
-        connection = None
-        return an_input.as_task().execute(connection)
+        self.list_tables()
+        self.list_table_data()
+        self.get_extracts_from_etldb()
+        # # TODO: Add implementation.
+        # connection = None
+        # return an_input.as_task().execute(connection)
     
     def _create_connection(self):
         try:
@@ -49,14 +49,14 @@ class RunExtraction(Task[SQLMetadata, object]):
                 'pool_size': 5
                 }    
             connection = mysql.connector.connect(**connection_config_dict)
-
             if connection.is_connected():
-                cursor = connection.cursor()
-                return cursor
+                return connection.cursor()
         except Error as e:
-            print("Error while connecting to DB", e)
-            
-    def __extract_etldata(self,query):
+            raise e
+        finally:
+            connection.close()    
+                    
+    def __execute_query(self,query):
         cursor = self._create_connection()
         output=None
         try:
@@ -66,10 +66,20 @@ class RunExtraction(Task[SQLMetadata, object]):
         except Error as err:
             print("Error extracting data ",err)
             
-    def get_tables(self):
-        results = self.__extract_etldata(queries.list_dbs)
+    def list_tables(self):
+        results = self.__execute_query(queries.list_dbs)
         for result in results:
             print(result)
-        
 
+    def list_table_data(self):
+        results = self.__execute_query(queries.list_table_data)
+        print("===================TABLE DAAATA================")
+        for result in results:
+            print(result)     
+
+    def get_extracts_from_etldb(self):
+        ...
+        # results = self.__execute_query(queries.extract_data)
+        # print("==============EXTRAAAACTS=================")
+        
         

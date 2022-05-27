@@ -48,8 +48,8 @@ def main() -> None:
     server_url: str = "http://idr.fahariyajamii.org"
 
     main_pipeline: Pipeline[str, object] = Pipeline(
-        FetchMetadataFromServer(),
-        CheckChangesFromETL(),
+        # FetchMetadataFromServer(),
+        # CheckChangesFromETL(),
         RunExtraction()
     )
 

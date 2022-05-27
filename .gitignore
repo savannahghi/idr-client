@@ -9,6 +9,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+del.sql
 build/
 develop-eggs/
 dist/
