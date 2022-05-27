@@ -25,7 +25,7 @@ _RT = TypeVar("_RT")
 
 class Chainable(
     Generic[_IN, _RT],
-    Task[Callable[[_IN], _RT], "Chainable[_RT, Any"]
+    Task[Callable[[_IN], _RT], "Chainable[_RT, Any]"]
 ):
 
     def __init__(self, an_input: _IN):

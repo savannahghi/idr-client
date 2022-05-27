@@ -12,17 +12,17 @@ from .task import Task
 
 _IN = TypeVar("_IN")
 _RT = TypeVar("_RT")
-_SE = TypeVar("_SE", bound="AbstractMetadata")
+_MD = TypeVar("_MD", bound="AbstractMetadata")
 
 
 # =============================================================================
 # HELPERS
 # =============================================================================
 
-def _get_required_fields_names(sims_element_type: Type[_SE]) -> Sequence[str]:
+def _get_required_fields_names(metadata: Type[_MD]) -> Sequence[str]:
     return tuple(
         field_name
-        for field_name, field_type in sims_element_type.__annotations__.items()
+        for field_name, field_type in metadata.__annotations__.items()
         if not is_optional_type(field_type)
     )
 
@@ -30,7 +30,6 @@ def _get_required_fields_names(sims_element_type: Type[_SE]) -> Sequence[str]:
 # =============================================================================
 # METADATA
 # =============================================================================
-
 
 class AbstractMetadata(Generic[_IN, _RT], InitFromMapping, metaclass=ABCMeta):
     """Represents metadata needed to initialize a tasks."""
