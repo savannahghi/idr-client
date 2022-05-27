@@ -1,16 +1,7 @@
 import mysql.connector
 from mysql.connector import Error
-
+import config
 import queries
-
-import os
-
-db_name = os.getenv('DB_NAME')
-db_user = os.getenv('DB_USER')
-db_pwd = os.getenv('DB_PASSWORD')
-db_host = os.getenv('DB_HOST')
-db_port = os.getenv('DB_PORT')
-
 
 def extract_etldata(connection,query):
     cursor = connection.cursor()
@@ -24,10 +15,10 @@ def extract_etldata(connection,query):
               
 try:
     connection_config_dict = {
-        'user': db_user,
-        'password': db_pwd,
-        'host': db_host,
-        'database': db_name,
+        'user': config.db_user,
+        'password': config.db_pwd,
+        'host': config.db_host,
+        'database': config.db_name,
         'raise_on_warnings': True,
         'use_pure': False,
         'autocommit': True,
