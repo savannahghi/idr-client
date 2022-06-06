@@ -4,7 +4,8 @@ from idr_client.lib import Pipeline
 from idr_client.use_cases.main_pipeline import (
     CheckChangesFromETL,
     FetchMetadataFromServer,
-    RunExtraction
+    RunExtraction,
+    RunTransformation
 )
 
 
@@ -45,15 +46,15 @@ def main() -> None:
     parser = argparse_factory()
     parser.parse_args()
 
-    server_url: str = "http://idr.fahariyajamii.org"
+    etl_host_url: str = "http://127.0.0.1:8000"
 
     main_pipeline: Pipeline[str, object] = Pipeline(
-        FetchMetadataFromServer(),
         CheckChangesFromETL(),
-        RunExtraction()
+        FetchMetadataFromServer(),
+        RunExtraction(),
+        RunTransformation()
     )
-
-    main_pipeline.execute(server_url)
+    main_pipeline.execute(etl_host_url)
 
 
 if __name__ == "__main__":
