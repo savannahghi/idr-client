@@ -1,13 +1,5 @@
 from idr_client import config
 
-list_dbs = """
-SHOW TABLES;
-"""
-
-list_table_data = f"""
-select * from {config.etl_db_name}.etl_client_trace;
-"""
-
 extract_data = f'''
 select 
        d.DOB,
