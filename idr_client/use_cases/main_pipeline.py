@@ -1,11 +1,14 @@
+import sys
 import requests
 from requests.auth import HTTPBasicAuth
 from typing import Tuple
 from datetime import datetime
 from sqlalchemy import create_engine
+import pandas as pd
+from pprint import pprint
 
 from idr_client import config
-from idr_client.core import Task,qries
+from idr_client.core import Task,qries, queries
 from idr_client.lib import SQLMetadata
 
 
@@ -40,7 +43,8 @@ etl_user:str = config.etl_user
 etl_db_pwd:str = config.etl_db_pwd
 etl_db_name:str = config.etl_db_name
 
-default_date = datetime.fromtimestamp(0)
+# default_date = datetime.fromtimestamp(0)
+default_date = datetime.fromisoformat("2021-12-12 00:00:00")
 
 
 def connect_to_db():
@@ -70,18 +74,19 @@ def getLastETLRunDate():
     except Exception  as e:
         return default_date
 
+last_run_date = getLastETLRunDate()
+
 def countEtlModifiedOrCreatedRecord():
-    last_run_date = getLastETLRunDate()
     count_modified_or_created_record = f'''
         SELECT COUNT(uuid) FROM {config.etl_db_name}.etl_cervical_cancer_screening rec 
         WHERE (rec.date_created > '{last_run_date}') OR (rec.date_last_modified > '{last_run_date}');
         '''
     count = execute_query(count_modified_or_created_record)
     return count.first()[0]    
-    
+
 class CheckChangesFromETL(Task[SQLMetadata, bool]):
     """Check a KenyaETL table for changes."""
-    def execute(self) -> bool:
+    def execute(self,an_input) -> bool:
         execute_query(qries.create_etl_logs)
         record_count = countEtlModifiedOrCreatedRecord()
         if record_count>0:
@@ -95,43 +100,45 @@ class FetchMetadataFromServer(Task[str, Tuple[SQLMetadata, SQLMetadata]]):
             resp = requests.post(server_url+'/api/auth/login/',auth = HTTPBasicAuth(user_name,user_pwd))
             if resp.status_code == 200:
                 token = resp.json()["token"]
-                response = requests.get(server_url+"/api/simple_sql_metadata/",headers={'Authorization': 'Token '+token})
+                response = requests.get(server_url+"/api/sql_data/sql_extract_metadata/",headers={'Authorization': 'Token '+token})
                 if response.status_code == 200:
+                    # print("METADATA ",response.json()['results'][0]['updated_at'])
                     metadata = response.json()['results'][0]
                     query = metadata['sql_query']
                     with open('idr_client/core/queries.py', 'w') as f:
                         f.write(query)
                         from idr_client.core import queries
                     return queries.extract_data
-                raise Exception("Bad response ",response.status_code)
-            raise Exception("No access token.",resp)
-        raise Exception("No change on etl database")
-                                
+                raise Exception("Error getting metadata: ",response)
+            raise Exception("Error getting access token: ",resp)
+        sys.exit("No change on etl since last run.\nExiting...")
+                              
 class RunExtraction(Task[SQLMetadata, object]):
     """Extract data from a database."""
+    '''
+    - run raw query as fetched from the server,
+    - run a filter against the result of the query. filter based on last_extract_date
+    '''
 
     def execute(self, an_input: SQLMetadata) -> object: 
-        results = execute_query(an_input)
-        return results
+        extracts = execute_query(an_input)        
+        new_extracts = [r for r in extracts if (r['Date_Created'] > last_run_date) or (r['Date_Last_Modified'] > last_run_date)]
+        return new_extracts
         
 class RunTransformation(Task[SQLMetadata, object]):
     """Transform the extracts."""
     def execute(self, an_input: SQLMetadata) -> object: 
-        import pandas as pd
         df = pd.DataFrame(an_input)
-        df.to_csv("extracts.csv",index=False)
-        
-        def write_parquet_file():
-            df = pd.read_csv('extracts.csv')
-            df.to_parquet('extracts.parquet')
-            
-        write_parquet_file()
-        pq=pd.read_parquet("extracts.parquet")
-        print(pq)
-        
-        
+        df.to_csv("idr_client/data/extracts.csv",index=False)
+        df = pd.read_csv('idr_client/data/extracts.csv',chunksize=100)
+        for data in df:
+            print(data)                
 class TransimitData():
     """Transmit the transformed data"""
     ...
-        
+    '''
+    - Should be atomic process where all data should be commited to server or none.
+    - Only on successful transmission, insert a record to etl_extract_log else
+    - Rollback the action
+    '''
         
