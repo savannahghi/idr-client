@@ -1,5 +1,9 @@
 import os
 
+# Org unit
+facility_name = os.getenv('ORG_UNIT_NAME')
+mfl_code = os.getenv('ORG_UNIT_CODE')
+
 # Server configs
 server_url = os.getenv('SERVER_URL')
 user_name = os.getenv('USER_NAME')
