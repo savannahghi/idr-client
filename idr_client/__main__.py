@@ -5,7 +5,8 @@ from idr_client.use_cases.main_pipeline import (
     CheckChangesFromETL,
     FetchMetadataFromServer,
     RunExtraction,
-    RunTransformation
+    RunTransformation,
+    TransmitData
 )
 
 
@@ -52,7 +53,8 @@ def main() -> None:
         CheckChangesFromETL(),
         FetchMetadataFromServer(),
         RunExtraction(),
-        RunTransformation()
+        RunTransformation(),
+        TransmitData()
     )
     main_pipeline.execute(etl_host_url)
 
