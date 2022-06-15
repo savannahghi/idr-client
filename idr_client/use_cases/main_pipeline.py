@@ -1,16 +1,16 @@
 import os
-
 import requests
-import json
 from requests.auth import HTTPBasicAuth
 from typing import Tuple
 from datetime import datetime
 from sqlalchemy import create_engine
 import pandas as pd
 from localStoragePy import localStoragePy
+import sqlite3
+from sqlite3 import Error
 
 from idr_client import config
-from idr_client.core import Task, qries
+from idr_client.core import Task, static_queries
 from idr_client.lib import SQLMetadata
 
 # facility variables
@@ -34,6 +34,29 @@ default_date = datetime.fromtimestamp(0)
 # default_date = datetime.fromisoformat("2021-12-12 00:00:00")
 
 localStorage = localStoragePy('idr-client', 'json')
+
+
+def logs_db_connection(db_file):
+    """ create a database connection to a SQLite database """
+    try:
+        conn = sqlite3.connect(db_file)
+        return conn
+    except Error as e:
+        print(e)
+
+
+sqlite_db_file = "idr_client/data/idr_client.db"
+
+
+def create_logs_table():
+    conn = logs_db_connection(sqlite_db_file)
+    cursor = conn.cursor()
+    cursor.execute(static_queries.create_etl_logs)
+    conn.commit()
+    cursor.close()
+
+
+create_logs_table()
 
 
 def connect_to_db():
@@ -60,14 +83,20 @@ def get_user_token(user, pwd):
 
 
 def get_last_etl_run_date():
-    qry_logs = execute_query(qries.get_last_etlrun_date)
-    etl_last_run_date = qry_logs.first()[0]
-    if etl_last_run_date is None:
-        return default_date
-    return etl_last_run_date
+    return default_date
+    # conn = logs_db_connection(sqlite_db_file)
+    # cursor = conn.cursor()
+    # query_logs = cursor.execute(static_queries.get_last_etlrun_date)
+    #
+    # etl_last_run_date = query_logs.first()[0]
+    # if etl_last_run_date is None:
+    #     return default_date
+    #     cursor.close()
+    #     conn.close()
+    # return etl_last_run_date
 
 
-def count_created_or_record(last_run_date):
+def count_created_or_recorded(last_run_date):
     count_modified_or_created_record = f'''
         SELECT COUNT(uuid) FROM {config.etl_db_name}.etl_cervical_cancer_screening rec 
         WHERE (rec.date_created > '{last_run_date}') OR (rec.date_last_modified > '{last_run_date}');
@@ -80,9 +109,9 @@ class CheckChangesFromETL(Task[SQLMetadata, bool]):
     """Check a KenyaETL table for changes."""
 
     def execute(self, an_input) -> bool:
-        execute_query(qries.create_etl_logs)
+        execute_query(static_queries.create_etl_logs)
         last_etl_run = get_last_etl_run_date()
-        record_count = count_created_or_record(last_etl_run)
+        record_count = count_created_or_recorded(last_etl_run)
         if record_count > 0:
             return True
         return False
@@ -132,18 +161,26 @@ class RunTransformation(Task[SQLMetadata, object]):
     def execute(self, an_input: SQLMetadata) -> object:
         df = pd.DataFrame(an_input)
         df.to_csv("idr_client/data/extracts.csv", index=False)
-        df = pd.read_csv('idr_client/data/extracts.csv', chunksize=100)
-        count = 0
-        # TODO: get count instead by using list of files in chunks folder
-        for data in df:
-            count += 1
-        return {'metadata_name': an_input['metadata_name'], 'metadata_id': an_input['metadata_id'], 'chunks': count}
+
+        chunks_folder = "idr_client/data/chunks/"
+
+        def create_chunks():
+            counter = 0
+            for csv_chunk in pd.read_csv('idr_client/data/extracts.csv', chunksize=100):
+                csv_chunk.to_csv(chunks_folder + "chunk_" + str(counter) + ".csv")
+                counter += 1
+
+        create_chunks()
+        total = len(os.listdir(chunks_folder))
+
+        return {'metadata_name': an_input['metadata_name'], 'metadata_id': an_input['metadata_id'],
+                'chunks': total, 'chunks_folder': chunks_folder}
 
 
 class TransmitData(Task[SQLMetadata, object]):
     """Transmit the transformed data"""
     '''
-    - Should be atomic process where all data should be commited to server or none.
+    - Should be atomic process where all data should be committed to server or none.
     - Only on successful transmission, insert a record to etl_extract_log else
     - Rollback the action
     '''
@@ -152,34 +189,41 @@ class TransmitData(Task[SQLMetadata, object]):
         data = {"org_unit_name": facility_name, "org_unit_code": mfl_code, "content_type": "text/csv",
                 "chunks": an_input['chunks'], "extras": {}, "extract_metadata": an_input['metadata_id']}
 
-        chunks_folder = "idr_client/data/chunks/"
-
-        def create_chunks():
-            counter = 0
-            for csv_chunk in pd.read_csv('idr_client/data/extracts.csv', chunksize=100):
-                csv_chunk.to_csv(chunks_folder + "chunk_" + str(counter) + ".csv")
-                counter = counter + 1
-
-        # post metadata
         response = requests.post(server_url + "/api/sql_data/sql_upload_metadata/", data=data,
                                  headers={'Authorization': 'Token ' + localStorage.getItem("token")})
-
         if response.status_code == 201:
-            output = json.loads(response.content)
-            create_chunks()
+            print("success creating metadata.", response.status_code)
+            output = response.json()
             chunk_index: int = 0
-            for data in os.listdir(chunks_folder):
-                path = chunks_folder+data
+            for data in os.listdir("idr_client/data/chunks/"):
+                path = an_input['chunks_folder'] + data
                 metadata_id = output['id']
-                chunk = {"chunk_index": chunk_index, "chunk_content":  open(path, 'rb'),
-                         "upload_metadata": metadata_id}
+                chunk = {"chunk_index": chunk_index, "chunk_content": None, "upload_metadata": metadata_id}
                 url_ext = f"/api/sql_data/sql_upload_metadata/{metadata_id}/start_chunk_upload/"
-                response = requests.post(server_url + url_ext, data=chunk,
+
+                # post chunks without chunk content
+                response = requests.post(server_url + url_ext,
+                                         json=chunk,
                                          headers={'Authorization': 'Token ' + localStorage.getItem("token")})
-                breakpoint()
+                print("success creating chunks.",data)
                 if response.status_code == 201:
-                    print(chunk_index)
-                    chunk_index = chunk_index + 1
-                print("Cannot upload chunk at index ", chunk_index)
-                exit("Cannot upload a chunk")
-        exit("Cannot upload extracts metadata")
+                    chunk_id = response.json()["id"]
+                    edit_chunk_url = f"{server_url}/api/sql_data/sql_upload_chunks/{chunk_id}/"
+                    chunk_file = {"chunk_content": open(path, 'rb')}
+                    chunk_index += 1
+
+                    # patch chunks with chunk content
+                    res = requests.patch(edit_chunk_url, files=chunk_file,
+                                         headers={'Authorization': 'Token ' + localStorage.getItem("token")})
+                    if res.status_code == 200:
+                        print("success adding chunks_content.", res.status_code)
+                    else:
+                        # TODO: retries here
+                        ...
+                        print("Do retries and error catching")
+
+                else:
+                    # TODO: retries here
+                    pass
+        print("do retries here. ")
+        exit()
