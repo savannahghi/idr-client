@@ -6,13 +6,13 @@ from idr_client.use_cases.main_pipeline import (
     FetchMetadataFromServer,
     RunExtraction,
     RunTransformation,
-    TransmitData
+    TransmitData,
 )
-
 
 # =============================================================================
 # HELPERS
 # =============================================================================
+
 
 def argparse_factory(prog_name: str = "idr_client") -> ArgumentParser:
     """Returns a new ArgumentParser instance configured for use with this tool.

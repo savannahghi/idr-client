@@ -1,7 +1,6 @@
 from .metadata import SQLMetadata, SQLMetadataTypes
-from .tasks import *
-from .tasks import __all__ as _all_tasks
-
+from .tasks import *  # noqa
+from .tasks import __all__ as _all_tasks  # noqa
 
 __all__ = [
     "SQLMetadata",

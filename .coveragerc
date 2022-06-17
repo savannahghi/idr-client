@@ -1,0 +1,27 @@
+[run]
+include = idr_client/*
+omit = tests/*
+
+
+[tool:pytest]
+addopts = --ds=configs.test_configs --cov=idr_client --cov-fail-under=100 --cov-report=html --cov-report=term-missing -n auto --durations=10 --cache-clear --create-db
+
+
+[report]
+exclude_lines =
+    # Have to re-enable the standard pragma
+    pragma: no branch
+    pragma: nocover
+    pragma: no cover
+
+    # Don't complain if tests don't hit defensive assertion code:
+    raise AssertionError
+    raise NotImplementedError
+
+    # Don't complain about abstract methods, they aren't run:
+    @(abc\.)?abstractmethod
+show_missing=True
+
+
+[html]
+directory=coverage
