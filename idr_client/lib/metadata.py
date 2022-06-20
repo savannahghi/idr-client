@@ -1,11 +1,9 @@
-from abc import ABCMeta, abstractmethod
 from enum import Enum
-from typing import Any, Generic, Optional, Sequence, Type, TypeVar, Mapping
+from typing import Any, Mapping, Optional, TypeVar
 
 from idr_client.core import AbstractMetadata
 
 from .tasks import SQLTask
-
 
 # =============================================================================
 # TYPES

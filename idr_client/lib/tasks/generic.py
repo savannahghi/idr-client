@@ -1,12 +1,5 @@
 from functools import reduce
-from typing import (
-    Any,
-    Callable,
-    Generic,
-    Sequence,
-    TypeVar,
-    cast
-)
+from typing import Any, Callable, Generic, Sequence, TypeVar, cast
 
 from idr_client.core import Task
 
