@@ -27,5 +27,3 @@ require_env('DB_PORT')
 require_env('DB_NAME')
 require_env('DB_USER')
 require_env('DB_PASSWORD')
-
-

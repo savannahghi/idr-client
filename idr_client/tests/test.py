@@ -1,66 +1,89 @@
-import os
-
-import pytest
+from unittest.mock import MagicMock, patch
+from unittest import TestCase
 import requests
-from localStoragePy import localStoragePy
-from requests.auth import HTTPBasicAuth
-from sqlalchemy import create_engine
+from sqlite3 import Connection as SQLiteConnection
+from sqlalchemy.engine import Connection as AlchemyConnection
+from idr_client.use_cases.main_pipeline import connect_to_sqlite_db, \
+    execute_sqlite_query, execute_mysql_query, get_user_token, get_last_etl_run_date
 
-from configs import config
-from idr_client.use_cases import main_pipeline as mp
-from idr_client.core import static_queries
-from datetime import datetime
-
-local_storage = localStoragePy("test_local", "json")
+from requests.exceptions import ConnectionError, Timeout
 
 
-@pytest.fixture
-def user_token(user, pwd):
-    resp = requests.post(config.server_url + '/api/auth/login/', auth=HTTPBasicAuth(user, pwd))
-    if resp.status_code == 200:
-        token = resp.json()["token"]
-        local_storage.setItem("token", token)
-        yield token
+class TestUseCases(TestCase):
+    @patch('idr_client.use_cases.main_pipeline.sqlite3')
+    def test_sqlite_connection(self, mock_sqlite3):
+        connection = MagicMock(SQLiteConnection)
+        cursor = connection.cursor()
+        mock_sqlite3.connect.return_value = cursor
+        self.assertEqual(connect_to_sqlite_db(), cursor)
+
+    @patch('idr_client.use_cases.main_pipeline.execute_mysql_query')
+    def test_msql_connection(self, mock_mysql_query_exec):
+        mock_query_result = MagicMock(AlchemyConnection)
+        mock_query_result.execute.return_value
+        mock_mysql_query_exec.execute.return_value = mock_query_result
+        execute_mysql_query("show tables;")
+        mock_query_result()
+        mock_query_result.assert_called()
+
+    def test_sqlite_query(self):
+        query = "select count(log_id) from tbl_extractions_log"
+        result = execute_sqlite_query(query).fetchone()
+        self.assertGreaterEqual(result, (0,))
+
+    @patch('idr_client.use_cases.main_pipeline.requests')
+    def test_success_get_token(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "token": 1234
+        }
+
+        mock_requests.post.return_value = mock_response
+        self.assertEqual(get_user_token("user", "pwd"), 1234)
+
+    @patch('idr_client.use_cases.main_pipeline.requests')
+    def test_status_code_failure_get_token(self, mock_get_token):
+        mock_response = MagicMock()
+        # mock_response.status_code = 403
+        mock_response.json.return_value = {
+            "token": "No token"
+        }
+        mock_get_token.post.side_effect = mock_response
+        self.assertEqual(get_user_token("user", "pwd"), "No token")
+
+    @patch('idr_client.use_cases.main_pipeline.requests')
+    def test_timeout_get_token(self, mock_timeout_request):
+        mock_timeout_request.exceptions = requests.exceptions
+        mock_timeout_request.post.side_effect = Timeout("Request timed out.")
+        self.assertEqual(get_user_token("user", "pwd"), "Request timed out.")
+
+    @patch('idr_client.use_cases.main_pipeline.requests')
+    def test_connection_error_get_token(self, mock_connection_error):
+        mock_connection_error.exceptions = requests.exceptions
+        mock_connection_error.post.side_effect = ConnectionError("Connection error.")
+        self.assertEqual(get_user_token("user", "pwd"), "Connection error.")
+
+    @patch('idr_client.use_cases.main_pipeline.requests')
+    def test_general_error_get_token(self, mock_other_errors):
+        mock_other_errors.exceptions = requests.exceptions
+        mock_other_errors.post.side_effect = Exception("Other exceptions.")
+        self.assertEqual(get_user_token("user", "pwd"), "Other exceptions.")
+
+    @patch('idr_client.use_cases.main_pipeline.get_last_etl_run_date')
+    def test_get_last_etl_run(self, mock_last_etl_run):
+        mock_query_result = MagicMock(AlchemyConnection)
+        mock_query_result.execute.return_value
+        mock_last_etl_run.execute.return_value = mock_query_result
+        get_last_etl_run_date()
+        mock_query_result()
+        mock_query_result.assert_called()
 
 
-@pytest.fixture
-def setup_sqlite_db(tmpdir):
-    """ Fixture to set up sqlite db connection """
-    db_file = os.path.join(tmpdir.strpath, "test.db")
-    conn = mp.sqlite_db_connection(db_file)
-    yield conn
 
 
-@pytest.fixture
-def setup_mysql_db():
-    """ Fixture to set up mysql db connection """
-    url = f"mysql+pymysql://{config.etl_user}:{config.etl_db_pwd}@{config.etl_db_host}:{config.db_port}/{config.etl_db_name}"
-    engine = create_engine(url)
-    yield engine.connect()
 
 
-def test_sqlite_connection(setup_sqlite_db):
-    q = '''
-    SELECT name FROM sqlite_schema WHERE type='table' ORDER BY name;
-    '''
-    assert len(list(mp.execute_sqlite_query(q))) >= 0
 
 
-def test_mysql_connection(setup_mysql_db):
-    q = '''
-    show tables;
-    '''
-    assert len(list(mp.execute_mysql_query(q))) >= 0
 
-
-@pytest.fixture
-def get_last_etl_run_date():
-    query_logs = mp.execute_sqlite_query(static_queries.get_last_etlrun_date)
-    results = query_logs.fetchall()
-    if len(results) < 1:
-        yield mp.get_last_etl_run_date() == datetime.fromtimestamp(0)
-    yield mp.get_last_etl_run_date() == str(*results[0])
-
-
-def test_created_or_recorded(get_last_etl_run_date):
-    assert mp.count_created_or_recorded(get_last_etl_run_date) >= 0

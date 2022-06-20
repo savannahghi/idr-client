@@ -1,10 +1,7 @@
 [run]
-include = idr_client/*
-omit = tests/*
-
-
-[tool:pytest]
-addopts = --ds=configs.test_configs --cov=idr_client --cov-fail-under=100 --cov-report=html --cov-report=term-missing -n auto --durations=10 --cache-clear --create-db
+branch=True
+source=idr_client
+omit=idr_client/configs/*, idr_client/tests/*, idr_client/data/*
 
 
 [report]
@@ -25,3 +22,4 @@ show_missing=True
 
 [html]
 directory=coverage
+

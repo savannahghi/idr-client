@@ -7,4 +7,4 @@ __all__ = [
     "SQLMetadataTypes"
 ]
 
-__all__ += _all_tasks  # type: ignore
+__all__ += _all_tasks  # noqa
