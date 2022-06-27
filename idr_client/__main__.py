@@ -14,7 +14,8 @@ from idr_client.use_cases.main_pipeline import (
 # =============================================================================
 
 
-def argparse_factory(prog_name: str = "idr_client") -> ArgumentParser:  # pragma: no cover
+def argparse_factory(
+        prog_name: str = "idr_client") -> ArgumentParser:  # pragma: no cover
     """Returns a new ArgumentParser instance configured for use with this tool.
 
     :param prog_name: An optional name to be used as the program name.
