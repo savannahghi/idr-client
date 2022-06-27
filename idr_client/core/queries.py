@@ -1,5 +1,4 @@
-from configs import config
-
+from idr_client.configs import config
 # flake8: noqa
 
 extract_data = f'''select 

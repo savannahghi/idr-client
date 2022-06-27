@@ -14,7 +14,7 @@ from idr_client.use_cases.main_pipeline import (
 # =============================================================================
 
 
-def argparse_factory(prog_name: str = "idr_client") -> ArgumentParser:
+def argparse_factory(prog_name: str = "idr_client") -> ArgumentParser:  # pragma: no cover
     """Returns a new ArgumentParser instance configured for use with this tool.
 
     :param prog_name: An optional name to be used as the program name.
@@ -37,7 +37,7 @@ def argparse_factory(prog_name: str = "idr_client") -> ArgumentParser:
 # MAIN
 # =============================================================================
 
-def main() -> None:
+def main() -> None:  # pragma: no cover
     """
     The main entry point for this tool.
 
@@ -59,5 +59,5 @@ def main() -> None:
     main_pipeline.execute(etl_host_url)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()

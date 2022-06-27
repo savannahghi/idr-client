@@ -3,7 +3,7 @@ from typing import Any
 from idr_client.core.task import Task
 
 
-class SQLTask(Task[str, object]):
+class SQLTask(Task[str, object]):  # pragma: no cover
 
     def __init__(self, sql_query: str):
         self._sql_query = sql_query
