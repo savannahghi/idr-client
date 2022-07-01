@@ -97,9 +97,9 @@ def main() -> None:  # pragma: no cover
     """
 
     parser = argparse_factory()
-    parser.parse_args()
+    args = parser.parse_args()
 
-    app.setup()
+    app.setup(config_file_path=args.config)
     main_pipeline: Pipeline[None, Any] = main_pipeline_factory()
     main_pipeline.execute(None)
     print("Done ...")

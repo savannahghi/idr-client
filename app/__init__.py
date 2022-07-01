@@ -11,8 +11,10 @@ from app.lib import Config, SettingInitializer
 # CONSTANTS
 # =============================================================================
 
+_LOGGING_CONFIG_KEY = "LOGGING"
+
 _DEFAULT_CONFIG: Dict[str, Any] = {
-    "logging": {
+    _LOGGING_CONFIG_KEY: {
         "version": 1,
         "disable_existing_loggers": False,
         "formatters": {
@@ -53,7 +55,7 @@ class _LoggingInitializer(Task[Any, Any]):
 
     def execute(self, an_input: Optional[Mapping[str, Any]]) -> Any:
         logging_config: Dict[str, Any] = dict(
-            an_input or _DEFAULT_CONFIG["logging"]
+            an_input or _DEFAULT_CONFIG[_LOGGING_CONFIG_KEY]
         )
         dictConfig(logging_config)
         return logging_config
@@ -85,7 +87,7 @@ def setup(
     if config_file_path:  # load config from a file when provided
         _settings_dict.update(_load_config_file(config_file_path))
     _initializers_dict: Dict[str, Any] = dict(settings_initializers or {})
-    _initializers_dict.update({"logging": _LoggingInitializer()})
+    _initializers_dict.update({_LOGGING_CONFIG_KEY: _LoggingInitializer()})
 
     global settings
     settings = Config(
