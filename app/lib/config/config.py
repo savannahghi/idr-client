@@ -1,6 +1,9 @@
+import logging
 from typing import Any, Dict, Mapping, Optional
 
 from app.core import Task
+
+from .exceptions import MissingSettingError
 
 # =============================================================================
 # TYPES
@@ -10,12 +13,27 @@ SettingInitializer = Task[Any, Any]
 
 
 # =============================================================================
+# CONSTANTS
+# =============================================================================
+
+_LOGGER = logging.getLogger(__name__)
+
+
+# =============================================================================
 # CONFIG
 # =============================================================================
 
 
 class Config:
-    """An object that holds the app settings."""
+    """An object that holds the app settings.
+
+    Only read only access to the settings is available post initialization. Any
+    required modifications to the settings should be done at initialization
+    time by passing a mapping of setting names and ``SettingInitializer``
+    instances to this class's constructor. Setting names are encouraged to be
+    uppercase to convey that they are read only. Setting names that are also
+    valid python identifiers can also be accessed using the dot notation.
+    """
 
     def __init__(
         self,
@@ -50,7 +68,26 @@ class Config:
 
     def __getattr__(self, setting: str) -> Any:
         """Make settings available using the dot operator."""
-        return self._settings[setting]
+        try:
+            return self._settings[setting]
+        except KeyError:
+            raise MissingSettingError(setting=setting)
+
+    def get(self, setting: str, default: Any = None) -> Any:
+        """
+        Retrieve the value of the given setting or return the given default if
+        no such setting exists in this ``Config`` instance. This method can
+        also be used for retrieval of settings with invalid python identifier
+        names.
+
+        :param setting: The name of the setting value to retrieve.
+        :param default: A value to return when no setting with the given name
+            exists in this config.
+
+        :return: The value of the given setting if it is present in this config
+            or the given default otherwise.
+        """
+        return self._settings.get(setting, default)
 
     def _run_initializers(self) -> None:
         """
@@ -63,5 +100,11 @@ class Config:
         :return: None.
         """
         for setting, initializer in self._initializers.items():
-            setting_val: Any = initializer(self._settings.get(setting))
+            raw_setting_val: Any = self._settings.get(setting)
+            setting_val: Any = initializer(raw_setting_val)
+            _LOGGER.debug(
+                'Ran initializer for the setting "%s" with raw value "%s".',
+                str(setting),
+                str(raw_setting_val),
+            )
             self._settings[setting] = setting_val
