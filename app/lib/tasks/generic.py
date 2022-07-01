@@ -16,11 +16,10 @@ _RT = TypeVar("_RT")
 # ITEM PROCESSORS
 # =============================================================================
 
-class Chainable(
-    Generic[_IN, _RT],
-    Task[Callable[[_IN], _RT], "Chainable[_RT, Any]"]
-):
 
+class Chainable(
+    Generic[_IN, _RT], Task[Callable[[_IN], _RT], "Chainable[_RT, Any]"]
+):
     def __init__(self, an_input: _IN):
         self._an_input: _IN = an_input
 
@@ -34,7 +33,6 @@ class Chainable(
 
 
 class Consumer(Generic[_IN], Task[_IN, _IN]):
-
     def __init__(self, consume: Callable[[_IN], None]):
         assert consume, "consume cannot be None."
         self._consume: Callable[[_IN], None] = consume
@@ -45,7 +43,6 @@ class Consumer(Generic[_IN], Task[_IN, _IN]):
 
 
 class Pipeline(Generic[_IN, _RT], Task[_IN, _RT]):
-
     def __init__(self, *tasks: Task[Any, Any]):
         assert tasks, "tasks cannot be None or empty."
         self._tasks: Sequence[Task[Any, Any]] = tuple(tasks)
@@ -62,6 +59,6 @@ class Pipeline(Generic[_IN, _RT], Task[_IN, _RT]):
             reduce(
                 lambda _acc, _tsk: _tsk.execute(_acc),
                 self.tasks[1:],
-                self.tasks[0].execute(an_input)
-            )
+                self.tasks[0].execute(an_input),
+            ),
         )

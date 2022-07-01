@@ -14,8 +14,8 @@ LOGGER = getLogger(__name__)
 # TASKS
 # =============================================================================
 
-class FetchDataSources(Task[None, Mapping[str, DataSource]]):
 
+class FetchDataSources(Task[None, Mapping[str, DataSource]]):
     def __init__(self, transport: Transport):
         self._transport: Transport = transport
 
@@ -28,13 +28,11 @@ class FetchDataSources(Task[None, Mapping[str, DataSource]]):
 class FetchExtractMetadata(
     Task[Mapping[str, DataSource], Mapping[str, ExtractMetadata]]
 ):
-
     def __init__(self, transport: Transport):
         self._transport: Transport = transport
 
     def execute(
-            self,
-            an_input: Mapping[str, DataSource]
+        self, an_input: Mapping[str, DataSource]
     ) -> Mapping[str, ExtractMetadata]:
         # TODO: Add a proper implementation
         LOGGER.info("Fetching extract metadata.")
