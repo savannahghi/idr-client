@@ -12,7 +12,7 @@ class FetchMetadata(Pipeline[None, Mapping[str, ExtractMetadata]]):
     def __init__(self, transport: Transport):
         super().__init__(
             FetchDataSources(transport=transport),
-            FetchExtractMetadata(transport=transport)
+            FetchExtractMetadata(transport=transport),
         )
 
 

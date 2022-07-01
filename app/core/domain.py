@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 from functools import lru_cache
 from typing import Any, Generic, Mapping, Optional, Sequence, Type, TypeVar
 
@@ -16,6 +16,7 @@ _DS = TypeVar("_DS", bound="DataSource", covariant=True)
 # HELPERS
 # =============================================================================
 
+
 @lru_cache(maxsize=None)
 def _get_available_annotations(do_klass: Type[_ADO]) -> Mapping[str, Any]:
     """Extract all annotations available on a domain object class.
@@ -31,8 +32,7 @@ def _get_available_annotations(do_klass: Type[_ADO]) -> Mapping[str, Any]:
     return {
         field_name: field_type
         for klass in filter(
-            lambda _klass: hasattr(_klass, "__annotations__"),
-            do_klass.mro()
+            lambda _klass: hasattr(_klass, "__annotations__"), do_klass.mro()
         )
         for field_name, field_type in klass.__annotations__.items()
     }
@@ -66,6 +66,7 @@ def _get_required_fields_names(do_klass: Type[_ADO]) -> Sequence[str]:
 # DOMAIN ITEMS DEFINITIONS
 # =============================================================================
 
+
 class AbstractDomainObject(metaclass=ABCMeta):
     """The base class for all domain objects in the app."""
 
@@ -85,9 +86,8 @@ class AbstractDomainObject(metaclass=ABCMeta):
         required_fields: Sequence[str] = self.__class__.get_required_fields()
         if any(set(required_fields).difference(set(kwargs.keys()))):
             raise ValueError(
-                "The following values are required: %s" % ", ".join(
-                    required_fields
-                )
+                "The following values are required: %s"
+                % ", ".join(required_fields)
             )
 
         for valid_field in _get_available_annotations(self.__class__):
@@ -109,6 +109,7 @@ class AbstractDomainObject(metaclass=ABCMeta):
 
 class DataSource(AbstractDomainObject, metaclass=ABCMeta):
     """An interface representing an entity that contains data of interest."""
+
     id: str
     name: str
     description: str
@@ -116,6 +117,7 @@ class DataSource(AbstractDomainObject, metaclass=ABCMeta):
 
 class ExtractMetadata(Generic[_DS], AbstractDomainObject, metaclass=ABCMeta):
     """Metadata describing the data to be extracted from a `DataSource`."""
+
     id: str
     name: str
     description: str

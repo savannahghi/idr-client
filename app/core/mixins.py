@@ -15,6 +15,7 @@ _RT = TypeVar("_RT")
 # MIXINS
 # =============================================================================
 
+
 class InitFromMapping(metaclass=ABCMeta):
     """
     Represents objects that can initialize themselves from a serialized

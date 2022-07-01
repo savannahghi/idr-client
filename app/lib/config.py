@@ -13,13 +13,16 @@ SettingInitializer = Task[Any, Any]
 # CONFIG
 # =============================================================================
 
+
 class Config:
     """An object that holds the app settings."""
 
     def __init__(
-            self,
-            settings: Mapping[str, Any],
-            settings_initializers: Optional[Mapping[str, SettingInitializer]] = None  # noqa
+        self,
+        settings: Mapping[str, Any],
+        settings_initializers: Optional[
+            Mapping[str, SettingInitializer]
+        ] = None,  # noqa
     ):
         """
         Initialize a new :class:`Config` instance. The settings to use are
@@ -40,7 +43,9 @@ class Config:
             initialization tasks.
         """
         self._settings: Dict[str, Any] = dict(settings or {})
-        self._initializers: Mapping[str, Task] = settings_initializers or dict()  # noqa
+        self._initializers: Mapping[str, Task] = (
+            settings_initializers or dict()
+        )  # noqa
         self._run_initializers()
 
     def __getattr__(self, setting: str) -> Any:

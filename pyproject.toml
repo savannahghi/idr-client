@@ -2,3 +2,63 @@
 requires = ["setuptools>=62.4.0", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
+[tool.black]
+line-length = 79
+target-version = ["py37"]
+
+[tool.coverage.html]
+directory = "coverage"
+
+[tool.coverage.report]
+exclude_lines = [
+    # Have to re-enable the standard pragma"
+    "pragma: no branch",
+    "pragma: nocover",
+    "pragma: no cover",
+
+    # Don't complain if tests don't hit defensive assertion code:
+    "raise AssertionError",
+    "raise NotImplementedError",
+
+    # Don't complain about abstract methods, they aren't run:
+    '@(abc\.)?abstractmethod'
+]
+show_missing = true
+
+[tool.coverage.run]
+branch = true
+omit = [".tox/*", "docs/*", "tests/*"]
+source = ["app"]
+
+[tool.isort]
+extend_skip = "docs"
+extend_skip_glob = ["*/migrations/*", "*/static/CACHE/*"]
+line_length = 79
+multi_line_output = 3
+profile = "black"
+
+[tool.pyright]
+enableTypeIgnoreComments = true
+reportConstantRedefinition = "error"
+reportDuplicateImport = "error"
+reportPrivateUsage = "error"
+reportUnusedClass = "warning"
+reportUnusedFunction = "warning"
+reportUnusedImport = "error"
+reportUnusedVariable = "warning"
+reportWildcardImportFromLibrary = "warning"
+strictDictionaryInference = true
+strictListInference = true
+strictParameterNoneValue = true
+strictSetInference = true
+typeCheckingMode = "basic"
+
+[tool.pytest.ini_options]
+addopts = "--cov=app --cov-fail-under=74 --cov-report=html --cov-report=term-missing -n auto --junitxml='junitxml_report/report.xml' -v --durations=10 --cache-clear -p no:sugar"
+console_output_style = "progress"
+log_cli = 1
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"
+log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)"
+log_cli_level = "ERROR"
+python_files = ["*test.py", "test_*.py"]
+norecursedirs = "node_modules venv build env bin .cache .tox"
