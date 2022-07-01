@@ -16,8 +16,8 @@ _Mapper = Callable[[CursorResult], _R]
 # TASKS
 # =============================================================================
 
-class SQLTask(Generic[_R], Task[Connection, _R]):
 
+class SQLTask(Generic[_R], Task[Connection, _R]):
     def __init__(self, sql_query: str, mapper: _Mapper):
         self._sql_query: str = sql_query
         self._mapper: _Mapper = mapper
