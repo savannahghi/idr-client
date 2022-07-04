@@ -34,10 +34,9 @@ def argparse_factory(prog_name: str = "idr_client") -> ArgumentParser:
     parser.add_argument(
         "-c",
         "--config",
-        default="config.yaml",
         help=(
             "The location of the application config file. Only yaml files are "
-            "supported currently (default: %(default)s)."
+            "supported currently."
         ),
         type=str,
     )
