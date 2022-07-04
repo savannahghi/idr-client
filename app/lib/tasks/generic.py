@@ -28,13 +28,17 @@ class Chainable(
         return self._an_input
 
     def execute(self, bind: Callable[[_IN], _RT]) -> "Chainable[_RT, Any]":
-        assert bind, '"bind" cannot be None.'
+        from app.lib import ensure_not_none
+
+        ensure_not_none(bind, '"bind" cannot be None.')
         return Chainable(bind(self.an_input))
 
 
 class Consumer(Generic[_IN], Task[_IN, _IN]):
     def __init__(self, consume: Callable[[_IN], None]):
-        assert consume, "consume cannot be None."
+        from app.lib import ensure_not_none
+
+        ensure_not_none(consume, "consume cannot be None.")
         self._consume: Callable[[_IN], None] = consume
 
     def execute(self, an_input: _IN) -> _IN:
@@ -44,7 +48,9 @@ class Consumer(Generic[_IN], Task[_IN, _IN]):
 
 class Pipeline(Generic[_IN, _RT], Task[_IN, _RT]):
     def __init__(self, *tasks: Task[Any, Any]):
-        assert tasks, "tasks cannot be None or empty."
+        from app.lib import ensure_not_none_nor_empty
+
+        ensure_not_none_nor_empty(tasks, "tasks cannot be None or empty.")
         self._tasks: Sequence[Task[Any, Any]] = tuple(tasks)
 
     @property

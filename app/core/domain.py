@@ -1,8 +1,10 @@
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 from functools import lru_cache
 from typing import Any, Generic, Mapping, Optional, Sequence, Type, TypeVar
 
 from typing_inspect import is_optional_type
+
+# from .mixins import ToTask
 
 # =============================================================================
 # TYPES
@@ -23,11 +25,12 @@ def _get_available_annotations(do_klass: Type[_ADO]) -> Mapping[str, Any]:
 
     This includes all annotations defined on the class's ancestors.
 
-    *Note: The results of this method are cached to improve performance.*
+    .. note::
+        The results of this method are cached to improve performance.
 
-    :param do_klass: A class inheriting from `AbstractDomainObject`.
+    :param do_klass: A class inheriting from ``AbstractDomainObject``.
 
-    :return A mapping of the extracted annotations.
+    :return: A mapping of the extracted annotations.
     """
     return {
         field_name: field_type
@@ -43,14 +46,16 @@ def _get_required_fields_names(do_klass: Type[_ADO]) -> Sequence[str]:
     """Determine and return the required fields of a domain object class.
 
     A required field in the context of this method is defined as one whose
-    type is not `NoneType` or direct union with it such as `typing.Optional`.
-    These includes all the fields defined on the class's ancestors.
+    type is not ``NoneType`` or direct union with it such as
+    ``typing.Optional``. These includes all the fields defined on the class's
+    ancestors.
 
-    *Note: The results of this method are cached to improve performance.*
+    .. note::
+        The results of this method are cached to improve performance.
 
-    :param do_klass: A class inheriting from `AbstractDomainObject`.
+    :param do_klass: A class inheriting from ``AbstractDomainObject``.
 
-    :return A sequence of the required field names of a domain object class.
+    :return: A sequence of the required field names of a domain object class.
     """
     available_annotations: Mapping[str, Any] = _get_available_annotations(
         do_klass=do_klass
@@ -75,9 +80,10 @@ class AbstractDomainObject(metaclass=ABCMeta):
         Initialize a domain object and set the object's fields using the
         provided kwargs. Note that fields without annotations are going to be
         ignored and thus not set. If a non empty sequence of the required
-        fields is returned by the `cls.get_required_fields` method, then they
-        must be provided in the kwargs or else a `ValueError` exception will
-        be raised.
+        fields is returned by the
+        :py:meth:`~app.core.AbstractDomainObject.get_required_fields()` method,
+        then they must be provided in the kwargs or else a ``ValueError``
+        exception will be raised.
 
         :param kwargs: fields and their values to set on the created object.
 
@@ -100,7 +106,7 @@ class AbstractDomainObject(metaclass=ABCMeta):
         When not overriden, this method uses type annotations on the class to
         determine optional fields of the class. That is, fields whose type
         annotations aren't marked as either `NoneType` or those in direct union
-        with it such as `typing.Optional`.
+        with it such as ``typing.Optional``.
 
         :return: a sequence of the required fields for this class.
         """
@@ -112,14 +118,98 @@ class DataSource(AbstractDomainObject, metaclass=ABCMeta):
 
     id: str
     name: str
-    description: str
+    description: Optional[str]
+
+    @property
+    @abstractmethod
+    def extract_metadata(self) -> Mapping[str, "ExtractMetadata"]:
+        """
+        Return a readonly mapping of the extract metadata instances that
+        operate on this data source.
+
+        :return: A readonly mapping of extract metadata instances that operate
+            on thi data source.
+        """
+        ...
+
+    @extract_metadata.setter
+    @abstractmethod
+    def extract_metadata(
+        self, extract_metadata: Mapping[str, "ExtractMetadata"]
+    ) -> None:
+        """Set the extract metadata instances that belong to this data source.
+
+        .. note::
+            This will replace *(not update)* the current value of the extract
+            metadata instances for this data source.
+
+        :param extract_metadata: A read only mapping of the extract metadata
+            instances that operate on this data source.
+
+        :return: None.
+        """
+        ...
 
 
-class ExtractMetadata(Generic[_DS], AbstractDomainObject, metaclass=ABCMeta):
-    """Metadata describing the data to be extracted from a `DataSource`."""
+class DataSourceType(Generic[_DS], AbstractDomainObject, metaclass=ABCMeta):
+    """
+    An interface representing the different kinds of supported data sources.
+    """
+
+    name: str
+    description: Optional[str]
+
+    @property
+    @abstractmethod
+    def code(self) -> str:
+        """
+        Return a unique token for this data source type. This token is used
+        during lookups to identify this data source type.
+
+        :return: A unique token for this data source type.
+        """
+        ...
+
+    @property
+    @abstractmethod
+    def data_sources(self) -> Mapping[str, _DS]:
+        """
+        Return a readonly mapping of all data sources that belong to this data
+        source type.
+
+        :return: A readonly mapping of all data sources that belong to this
+            data source type.
+        """
+        ...
+
+    @data_sources.setter
+    @abstractmethod
+    def data_sources(self, data_sources: Mapping[str, _DS]) -> None:
+        """Set the data sources that belong to this data source type.
+
+        .. note::
+            This will replace *(not update)* the current value of data sources
+            for this data source type.
+
+        :param data_sources: A readonly mapping of the data sources belonging
+            to this data source type.
+
+        :return: None.
+        """
+        ...
+
+
+class ExtractMetadata(
+    Generic[_DS],
+    AbstractDomainObject,
+    # ToTask,
+    metaclass=ABCMeta,
+):
+    """
+    Metadata describing the data to be extracted from a :class:`DataSource`.
+    """
 
     id: str
     name: str
-    description: str
-    data_source: _DS
+    description: Optional[str]
     preferred_uploads_name: Optional[str]

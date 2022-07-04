@@ -1,4 +1,14 @@
 from .config import Config, SettingInitializer
-from .exceptions import MissingSettingError
+from .exceptions import (
+    ConfigurationError,
+    ImproperlyConfiguredError,
+    MissingSettingError,
+)
 
-__all__ = ["Config", "MissingSettingError", "SettingInitializer"]
+__all__ = [
+    "Config",
+    "ConfigurationError",
+    "ImproperlyConfiguredError",
+    "MissingSettingError",
+    "SettingInitializer",
+]
