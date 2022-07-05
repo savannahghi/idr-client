@@ -23,3 +23,10 @@ class IDRClientException(Exception):
             or None if one wasn't given.
         """
         return self._message
+
+
+class TransportError(IDRClientException):
+    """
+    An exception indicating that some error occurred during transport of data
+    from the client to an IDR Server or vice versa.
+    """
