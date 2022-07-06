@@ -1,9 +1,8 @@
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 from unittest import TestCase
 
 import pytest
 
-from app.core import Task
 from app.lib import Config, MissingSettingError, SettingInitializer
 
 # =============================================================================
@@ -11,21 +10,29 @@ from app.lib import Config, MissingSettingError, SettingInitializer
 # =============================================================================
 
 
-class _SettingToStringInitializer(Task[Any, str]):
+class _Setting1Initializer(SettingInitializer):
     """
     A simple initializer that takes a setting raw value and returns it's string
     representation.
     """
 
+    @property
+    def setting(self) -> str:
+        return "SETTING_1"
+
     def execute(self, an_input: Any) -> str:
         return str(an_input)
 
 
-class _AddOneInitializer(Task[int, int]):
+class _Setting2Initializer(SettingInitializer):
     """
     A simple initializer that takes an integer setting value and returns the
     value + 1 or 0 if the the value is None.
     """
+
+    @property
+    def setting(self) -> str:
+        return "SETTING_2"
 
     def execute(self, an_input: int) -> int:
         return an_input + 1 if an_input is not None else 0
@@ -50,12 +57,12 @@ class TestConfig(TestCase):
         }
 
         # Setting Initializers
-        self._setting_1_initializer = _SettingToStringInitializer()
-        self._setting_2_initializer = _AddOneInitializer()
-        self._initializers: Mapping[str, SettingInitializer] = {
-            "SETTING_1": self._setting_1_initializer,
-            "SETTING_2": self._setting_2_initializer,
-        }
+        self._setting_1_initializer = _Setting1Initializer()
+        self._setting_2_initializer = _Setting2Initializer()
+        self._initializers: Sequence[SettingInitializer] = (
+            self._setting_1_initializer,
+            self._setting_2_initializer,
+        )
 
     def test_initializers_are_run(self) -> None:
         """

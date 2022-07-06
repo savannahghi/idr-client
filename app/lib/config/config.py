@@ -1,16 +1,8 @@
 import logging
-from typing import Any, Dict, Mapping, Optional
-
-from app.core import Task
+from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from .exceptions import MissingSettingError
-
-# =============================================================================
-# TYPES
-# =============================================================================
-
-SettingInitializer = Task[Any, Any]
-
+from .setting_initializer import SettingInitializer
 
 # =============================================================================
 # CONSTANTS
@@ -29,18 +21,18 @@ class Config:
 
     Only read only access to the settings is available post initialization. Any
     required modifications to the settings should be done at initialization
-    time by passing a mapping of setting names and ``SettingInitializer``
-    instances to this class's constructor. Setting names are encouraged to be
-    uppercase to convey that they are read only. Setting names that are also
-    valid python identifiers can also be accessed using the dot notation.
+    time by passing a sequence of :class:`initializers <SettingInitializer>`
+    to this class's constructor.
+
+    Setting names are encouraged to be uppercase to convey that they are read
+    only. Setting names that are also valid python identifiers can also be
+    accessed using the dot notation on instances of this class.
     """
 
     def __init__(
         self,
         settings: Mapping[str, Any],
-        settings_initializers: Optional[
-            Mapping[str, SettingInitializer]
-        ] = None,  # noqa
+        settings_initializers: Optional[Sequence[SettingInitializer]] = None,
     ):
         """
         Initialize a new :class:`Config` instance. The settings to use are
@@ -54,16 +46,19 @@ class Config:
         values by taking a raw setting value and return the desired or
         appropriate value. The value is then set as the new value of the
         setting and will remain that way for the duration of the runtime of the
-        app.
+        app. If multiple initializers are given for the same setting, they are
+        executed in the given order with the output of the previous initializer
+        becoming the input of the next initializer. The output of the last
+        initializer is then set as the final value of the setting.
 
         :param settings: The configurations/settings to use as a mapping.
         :param settings_initializers: Optional initializers to perform post
             initialization tasks.
         """
         self._settings: Dict[str, Any] = dict(settings or {})
-        self._initializers: Mapping[str, Task] = (
-            settings_initializers or dict()
-        )  # noqa
+        self._initializers: Mapping[
+            str, Sequence[SettingInitializer]
+        ] = self._group_related_initializers(settings_initializers or tuple())
         self._run_initializers()
 
     def __getattr__(self, setting: str) -> Any:
@@ -99,12 +94,25 @@ class Config:
 
         :return: None.
         """
-        for setting, initializer in self._initializers.items():
-            raw_setting_val: Any = self._settings.get(setting)
-            setting_val: Any = initializer(raw_setting_val)
+        from app.lib import Pipeline
+
+        for _setting, _initializers in self._initializers.items():
+            raw_setting_val: Any = self._settings.get(_setting)
+            initializer_pipeline: Pipeline = Pipeline(*_initializers)
+            setting_val: Any = initializer_pipeline(raw_setting_val)  # noqa
             _LOGGER.debug(
                 'Ran initializer for the setting "%s" with raw value "%s".',
-                str(setting),
+                str(_setting),
                 str(raw_setting_val),
             )
-            self._settings[setting] = setting_val
+            self._settings[_setting] = setting_val
+
+    @staticmethod
+    def _group_related_initializers(
+        initializers: Sequence[SettingInitializer],
+    ) -> Mapping[str, Sequence[SettingInitializer]]:
+        grouped_initializers: Dict[str, List[SettingInitializer]] = dict()
+        for _initializer in initializers:
+            grouped_initializers.setdefault(_initializer.setting, [])
+            grouped_initializers[_initializer.setting].append(_initializer)
+        return grouped_initializers
