@@ -1,11 +1,11 @@
 import inspect
 from logging.config import dictConfig
-from typing import Any, Dict, Mapping, Optional, Sequence, Type, cast
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Type, cast
 
 import yaml
 from yaml import Loader
 
-from app.core import DataSourceType, Task
+from app.core import DataSourceType
 from app.lib import (
     AppRegistry,
     Config,
@@ -85,27 +85,34 @@ def _load_config_file(config_file_path: str) -> Mapping[str, Any]:
 # =============================================================================
 
 
-class _LoggingInitializer(Task[Optional[Mapping[str, Any]], Any]):
-    """A ``SettingInitializer`` that configures logging for the app."""
+class _LoggingInitializer(SettingInitializer):
+    """A :class:`SettingInitializer` that configures logging for the app."""
+
+    @property
+    def setting(self) -> str:
+        return _LOGGING_CONFIG_KEY
 
     def execute(self, an_input: Optional[Mapping[str, Any]]) -> Any:
         logging_config: Dict[str, Any] = dict(
-            an_input or _DEFAULT_CONFIG[_LOGGING_CONFIG_KEY]
+            an_input or _DEFAULT_CONFIG[self.setting]
         )
         dictConfig(logging_config)
         return logging_config
 
 
-class _SupportedDataSourceTypesInitializer(Task[Optional[Sequence[str]], Any]):
+class _SupportedDataSourceTypesInitializer(SettingInitializer):
     """
-    A ``SettingInitializer`` that initializes and registers supported data
-    types in the app registry.
+    A :class:`SettingInitializer` that initializes and registers supported
+    data types in the app registry.
     """
+
+    @property
+    def setting(self) -> str:
+        return _SUPPORTED_DATA_SOURCE_TYPES_CONFIG_KEY
 
     def execute(self, an_input: Optional[Sequence[str]]) -> Any:
         supported_dst: Sequence[str] = (
-            an_input
-            or _DEFAULT_CONFIG[_SUPPORTED_DATA_SOURCE_TYPES_CONFIG_KEY]
+            an_input or _DEFAULT_CONFIG[self.setting]
         )
         global registry
         _dst: DataSourceType
@@ -148,9 +155,7 @@ class _SupportedDataSourceTypesInitializer(Task[Optional[Sequence[str]], Any]):
 
 def setup(
     initial_settings: Optional[Mapping[str, Any]] = None,
-    settings_initializers: Optional[
-        Mapping[str, SettingInitializer]
-    ] = None,  # noqa
+    settings_initializers: Optional[Sequence[SettingInitializer]] = None,
     config_file_path: Optional[str] = None,
 ) -> None:
     """
@@ -171,15 +176,13 @@ def setup(
     _settings_dict: Dict[str, Any] = dict(initial_settings or _DEFAULT_CONFIG)
     if config_file_path:  # load config from a file when provided
         _settings_dict.update(_load_config_file(config_file_path))
-    _initializers_dict: Dict[str, Any] = dict(settings_initializers or {})
-    _initializers_dict.update(
-        {
-            _LOGGING_CONFIG_KEY: _LoggingInitializer(),
-            _SUPPORTED_DATA_SOURCE_TYPES_CONFIG_KEY: _SupportedDataSourceTypesInitializer(),  # noqa
-        }
-    )
+
+    # Load initializers
+    _initializers: List[Any] = list(settings_initializers or [])
+    _initializers.insert(0, _LoggingInitializer())
+    _initializers.insert(1, _SupportedDataSourceTypesInitializer())
 
     global settings
     settings = Config(
-        settings=_settings_dict, settings_initializers=_initializers_dict
+        settings=_settings_dict, settings_initializers=_initializers
     )
