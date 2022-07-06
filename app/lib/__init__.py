@@ -2,7 +2,7 @@ from .app_registry import AppRegistry
 from .checkers import ensure_not_none, ensure_not_none_nor_empty
 from .config import *  # noqa: F401,F403
 from .config import __all__ as _all_config
-from .module_loading import import_string
+from .module_loading import import_string, import_string_as_klass
 from .tasks import *  # noqa: F401,F403
 from .tasks import __all__ as _all_tasks
 from .transports import *  # noqa: F401,F403
@@ -13,6 +13,7 @@ __all__ = [
     "ensure_not_none",
     "ensure_not_none_nor_empty",
     "import_string",
+    "import_string_as_klass",
 ]
 __all__ += _all_config  # type: ignore
 __all__ += _all_tasks  # type: ignore
