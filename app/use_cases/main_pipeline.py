@@ -1,12 +1,14 @@
 from typing import Mapping
 
-from app.core import ExtractMetadata, Task, Transport
+from app.core import DataSourceType, ExtractMetadata, Task, Transport
 from app.lib import Pipeline
 
 from .fetch_metadata import FetchDataSources, FetchExtractMetadata
 
 
-class FetchMetadata(Pipeline[None, Mapping[str, ExtractMetadata]]):
+class FetchMetadata(
+    Pipeline[Mapping[str, DataSourceType], Mapping[str, ExtractMetadata]]
+):
     """Connect to the remote server and fetch metadata."""
 
     def __init__(self, transport: Transport):
@@ -21,6 +23,8 @@ class RunExtraction(Task[Mapping[str, ExtractMetadata], object]):
 
     def execute(self, an_input: Mapping[str, ExtractMetadata]) -> object:
         # TODO: Add proper implementation
+        for _extract in an_input.values():
+            print('Running extract "%s"' % _extract.name)
         return object()
 
 

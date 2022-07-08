@@ -1,4 +1,10 @@
-from .generic import Chainable, Consumer, Pipeline
+from .generic import Chainable, ConcurrentExecutor, Consumer, Pipeline
 from .sql import SQLTask
 
-__all__ = ["Chainable", "Consumer", "Pipeline", "SQLTask"]
+__all__ = [
+    "Chainable",
+    "ConcurrentExecutor",
+    "Consumer",
+    "Pipeline",
+    "SQLTask",
+]

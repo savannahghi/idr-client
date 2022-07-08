@@ -1,5 +1,15 @@
 from logging.config import dictConfig
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Type
+from typing import (
+    Any,
+    Dict,
+    Final,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Type,
+    cast,
+)
 
 import yaml
 from yaml import Loader
@@ -8,8 +18,10 @@ from app.core import DataSourceType
 from app.lib import (
     AppRegistry,
     Config,
+    DefaultTransportFactory,
     ImproperlyConfiguredError,
     SettingInitializer,
+    import_string,
     import_string_as_klass,
 )
 
@@ -17,13 +29,17 @@ from app.lib import (
 # CONSTANTS
 # =============================================================================
 
-_LOGGING_CONFIG_KEY = "LOGGING"
+_DEFAULT_TRANSPORT_FACTORY_CONFIG_KEY: Final[str] = "DEFAULT_TRANSPORT_FACTORY"
 
-_SETTINGS_INITIALIZERS_CONFIG_KEY = "SETTINGS_INITIALIZERS"
+_LOGGING_CONFIG_KEY: Final[str] = "LOGGING"
 
-_SUPPORTED_DATA_SOURCE_TYPES_CONFIG_KEY = "SUPPORTED_DATA_SOURCE_TYPES"
+_SETTINGS_INITIALIZERS_CONFIG_KEY: Final[str] = "SETTINGS_INITIALIZERS"
 
-_DEFAULT_CONFIG: Dict[str, Any] = {
+_SUPPORTED_DATA_SOURCE_TYPES_CONFIG_KEY: Final[
+    str
+] = "SUPPORTED_DATA_SOURCE_TYPES"  # noqa
+
+_DEFAULT_CONFIG: Final[Dict[str, Any]] = {
     _LOGGING_CONFIG_KEY: {
         "version": 1,
         "disable_existing_loggers": False,
@@ -53,14 +69,14 @@ _DEFAULT_CONFIG: Dict[str, Any] = {
 # APP GLOBALS
 # =============================================================================
 
-registry: AppRegistry = None  # type: ignore
+registry: Final[AppRegistry] = None  # type: ignore
 """
 The application registry. Provides lookup for important resources and services
 within the application. This value is only available after a successful
 application set up. That is, after ``app.setup()`` completes successfully.
 """
 
-settings: Config = None  # type: ignore
+settings: Final[Config] = None  # type: ignore
 """
 The application configurations. This value is only available after a
 successful application set up. That is, after ``app.setup()`` completes
@@ -113,6 +129,39 @@ def _load_settings_initializers(
 # =============================================================================
 # DEFAULT SETTINGS INITIALIZERS
 # =============================================================================
+
+
+class _DefaultTransportFactoryInitializer(SettingInitializer):
+    @property
+    def setting(self) -> str:
+        return _DEFAULT_TRANSPORT_FACTORY_CONFIG_KEY
+
+    def execute(self, an_input: Optional[str]) -> Any:
+        # If the default transport setting has not been provided or is empty,
+        # do nothing.
+        if not an_input:
+            return an_input
+
+        if type(an_input) is not str:
+            raise ImproperlyConfiguredError(
+                message='The value of the "%s" setting must be a string'
+                % _DEFAULT_TRANSPORT_FACTORY_CONFIG_KEY
+            )
+
+        default_transport_factory: DefaultTransportFactory
+        try:
+            default_transport_factory = cast(
+                DefaultTransportFactory, import_string(an_input)
+            )
+            global registry
+            registry.default_transport_factory = default_transport_factory
+        except (ImportError, TypeError) as exp:
+            raise ImproperlyConfiguredError(
+                message="Unable to import the default transport factory at "
+                '"%s". Ensure a valid path was given.' % an_input
+            ) from exp
+
+        return an_input
 
 
 class _LoggingInitializer(SettingInitializer):
@@ -200,7 +249,7 @@ def setup(
     """
     # Start by setting up the application registry
     global registry
-    registry = AppRegistry()
+    registry = AppRegistry()  # type: ignore
 
     # Load the application settings
     _settings_dict: Dict[str, Any] = dict(initial_settings or _DEFAULT_CONFIG)
@@ -217,8 +266,9 @@ def setup(
     )
     _initializers.insert(0, _LoggingInitializer())
     _initializers.insert(1, _SupportedDataSourceTypesInitializer())
+    _initializers.insert(2, _DefaultTransportFactoryInitializer())
 
     global settings
-    settings = Config(
+    settings = Config(  # type: ignore
         settings=_settings_dict, settings_initializers=_initializers
     )

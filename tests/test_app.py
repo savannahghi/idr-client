@@ -1,23 +1,15 @@
-from typing import Any, Dict, Mapping
+from typing import Any, Dict
 from unittest import TestCase
 
 import pytest
 
 import app
 from app.lib import ImproperlyConfiguredError, SettingInitializer
+from tests.factories import config_factory
 
 # =============================================================================
 # HELPERS
 # =============================================================================
-
-
-def _test_config_factory() -> Mapping[str, Any]:
-    return {
-        "SETTINGS_INITIALIZERS": [
-            "tests.test_app.FakeDataSourceTypesConfigInitializer"
-        ],
-        "SUPPORTED_DATA_SOURCE_TYPES": ["app.imp.sql_data.SQLDataSourceType"],
-    }
 
 
 class FakeDataSourceTypesConfigInitializer(SettingInitializer):
@@ -42,7 +34,7 @@ def test_app_globals_are_set_after_successful_setup() -> None:
     assert app.registry is None
 
     # After setup, globals should be not None.
-    app.setup(initial_settings=_test_config_factory())
+    app.setup(initial_settings=config_factory())
 
     assert app.settings is not None
     assert app.registry is not None
@@ -58,6 +50,7 @@ class TestAppModule(TestCase):
 
     def test_valid_config_is_successful(self) -> None:
         """Assert that a valid config will be executed successfully."""
+        # The statement below should execute cleanly.
         app.setup(initial_settings=self._default_config)
 
     def test_invalid_settings_initializers_config_causes_error(self) -> None:
@@ -93,5 +86,31 @@ class TestAppModule(TestCase):
             app.setup(initial_settings=config1)
 
         # Not a data source type
+        with pytest.raises(ImproperlyConfiguredError):
+            app.setup(initial_settings=config2)
+
+    def test_missing_default_transport_factory_setting_is_ok(self) -> None:
+        """
+        Assert that a missing setting for the default transport factory is
+        allowed.
+        """
+        config: Dict[str, Any] = dict()
+        app.setup(initial_settings=config)
+
+        assert app.settings.get("DEFAULT_TRANSPORT_FACTORY") is None
+
+    def test_that_invalid_default_transport_setting_causes_error(self) -> None:
+        """
+        Assert that invalid values for the default transport factory setting
+        cause expected errors.
+        """
+        config1: Dict[str, Any] = {"DEFAULT_TRANSPORT_FACTORY": 4}
+        config2: Dict[str, Any] = {"DEFAULT_TRANSPORT_FACTORY": "invalid_path"}
+
+        # The setting value must be a string
+        with pytest.raises(ImproperlyConfiguredError):
+            app.setup(initial_settings=config1)
+
+        # The setting value must be a valid dotted path.
         with pytest.raises(ImproperlyConfiguredError):
             app.setup(initial_settings=config2)
