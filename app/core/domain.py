@@ -150,6 +150,9 @@ class DataSource(AbstractDomainObject, metaclass=ABCMeta):
         """
         ...
 
+    def __str__(self) -> str:
+        return "%s::%s" % (self.id, self.name)
+
 
 class DataSourceType(Generic[_DS], AbstractDomainObject, metaclass=ABCMeta):
     """
@@ -198,6 +201,9 @@ class DataSourceType(Generic[_DS], AbstractDomainObject, metaclass=ABCMeta):
         """
         ...
 
+    def __str__(self) -> str:
+        return "%s::%s" % (self.code, self.name)
+
 
 class ExtractMetadata(
     Generic[_DS],
@@ -213,3 +219,6 @@ class ExtractMetadata(
     name: str
     description: Optional[str]
     preferred_uploads_name: Optional[str]
+
+    def __str__(self) -> str:
+        return "%s::%s" % (self.id, self.name)

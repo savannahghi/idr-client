@@ -1,9 +1,9 @@
 from argparse import ArgumentParser
-from typing import Any
+from typing import Any, Mapping, Optional
 
 import app
-from app.core import Transport
-from app.lib import HTTPTransport, Pipeline
+from app.core import DataSourceType, Transport
+from app.lib import Pipeline
 from app.use_cases.main_pipeline import (
     FetchMetadata,
     ProcessExtracts,
@@ -11,16 +11,18 @@ from app.use_cases.main_pipeline import (
     UploadExtracts,
 )
 
+from .__version__ import __title__, __version__
+
 # =============================================================================
 # HELPERS
 # =============================================================================
 
 
-def argparse_factory(prog_name: str = "idr_client") -> ArgumentParser:
-    """Returns a new ArgumentParser instance configured for use with this tool.
+def argparse_factory(prog_name: str = __title__) -> ArgumentParser:
+    """Returns a new ArgumentParser instance configured for use with this app.
 
     :param prog_name: An optional name to be used as the program name.
-    :return: An ArgumentParser instance for use with this program.
+    :return: An ArgumentParser instance for use with this app.
     """
 
     parser = ArgumentParser(
@@ -67,19 +69,42 @@ def argparse_factory(prog_name: str = "idr_client") -> ArgumentParser:
         ),
     )
     parser.add_argument(
-        "--version", action="version", version="%(prog)s 1.0.0"
+        "--version", action="version", version="%(prog)s " + __version__
     )
 
     return parser
 
 
-def main_pipeline_factory() -> Pipeline[None, Any]:
-    transport: Transport = HTTPTransport()
+def main_pipeline_factory(
+    transport: Optional[Transport] = None,
+) -> Pipeline[Mapping[str, DataSourceType], Any]:
+    """A factory for the main application pipeline.
+
+    Returns a fully initialized pipeline ready for use. An optional
+    :class:`transport <Transport>` instance can be given for use by the
+    pipeline tasks. If one, isn't provided, then one will be retrieved from
+    the app registry or an error raised if none is set.
+
+    :param transport: An optional transport for use by the pipeline tasks.
+
+    :return: A fully initialized main pipeline instance ready for use.
+
+    :raise ImproperlyConfiguredError: If no transport was provided and the
+        app default transport hasn't been set.
+    """
+    _transport: Transport
+    _transport = (
+        transport
+        or app.registry.get_default_transport_factory_or_raise(  # noqa
+            error_message="The default transport factory is required by the "
+            "main application pipeline."
+        )()
+    )
     return Pipeline(
-        FetchMetadata(transport=transport),
+        FetchMetadata(transport=_transport),
         RunExtraction(),
         ProcessExtracts(),
-        UploadExtracts(transport=transport),
+        UploadExtracts(transport=_transport),
     )
 
 
@@ -99,8 +124,10 @@ def main() -> None:  # pragma: no cover
     args = parser.parse_args()
 
     app.setup(config_file_path=args.config)
-    main_pipeline: Pipeline[None, Any] = main_pipeline_factory()
-    main_pipeline.execute(None)
+    main_pipeline: Pipeline[
+        Mapping[str, DataSourceType], Any
+    ] = main_pipeline_factory()
+    main_pipeline.execute(app.registry.data_source_types)
     print("Done ...")
 
 
