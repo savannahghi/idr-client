@@ -1,5 +1,6 @@
+from itertools import chain, groupby, product
 from logging import getLogger
-from typing import Dict, Mapping, Sequence
+from typing import Iterable, Mapping, Sequence, Tuple
 
 from app.core import (
     DataSource,
@@ -8,7 +9,7 @@ from app.core import (
     Task,
     Transport,
 )
-from app.lib import ConcurrentExecutor
+from app.lib import ConcurrentExecutor, Consumer
 
 # =============================================================================
 # CONSTANTS
@@ -35,11 +36,14 @@ class DoFetchDataSourceTypeSources(
             'Fetching data sources for data source type="%s".',
             str(self._data_source_type),
         )
-        dss: Mapping[str, DataSource] = an_input.fetch_data_sources(
+        data_sources: Sequence[DataSource] = an_input.fetch_data_sources(
             self._data_source_type
         )
-        self._data_source_type.data_sources = dss
-        return dss
+        data_source_type_sources: Mapping[str, DataSource] = {
+            _data_source.id: _data_source for _data_source in data_sources
+        }
+        self._data_source_type.data_sources = data_source_type_sources
+        return data_source_type_sources
 
 
 class DoFetchDataSourceExtracts(
@@ -47,7 +51,10 @@ class DoFetchDataSourceExtracts(
 ):
     """Fetch all the extract metadata of a given data source."""
 
-    def __init__(self, data_source: DataSource):
+    def __init__(
+        self, data_source_type: DataSourceType, data_source: DataSource
+    ):
+        self._data_source_type: DataSourceType = data_source_type
         self._data_source: DataSource = data_source
 
     def execute(self, an_input: Transport) -> Mapping[str, ExtractMetadata]:
@@ -55,13 +62,19 @@ class DoFetchDataSourceExtracts(
             'Fetching extract metadata for data source="%s".',
             str(self._data_source),
         )
-        em: Mapping[str, ExtractMetadata]
-        em = an_input.fetch_data_source_extracts(self._data_source)
-        self._data_source.extract_metadata = em
-        return em
+        extracts: Sequence[ExtractMetadata]
+        extracts = an_input.fetch_data_source_extracts(
+            data_source_type=self._data_source_type,
+            data_source=self._data_source,
+        )
+        data_source_extracts: Mapping[str, ExtractMetadata] = {
+            _k: next(_v) for _k, _v in groupby(extracts, lambda _e: _e.id)
+        }
+        self._data_source.extract_metadata = data_source_extracts
+        return data_source_extracts
 
 
-class FetchDataSources(Task[Transport, Mapping[str, DataSource]]):
+class FetchDataSources(Consumer[Sequence[DataSourceType]]):
     """
     Fetch all the :class:`data sources <DataSource>` for the given
     :class:`data source types <DataSourceType>`.
@@ -69,42 +82,32 @@ class FetchDataSources(Task[Transport, Mapping[str, DataSource]]):
 
     def __init__(self, transport: Transport):
         self._transport: Transport = transport
+        super().__init__(self._consume)
 
-    def execute(
-        self, an_input: Mapping[str, DataSourceType]
-    ) -> Mapping[str, DataSource]:
+    def _consume(self, an_input: Sequence[DataSourceType]) -> None:
         _LOGGER.info("Fetching data sources.")
         executor: ConcurrentExecutor[
             Transport, Sequence[Mapping[str, DataSource]]
         ] = ConcurrentExecutor(
             *self._data_source_types_to_tasks(an_input), initial_value=list()
         )
-        sources: Sequence[Mapping[str, DataSource]] = executor(  # noqa
-            self._transport
-        )
-        output: Dict[str, DataSource] = dict()
-        # Flatten nested data
-        for _sources in sources:
-            output.update(_sources)
-        return output
+        executor(self._transport)  # noqa
 
     @staticmethod
     def _data_source_types_to_tasks(
-        data_source_types: Mapping[str, DataSourceType]
+        data_source_types: Iterable[DataSourceType],
     ) -> Sequence[DoFetchDataSourceTypeSources]:
         return tuple(
             (
                 DoFetchDataSourceTypeSources(
                     data_source_type=_data_source_type
                 )
-                for _data_source_type in data_source_types.values()
+                for _data_source_type in data_source_types
             )
         )
 
 
-class FetchExtractMetadata(
-    Task[Mapping[str, DataSource], Mapping[str, ExtractMetadata]]
-):
+class FetchExtractMetadata(Consumer[Sequence[DataSourceType]]):
     """
     Fetch all :class:`extract metadata <ExtractMetadata>` for the given
     :class:`data sources <DataSource>`.
@@ -112,32 +115,37 @@ class FetchExtractMetadata(
 
     def __init__(self, transport: Transport):
         self._transport: Transport = transport
+        super().__init__(self._consume)
 
-    def execute(
-        self, an_input: Mapping[str, DataSource]
-    ) -> Mapping[str, ExtractMetadata]:
+    def _consume(self, an_input: Sequence[DataSourceType]) -> None:
         _LOGGER.info("Fetching extract metadata.")
+        data_sources: Sequence[Tuple[DataSourceType, DataSource]] = tuple(
+            chain.from_iterable(
+                # Map each data_source_type to tuples of the data_source_type
+                # and each of its data sources.
+                map(
+                    lambda _dst: product((_dst,), _dst.data_sources.values()),
+                    an_input,
+                )
+            )
+        )
         executor: ConcurrentExecutor[
             Transport, Sequence[Mapping[str, ExtractMetadata]]
         ] = ConcurrentExecutor(
-            *self._data_sources_to_tasks(an_input), initial_value=list()
+            *self._data_sources_to_tasks(data_sources), initial_value=list()
         )
-        extracts: Sequence[Mapping[str, ExtractMetadata]] = executor(  # noqa
-            self._transport
-        )
-        output: Dict[str, ExtractMetadata] = dict()
-        # Flatten nested data
-        for _extracts in extracts:
-            output.update(_extracts)
-        return output
+        executor(self._transport)  # noqa
 
     @staticmethod
     def _data_sources_to_tasks(
-        data_sources: Mapping[str, DataSource]
+        data_sources: Iterable[Tuple[DataSourceType, DataSource]]
     ) -> Sequence[DoFetchDataSourceExtracts]:
         return tuple(
             (
-                DoFetchDataSourceExtracts(data_source=_data_source)
-                for _data_source in data_sources.values()
+                DoFetchDataSourceExtracts(
+                    data_source_type=_data_source[0],
+                    data_source=_data_source[1],
+                )
+                for _data_source in data_sources
             )
         )

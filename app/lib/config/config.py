@@ -113,6 +113,7 @@ class Config:
     ) -> Mapping[str, Sequence[SettingInitializer]]:
         grouped_initializers: Dict[str, List[SettingInitializer]] = dict()
         for _initializer in initializers:
-            grouped_initializers.setdefault(_initializer.setting, [])
-            grouped_initializers[_initializer.setting].append(_initializer)
+            grouped_initializers.setdefault(_initializer.setting, []).append(
+                _initializer
+            )
         return grouped_initializers

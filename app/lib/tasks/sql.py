@@ -1,6 +1,9 @@
-from typing import Callable, Generic, TypeVar, cast
+from abc import ABCMeta
+from typing import Generic, TypeVar
 
-from sqlalchemy.engine import Connection, CursorResult
+import pandas as pd
+from sqlalchemy import text
+from sqlalchemy.engine import Connection
 
 from app.core.task import Task
 
@@ -9,7 +12,6 @@ from app.core.task import Task
 # =============================================================================
 
 _R = TypeVar("_R")  # Result
-_Mapper = Callable[[CursorResult], _R]
 
 
 # =============================================================================
@@ -17,12 +19,23 @@ _Mapper = Callable[[CursorResult], _R]
 # =============================================================================
 
 
-class SQLTask(Generic[_R], Task[Connection, _R]):
-    def __init__(self, sql_query: str, mapper: _Mapper):
-        self._sql_query: str = sql_query
-        self._mapper: _Mapper = mapper
+class SQLTask(Generic[_R], Task[Connection, _R], metaclass=ABCMeta):
+    """Base class for all SQL Tasks."""
 
-    def execute(self, connection: Connection) -> _R:
-        # TODO: execute a query on the given connection and map the result set
-        #  into some object.
-        return cast(_R, object())
+    ...
+
+
+class SimpleSQLSelect(SQLTask[pd.DataFrame]):
+    """
+    A task that fetches data from a dat and returns the result as a pandas
+    ``DataFrame``.
+    """
+
+    def __init__(self, sql_query: str):
+        self._sql_query: str = sql_query
+
+    def execute(self, connection: Connection) -> pd.DataFrame:
+        with connection:
+            result: pd.DataFrame
+            result = pd.read_sql(sql=text(self._sql_query), con=connection)
+        return result

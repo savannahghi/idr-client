@@ -1,3 +1,6 @@
+pandas~=1.4.3
+pyarrow~=8.0.0
+PyMySQl~=1.0.2
 pyaml~=21.10.1
 requests~=2.28.1
 SQLAlchemy~=1.4.39

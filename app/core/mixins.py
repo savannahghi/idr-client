@@ -1,5 +1,14 @@
 from abc import ABCMeta, abstractmethod
-from typing import Any, Generic, Mapping, TypeVar
+from types import TracebackType
+from typing import (
+    Any,
+    ContextManager,
+    Generic,
+    Mapping,
+    Optional,
+    Type,
+    TypeVar,
+)
 
 from .task import Task
 
@@ -16,6 +25,49 @@ _RT = TypeVar("_RT")
 # =============================================================================
 
 
+class Disposable(ContextManager, metaclass=ABCMeta):
+    """Represents an entity that uses resources that need to be cleaned up."""
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> Optional[bool]:
+        self.dispose()
+        return False
+
+    @property
+    @abstractmethod
+    def is_disposed(self) -> bool:
+        """
+        Return ``True`` if this object has already been disposed, ``False``
+        otherwise.
+
+        :return: ``True`` if this object has been disposed, ``False``
+            otherwise.
+        """
+        ...
+
+    @abstractmethod
+    def dispose(self) -> None:
+        """
+        Dispose this object releasing any underlying resources that it may
+        have.
+
+        .. note::
+            Unless otherwise specified, trying to use other methods of this
+            class on an instance after this method returns should generally be
+            considered a programming error and should result in an exception
+            being raised. This method which should be idempotent allowing it
+            to be called more that once; only the first call, however, should
+            have an effect.
+
+        :return: None.
+        """
+        ...
+
+
 class InitFromMapping(metaclass=ABCMeta):
     """
     Represents objects that can initialize themselves from a serialized
@@ -28,8 +80,9 @@ class InitFromMapping(metaclass=ABCMeta):
         """
         Initialize an object given a mapping representing the object's state.
 
-        *Note: This method is defined as a class method to allow implementors
-        to initialize themselves using this method.*
+        .. note::
+            This method is defined as a class method to allow implementing
+            classes to self initialize using this method.
 
         :param mapping: A mapping containing/representing an object's state.
 

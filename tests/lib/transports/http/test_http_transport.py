@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from app.core import TransportError
+from app.core import TransportClosedError, TransportError
 from app.lib.transports.http import HTTPAPIDialect, HTTPTransport
 from tests.core.factories import (
     FakeDataSourceFactory,
@@ -40,7 +40,7 @@ class TestHTTPTransport(TestCase):
         )
 
     def tearDown(self) -> None:
-        self._transport.close()
+        self._transport.dispose()
 
     def test_an_api_dialect_is_required_at_instantiation(self) -> None:
         """
@@ -50,9 +50,31 @@ class TestHTTPTransport(TestCase):
         with pytest.raises(ValueError):
             HTTPTransport(api_dialect=None)  # type: ignore
 
-    def test_close_returns_cleanly(self) -> None:
-        """Assert that the ``close()`` method returns cleanly."""
-        self._transport.close()
+    def test_dispose_returns_cleanly(self) -> None:
+        """Assert that the ``dispose()`` method returns cleanly."""
+        self._transport.dispose()
+
+        assert self._transport.is_disposed
+
+    def test_a_disposed_transport_raises_expected_errors(self) -> None:
+        """
+        Assert that a disposed transport raises ``TransportClosedError`` on
+        attempted usage.
+        """
+        data_source = FakeDataSourceFactory()
+        data_source_type = FakeDataSourceTypeFactory()
+        self._transport.dispose()
+        with patch("requests.sessions.Session.request", autospec=True) as s:
+            s.return_value = self._mock_response_factory()
+            with pytest.raises(TransportClosedError):
+                self._transport.fetch_data_sources(
+                    data_source_type=data_source_type
+                )
+
+            with pytest.raises(TransportClosedError):
+                self._transport.fetch_data_source_extracts(
+                    data_source_type=data_source_type, data_source=data_source
+                )
 
     def test_fetch_data_source_extracts_returns_expected_value(self) -> None:
         """
@@ -60,10 +82,13 @@ class TestHTTPTransport(TestCase):
         expected value.
         """
         data_source = FakeDataSourceFactory()
+        data_source_type = FakeDataSourceTypeFactory()
         with patch("requests.sessions.Session.request", autospec=True) as s:
             s.return_value = self._mock_response_factory()
-            results = self._transport.fetch_data_source_extracts(data_source)
-            self.assertDictEqual(results, {})
+            results = self._transport.fetch_data_source_extracts(
+                data_source_type=data_source_type, data_source=data_source
+            )
+            self.assertListEqual(list(results), [])
 
     def test_fetch_data_sources_returns_expected_value(self) -> None:
         """
@@ -74,7 +99,7 @@ class TestHTTPTransport(TestCase):
         with patch("requests.sessions.Session.request", autospec=True) as s:
             s.return_value = self._mock_response_factory()
             results = self._transport.fetch_data_sources(data_source_type)
-            self.assertDictEqual(results, {})
+            self.assertListEqual(list(results), [])
 
     def test_transport_re_authentication_failure(self) -> None:
         """
@@ -82,6 +107,7 @@ class TestHTTPTransport(TestCase):
         raised.
         """
         data_source = FakeDataSourceFactory()
+        data_source_type = FakeDataSourceTypeFactory()
         with patch("requests.sessions.Session.request", autospec=True) as s:
             s.side_effect = [
                 self._mock_response_factory(status_code=401),
@@ -92,7 +118,9 @@ class TestHTTPTransport(TestCase):
                 TransportError,
                 match="Unable to authenticate the client on IDR Server",
             ):
-                self._transport.fetch_data_source_extracts(data_source)
+                self._transport.fetch_data_source_extracts(
+                    data_source_type=data_source_type, data_source=data_source
+                )
 
     def test_transport_re_authentication_works(self) -> None:
         """
@@ -100,6 +128,7 @@ class TestHTTPTransport(TestCase):
         a re-authentication-trigger-status.
         """
         data_source = FakeDataSourceFactory()
+        data_source_type = FakeDataSourceTypeFactory()
         with patch("requests.sessions.Session.request", autospec=True) as s:
             s.side_effect = [
                 # The first response returns a re-authentication trigger status
@@ -111,19 +140,24 @@ class TestHTTPTransport(TestCase):
                 # after it was retried with the new credentials.
                 self._mock_response_factory(),
             ]
-            results = self._transport.fetch_data_source_extracts(data_source)
-            self.assertDictEqual(results, {})
+            results = self._transport.fetch_data_source_extracts(
+                data_source_type=data_source_type, data_source=data_source
+            )
+            self.assertListEqual(list(results), [])
 
     def test_request_failure(self) -> None:
         """Assert that a request failure raises the expected errors."""
         data_source = FakeDataSourceFactory()
+        data_source_type = FakeDataSourceTypeFactory()
         with patch("requests.sessions.Session.request", autospec=True) as s:
             s.return_value = self._mock_response_factory(status_code=500)
             with pytest.raises(
                 TransportError,
                 match="Expected response status 200, but got 500",
             ):
-                self._transport.fetch_data_source_extracts(data_source)
+                self._transport.fetch_data_source_extracts(
+                    data_source_type=data_source_type, data_source=data_source
+                )
 
     @staticmethod
     def _mock_response_factory(

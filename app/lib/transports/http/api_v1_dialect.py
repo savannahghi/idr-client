@@ -8,11 +8,7 @@ from app.core import (
     ExtractMetadata,
     TransportOptions,
 )
-from app.imp.sql_data import (
-    SQLDataSource,
-    SQLExtractMetadata,
-    SupportedDBVendors,
-)
+from app.imp.sql_data import SupportedDBVendors
 
 from .http_api_dialect import HTTPAPIDialect
 from .types import HTTPRequestParams
@@ -115,36 +111,50 @@ class IDRServerAPIv1(HTTPAPIDialect):
     # DATA SOURCE EXTRACTS RETRIEVAL
     # -------------------------------------------------------------------------
     def fetch_data_source_extracts(
-        self, data_source: DataSource, **options: TransportOptions
+        self,
+        data_source_type: DataSourceType,
+        data_source: DataSource,
+        **options: TransportOptions,
     ) -> HTTPRequestParams:
         return {
             "headers": {"Accept": "application/json"},
             "expected_http_status_code": 200,
             "method": _GET_METHOD,
-            "url": "%s/sql_data/sql_extract_metadata/" % self._base_url,
+            "url": "%s/%s/sql_extract_metadata/"
+            % (self._base_url, data_source_type.code),
         }
 
     def response_to_data_source_extracts(
         self,
         response_content: bytes,
+        data_source_type: DataSourceType,
         data_source: DataSource,
         **options: TransportOptions,
-    ) -> Mapping[str, ExtractMetadata]:
-        # TODO: Add proper implementation.
+    ) -> Sequence[ExtractMetadata]:
+        # TODO: Add an implementation for .
+        from app.lib import Chainable
+
+        dst: DataSourceType = data_source_type
         results: Sequence[Mapping[str, Any]] = json.loads(
             response_content
         ).get("results", tuple())
-        return {
-            _result["id"]: SQLExtractMetadata(
-                applicable_source_versions=tuple(),
-                description=_result.get("description"),
-                id=_result["id"],
-                name=_result["name"],
-                preferred_uploads_name=_result["preferred_uploads_name"],
-                sql_query=_result["sql_query"],
+        return tuple(
+            (
+                Chainable(_result).
+                # Process/clean the response content in preparation for data
+                # source initialization.
+                execute(
+                    lambda _r: {**_r, "applicable_source_version": tuple()}
+                ).
+                # Initialize the data source.
+                execute(
+                    lambda _r: (
+                        dst.imp_extract_metadata_klass().of_mapping(_r)
+                    )
+                ).value
+                for _result in results
             )
-            for _result in results
-        }
+        )
 
     # DATA SOURCES RETRIEVAL
     # -------------------------------------------------------------------------
@@ -164,21 +174,33 @@ class IDRServerAPIv1(HTTPAPIDialect):
         response_content: bytes,
         data_source_type: DataSourceType,
         **options: TransportOptions,
-    ) -> Mapping[str, DataSource]:
-        # TODO: Add proper implementation.
+    ) -> Sequence[DataSource]:
+        # TODO: Add support for multiple data source types.
+        from app.lib import Chainable
+
         results: Sequence[Mapping[str, Any]] = json.loads(
             response_content
         ).get("results", tuple())
-        return {
-            _result["id"]: SQLDataSource(
-                database_name=_result["database_name"],
-                database_vendor=SupportedDBVendors.MYSQL,
-                description=_result.get("description"),
-                id=_result["id"],
-                name=_result["name"],
+        return tuple(
+            (
+                Chainable(_result).
+                # Process/clean the response content in preparation for data
+                # source initialization.
+                execute(
+                    lambda _r: {
+                        **_r,
+                        "database_vendor": SupportedDBVendors.MYSQL,
+                    }
+                ).
+                # Initialize the data source.
+                execute(
+                    lambda _r: (
+                        data_source_type.imp_data_source_klass().of_mapping(_r)
+                    )
+                ).value
+                for _result in results
             )
-            for _result in results
-        }
+        )
 
     # HELPERS
     # -------------------------------------------------------------------------
