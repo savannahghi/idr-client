@@ -1,13 +1,15 @@
-from typing import Mapping
+from typing import Any, Sequence
 
-from app.core import DataSourceType, ExtractMetadata, Task, Transport
+from app.core import DataSourceType, Task, Transport
 from app.lib import Pipeline
 
 from .fetch_metadata import FetchDataSources, FetchExtractMetadata
+from .run_extraction import ExpandDataSourceType, ExtractDataSources
+from .types import RunExtractionResult
 
 
 class FetchMetadata(
-    Pipeline[Mapping[str, DataSourceType], Mapping[str, ExtractMetadata]]
+    Pipeline[Sequence[DataSourceType], Sequence[DataSourceType]]
 ):
     """Connect to the remote server and fetch metadata."""
 
@@ -18,30 +20,29 @@ class FetchMetadata(
         )
 
 
-class RunExtraction(Task[Mapping[str, ExtractMetadata], object]):
+class RunExtraction(
+    Pipeline[Sequence[DataSourceType], Sequence[RunExtractionResult]]
+):
     """Extract data from a database."""
 
-    def execute(self, an_input: Mapping[str, ExtractMetadata]) -> object:
-        # TODO: Add proper implementation
-        for _extract in an_input.values():
-            print('Running extract "%s"' % _extract.name)
-        return object()
+    def __init__(self):
+        super().__init__(ExpandDataSourceType(), ExtractDataSources())
 
 
-class ProcessExtracts(Task[object, object]):
-    """Perform any required processing on the extracted data."""
-
-    def execute(self, an_input: object) -> object:
-        # TODO: Add proper implementation
-        return an_input
-
-
-class UploadExtracts(Task[object, object]):
+class UploadExtracts(Task[Sequence[RunExtractionResult], Any]):
     """Upload the extracted metadata to the remote server."""
 
     def __init__(self, transport: Transport):
         self._transport: Transport = transport
 
-    def execute(self, an_input: object) -> object:
-        # TODO: Add proper implementation
+    def execute(self, an_input: Sequence[RunExtractionResult]) -> Any:
+        # TODO: Add proper implementation.
+        for _extract in an_input:
+            print("==========================================================")
+            print(_extract[2].name)
+            print("==========================================================")
+            print("\n", _extract[3], "\n")
+            print("----------------------------------------------------------")
+            print("\n")
+
         return an_input

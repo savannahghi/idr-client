@@ -108,7 +108,7 @@ def _load_settings_initializers(
             initializer_klass = import_string_as_klass(
                 _initializer_dotted_path, SettingInitializer
             )
-            initializers.append(initializer_klass())
+            initializers.append(initializer_klass())  # type: ignore
         except ImportError as exp:
             raise ImproperlyConfiguredError(
                 message='"%s" does not seem to be a valid path.'

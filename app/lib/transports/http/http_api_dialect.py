@@ -66,13 +66,18 @@ class HTTPAPIDialect(metaclass=ABCMeta):
     # -------------------------------------------------------------------------
     @abstractmethod
     def fetch_data_source_extracts(
-        self, data_source: DataSource, **options: TransportOptions
+        self,
+        data_source_type: DataSourceType,
+        data_source: DataSource,
+        **options: TransportOptions,
     ) -> HTTPRequestParams:
         """
         Construct and return a request object to fetch all
         :class: `extract metadata <app.core.ExtractMetadata>` relating to the
         given :class:`data source <app.core.DataSource>` from an IDR Server.
 
+        :param data_source_type: The data source type from which the data
+            source whose extracts are being fetched belongs.
         :param data_source: The data source whose extract metadata is to be
             retrieved from an IDR Server.
         :param options: Optional transport options.
@@ -86,19 +91,22 @@ class HTTPAPIDialect(metaclass=ABCMeta):
     def response_to_data_source_extracts(
         self,
         response_content: bytes,
+        data_source_type: DataSourceType,
         data_source: DataSource,
         **options: TransportOptions,
-    ) -> Mapping[str, ExtractMetadata]:
+    ) -> Sequence[ExtractMetadata]:
         """
         Process the contents of a *fetch data source extracts* response and
-        return a mapping of the retrieved extracts.
+        return a sequence of the retrieved extracts.
 
         :param response_content: The contents of a fetch data source extracts
             response.
+        :param data_source_type: The data source type from which the data
+            source whose extracts are being fetched belongs.
         :param data_source: The data source whose extracts are being retrieved.
         :param options: Optional transport options.
 
-        :return: A mapping of the retrieved data source extracts.
+        :return: A sequence of the retrieved data source extracts.
         """
         ...
 
@@ -128,16 +136,16 @@ class HTTPAPIDialect(metaclass=ABCMeta):
         response_content: bytes,
         data_source_type: DataSourceType,
         **options: TransportOptions,
-    ) -> Mapping[str, DataSource]:
+    ) -> Sequence[DataSource]:
         """
         Process the contents of a *fetch data sources* response and return a
-        mapping of the retrieved data sources.
+        sequence of the retrieved data sources.
 
         :param response_content: The contents of a fetch data sources response.
         :param data_source_type: The data source type whose data sources are
             being retrieved.
         :param options: Optional transport options.
 
-        :return: A mapping of the retrieved data sources.
+        :return: A sequence of the retrieved data sources.
         """
         ...

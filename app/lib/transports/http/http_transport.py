@@ -1,5 +1,5 @@
 import logging
-from typing import Mapping, Optional
+from typing import Mapping, Optional, Sequence
 
 from requests.auth import AuthBase
 from requests.models import PreparedRequest, Response
@@ -11,6 +11,7 @@ from app.core import (
     DataSourceType,
     ExtractMetadata,
     Transport,
+    TransportClosedError,
     TransportError,
     TransportOptions,
 )
@@ -66,20 +67,34 @@ class HTTPTransport(Transport):
             {"Accept": "*/*", "User-Agent": "%s/%s" % (__title__, __version__)}
         )
         self._auth: AuthBase = _NoAuth()
+        self._is_closed: bool = False
 
-    def close(self) -> None:
+    @property
+    def is_disposed(self) -> bool:
+        return self._is_closed
+
+    def dispose(self) -> None:
+        _LOGGER.debug("Closing transport")
+        self._is_closed = True
         self._session.close()
 
+    #  FETCH DATA SOURCE EXTRACTS
+    # -------------------------------------------------------------------------
     def fetch_data_source_extracts(
-        self, data_source: DataSource, **options: TransportOptions
-    ) -> Mapping[str, ExtractMetadata]:
+        self,
+        data_source_type: DataSourceType,
+        data_source: DataSource,
+        **options: TransportOptions,
+    ) -> Sequence[ExtractMetadata]:
+        self._ensure_not_closed()
         response: Response = self._make_request(
             self._api_dialect.fetch_data_source_extracts(
-                data_source, **options
+                data_source_type, data_source, **options
             )
         )
         return self._api_dialect.response_to_data_source_extracts(
             response_content=response.content,
+            data_source_type=data_source_type,
             data_source=data_source,
             **options,
         )
@@ -88,7 +103,8 @@ class HTTPTransport(Transport):
     # -------------------------------------------------------------------------
     def fetch_data_sources(
         self, data_source_type: DataSourceType, **options: TransportOptions
-    ) -> Mapping[str, DataSource]:
+    ) -> Sequence[DataSource]:
+        self._ensure_not_closed()
         response: Response = self._make_request(
             self._api_dialect.fetch_data_sources(data_source_type, **options)
         )
@@ -101,6 +117,7 @@ class HTTPTransport(Transport):
     # OTHER HELPERS
     # -------------------------------------------------------------------------
     def _authenticate(self) -> AuthBase:
+        self._ensure_not_closed()
         _LOGGER.info("Authenticating HTTP transport.")
         request: HTTPRequestParams = self._api_dialect.authenticate()
         response: Response = self._session.request(
@@ -127,7 +144,12 @@ class HTTPTransport(Transport):
             )
         )
 
+    def _ensure_not_closed(self) -> None:
+        if self._is_closed:
+            raise TransportClosedError()
+
     def _make_request(self, request: HTTPRequestParams) -> Response:
+        self._ensure_not_closed()
         request_message: str = "HTTP Request (%s | %s)" % (
             request["method"],
             request["url"],

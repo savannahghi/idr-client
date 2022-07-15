@@ -1,12 +1,11 @@
 from argparse import ArgumentParser
-from typing import Any, Mapping, Optional
+from typing import Any, Optional, Sequence
 
 import app
 from app.core import DataSourceType, Transport
 from app.lib import Pipeline
 from app.use_cases.main_pipeline import (
     FetchMetadata,
-    ProcessExtracts,
     RunExtraction,
     UploadExtracts,
 )
@@ -77,7 +76,7 @@ def argparse_factory(prog_name: str = __title__) -> ArgumentParser:
 
 def main_pipeline_factory(
     transport: Optional[Transport] = None,
-) -> Pipeline[Mapping[str, DataSourceType], Any]:
+) -> Pipeline[Sequence[DataSourceType], Any]:
     """A factory for the main application pipeline.
 
     Returns a fully initialized pipeline ready for use. An optional
@@ -103,7 +102,6 @@ def main_pipeline_factory(
     return Pipeline(
         FetchMetadata(transport=_transport),
         RunExtraction(),
-        ProcessExtracts(),
         UploadExtracts(transport=_transport),
     )
 
@@ -124,10 +122,12 @@ def main() -> None:  # pragma: no cover
     args = parser.parse_args()
 
     app.setup(config_file_path=args.config)
-    main_pipeline: Pipeline[
-        Mapping[str, DataSourceType], Any
-    ] = main_pipeline_factory()
-    main_pipeline.execute(app.registry.data_source_types)
+    transport_factory = app.registry.get_default_transport_factory_or_raise()
+    with transport_factory() as transport:
+        main_pipeline: Pipeline[
+            Sequence[DataSourceType], Any
+        ] = main_pipeline_factory(transport=transport)
+        main_pipeline.execute(tuple(app.registry.data_source_types.values()))
     print("Done ...")
 
 

@@ -6,8 +6,18 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  build:
+ build:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:5.6
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+        ports:
+        - 3306/tcp
+        # needed because the mysql container does not provide a healthcheck
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=10s --health-retries=10
+
     strategy:
       matrix:
         python-version: ["3.9", "3.10"]
@@ -33,6 +43,14 @@ jobs:
       run: |
         pytest
         coveralls --service=github
+      env:
+        # use localhost for the host here because we are running the job on the VM.
+        # If we were running the job on in a container this would be mysql
+        MYSQL_TEST_DB_HOST: localhost
+        MYSQL_TEST_DB_PORT: ${{ job.services.mysql.ports[3306] }} # get randomly assigned published port
+        MYSQL_TEST_DB_NAME: mysql
+        MYSQL_TEST_DB_USERNAME: root
+        MYSQL_TEST_DB_PASSWORD: ""
 
     - name: Coveralls Finished
       uses: coverallsapp/github-action@master
@@ -42,3 +60,11 @@ jobs:
 
     - name: Test with tox
       run: tox -r
+      env:
+        # use localhost for the host here because we are running the job on the VM.
+        # If we were running the job on in a container this would be mysql
+        MYSQL_TEST_DB_HOST: localhost
+        MYSQL_TEST_DB_PORT: ${{ job.services.mysql.ports[3306] }} # get randomly assigned published port
+        MYSQL_TEST_DB_NAME: mysql
+        MYSQL_TEST_DB_USERNAME: root
+        MYSQL_TEST_DB_PASSWORD: ""
