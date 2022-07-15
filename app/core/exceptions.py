@@ -30,3 +30,18 @@ class TransportError(IDRClientException):
     An exception indicating that some error occurred during transport of data
     from the client to an IDR Server or vice versa.
     """
+
+
+class TransportClosedError(TransportError):
+    """
+    An exception indicating that an erroneous usage of a closed transport was
+    made.
+    """
+
+    def __init__(self, message: Optional[str] = "Transport closed.", *args):
+        """Initialize an ``TransportClosedError`` with the given parameters.
+
+        :param message: An optional error message.
+        :param args: args to pass to forward to the base exception.
+        """
+        super().__init__(message, *args)

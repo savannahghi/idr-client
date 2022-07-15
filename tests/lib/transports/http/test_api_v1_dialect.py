@@ -108,8 +108,9 @@ class TestIDRServerAPIv1(TestCase):
         expected value.
         """
         data_source = FakeDataSourceFactory()
+        data_source_type = FakeDataSourceTypeFactory()
         request_params = self._api_dialect.fetch_data_source_extracts(
-            data_source=data_source
+            data_source_type=data_source_type, data_source=data_source
         )
 
         assert request_params  # Should not be None or empty.
@@ -122,14 +123,18 @@ class TestIDRServerAPIv1(TestCase):
         the expected value.
         """
         data_source = FakeDataSourceFactory()
+        data_source_type = FakeDataSourceTypeFactory()
         response_content = {"results": []}
 
-        self.assertDictEqual(
-            self._api_dialect.response_to_data_source_extracts(
-                json.dumps(response_content).encode("ascii"),
-                data_source=data_source,
+        self.assertListEqual(
+            list(
+                self._api_dialect.response_to_data_source_extracts(
+                    json.dumps(response_content).encode("ascii"),
+                    data_source_type=data_source_type,
+                    data_source=data_source,
+                )
             ),
-            {},
+            [],
         )
 
     def test_fetch_data_sources_return_value(self) -> None:
@@ -154,10 +159,12 @@ class TestIDRServerAPIv1(TestCase):
         data_source_type = FakeDataSourceTypeFactory()
         response_content = {"results": []}
 
-        self.assertDictEqual(
-            self._api_dialect.response_to_data_sources(
-                json.dumps(response_content).encode("ascii"),
-                data_source_type=data_source_type,
+        self.assertListEqual(
+            list(
+                self._api_dialect.response_to_data_sources(
+                    json.dumps(response_content).encode("ascii"),
+                    data_source_type=data_source_type,
+                )
             ),
-            {},
+            [],
         )

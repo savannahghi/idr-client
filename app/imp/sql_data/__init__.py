@@ -2,14 +2,15 @@ from .domain import (
     SQLDataSource,
     SQLDataSourceType,
     SQLExtractMetadata,
-    SQLTask,
     SupportedDBVendors,
 )
+from .exceptions import SQLDataError, SQLDataSourceDisposedError
 
 __all__ = [
+    "SQLDataError",
     "SQLDataSource",
+    "SQLDataSourceDisposedError",
     "SQLDataSourceType",
     "SQLExtractMetadata",
-    "SQLTask",
     "SupportedDBVendors",
 ]

@@ -40,7 +40,10 @@ class _FakeHTTPAPIDialect(HTTPAPIDialect):
         return {"Authorization": "Bearer some_secure_token"}
 
     def fetch_data_source_extracts(
-        self, data_source: DataSource, **options: TransportOptions
+        self,
+        data_source_type: DataSourceType,
+        data_source: DataSource,
+        **options: TransportOptions,
     ) -> HTTPRequestParams:
         return {
             "headers": {"Accept": "application/json"},
@@ -54,8 +57,8 @@ class _FakeHTTPAPIDialect(HTTPAPIDialect):
         response_content: bytes,
         data_source: DataSource,
         **options: TransportOptions,
-    ) -> Mapping[str, ExtractMetadata]:
-        return dict()
+    ) -> Sequence[ExtractMetadata]:
+        return tuple()
 
     def fetch_data_sources(
         self, data_source_type: DataSourceType, **options: TransportOptions
@@ -72,8 +75,8 @@ class _FakeHTTPAPIDialect(HTTPAPIDialect):
         response_content: bytes,
         data_source_type: DataSourceType,
         **options: TransportOptions,
-    ) -> Mapping[str, DataSource]:
-        return dict()
+    ) -> Sequence[DataSource]:
+        return tuple()
 
 
 # =============================================================================
