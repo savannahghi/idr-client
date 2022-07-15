@@ -42,7 +42,7 @@ class TestChainable(TestCase):
     def setUp(self) -> None:
         super().setUp()
         self._an_input: int = 0
-        self._chainable: Chainable = Chainable(an_input=self._an_input)
+        self._chainable: Chainable = Chainable(value=self._an_input)
         self._add_one: Callable[[int], int] = lambda _x: _x + 1
         self._int_to_str: Callable[[int], str] = lambda _x: str(_x)
 
@@ -54,7 +54,7 @@ class TestChainable(TestCase):
             .execute(self._add_one)
             .execute(self._add_one)
             .execute(self._int_to_str)
-            .an_input
+            .value
         )
         assert val == "5"
 

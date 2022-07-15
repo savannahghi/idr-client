@@ -1,10 +1,16 @@
 import uuid
-from typing import Mapping
+from typing import Any, Mapping, Sequence, Type
 
 import factory
 
 from app import DataSourceType
-from app.core import DataSource, ExtractMetadata, Transport, TransportOptions
+from app.core import (
+    DataSource,
+    ExtractMetadata,
+    Task,
+    Transport,
+    TransportOptions,
+)
 
 # =============================================================================
 # MOCK CLASSES
@@ -17,6 +23,7 @@ class _FakeDataSource(DataSource):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._extract_metadata: Mapping[str, ExtractMetadata] = dict()
+        self._is_disposed: bool = False
 
     @property
     def extract_metadata(self) -> Mapping[str, "ExtractMetadata"]:
@@ -28,8 +35,15 @@ class _FakeDataSource(DataSource):
     ) -> None:
         self._extract_metadata = extract_metadata
 
+    @property
+    def is_disposed(self) -> bool:
+        return self._is_disposed
 
-class _FakeDataSourceType(DataSourceType[_FakeDataSource]):
+    def dispose(self) -> None:
+        self._is_disposed = True
+
+
+class _FakeDataSourceType(DataSourceType):
     """A fake data source type."""
 
     def __init__(self, **kwargs):
@@ -48,52 +62,125 @@ class _FakeDataSourceType(DataSourceType[_FakeDataSource]):
     def data_sources(self, data_sources: Mapping[str, _FakeDataSource]):
         self._data_sources = data_sources
 
+    @classmethod
+    def imp_data_source_klass(cls) -> Type[DataSource]:
+        return _FakeDataSource
 
-class _FakeExtractMetadata(ExtractMetadata[_FakeDataSource]):
+    @classmethod
+    def imp_extract_metadata_klass(cls) -> Type[ExtractMetadata]:
+        return _FakeExtractMetadata
+
+
+class _FakeExtractMetadata(ExtractMetadata[Any, Any]):
     """A fake extract metadata."""
+
+    def to_task(self) -> Task[Any, Any]:
+        return self._FakeExtractTask()
+
+    class _FakeExtractTask(Task[Any, Any]):
+        """A fake task that doesn't do anything."""
+
+        def execute(self, an_input: Any) -> Any:
+            return 0
 
 
 class _FakeTransport(Transport):
     """A fake transport that returns empty results."""
 
-    def close(self) -> None:
-        pass
+    def __init__(self):
+        self._is_closed: bool = False
+
+    @property
+    def is_disposed(self) -> bool:
+        return self._is_closed
+
+    def dispose(self) -> None:
+        self._is_closed = True
 
     def fetch_data_source_extracts(
-        self, data_source: DataSource, **options: TransportOptions
-    ) -> Mapping[str, ExtractMetadata]:
-        return dict()
+        self,
+        data_source_type: DataSourceType,
+        data_source: DataSource,
+        **options: TransportOptions,
+    ) -> Sequence[ExtractMetadata]:
+        return tuple()
 
     def fetch_data_sources(
         self, data_source_type: DataSourceType, **options: TransportOptions
-    ) -> Mapping[str, DataSource]:
-        return dict()
+    ) -> Sequence[DataSource]:
+        return tuple()
 
 
 # =============================================================================
-# FACTORIES
+# ABSTRACT FACTORIES
 # =============================================================================
 
 
 class AbstractDomainObjectFactory(factory.Factory):
-    """The base Test Factory for AbstractObject."""
+    """The base Test Factory for ``AbstractDomainObject``."""
 
     class Meta:
         abstract = True
 
 
-class FakeDataSourceFactory(AbstractDomainObjectFactory):
+class IdentifiableDomainObjectFactory(AbstractDomainObjectFactory):
+    """A base factory for ``IdentifiableDomainObject`` implementations."""
+
+    id = factory.LazyFunction(lambda: str(uuid.uuid4()))
+
+    class Meta:
+        abstract = True
+
+
+class DataSourceFactory(IdentifiableDomainObjectFactory):
+    """A base factory for ``DataSource`` implementations."""
+
+    name = factory.Sequence(lambda _n: "Data Source %d" % _n)
+    description = factory.Faker("sentence")
+
+    class Meta:
+        abstract = True
+
+
+class DataSourceTypeFactory(AbstractDomainObjectFactory):
+    """A base factory for ``DataSourceType`` implementations."""
+
+    description = factory.Faker("sentence")
+
+    class Meta:
+        abstract = True
+
+
+class ExtractMetadataFactory(IdentifiableDomainObjectFactory):
+    """
+    A base factory for ``ExtractMetadata`` implementations.
+    """
+
+    name = factory.Sequence(lambda _n: "Extract Metadata %d" % _n)
+    description = factory.Faker("sentence")
+    preferred_uploads_name = factory.LazyAttribute(
+        lambda _o: "%s" % _o.name.lower().replace(" ", "_")
+    )
+
+    class Meta:
+        abstract = True
+
+
+# =============================================================================
+# FAKE FACTORIES
+# =============================================================================
+
+
+class FakeDataSourceFactory(DataSourceFactory):
     """A factory for creating mock data source instances."""
+
+    name = factory.Sequence(lambda _n: "Fake Data Source %d" % _n)
 
     class Meta:
         model = _FakeDataSource
 
-    id = factory.LazyFunction(uuid.uuid4)
-    name = factory.Sequence(lambda _n: "Fake Data Source %d" % _n)
-    description = factory.Faker("sentence")
 
-
-class FakeDataSourceTypeFactory(AbstractDomainObjectFactory):
+class FakeDataSourceTypeFactory(DataSourceTypeFactory):
     """A factory for creating mock data source instances."""
 
     name = factory.Sequence(lambda _n: "Fake Data Source Type %d" % _n)
@@ -103,12 +190,11 @@ class FakeDataSourceTypeFactory(AbstractDomainObjectFactory):
         model = _FakeDataSourceType
 
 
-class FakeExtractMetadataFactory(AbstractDomainObjectFactory):
+class FakeExtractMetadataFactory(ExtractMetadataFactory):
     """
     A factory for creating fake extract metadata instances.
     """
 
-    id = factory.LazyFunction(uuid.uuid4)
     name = factory.Sequence(lambda _n: "Fake Extract Metadata %d" % _n)
     description = factory.Faker("sentence")
     preferred_uploads_name = factory.LazyAttribute(
@@ -119,7 +205,7 @@ class FakeExtractMetadataFactory(AbstractDomainObjectFactory):
         model = _FakeExtractMetadata
 
 
-class FakeTransportFactory(AbstractDomainObjectFactory):
+class FakeTransportFactory(factory.Factory):
     """
     A factory for creating fake transport instances that return empty results.
     """

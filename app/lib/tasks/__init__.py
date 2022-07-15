@@ -1,5 +1,6 @@
-from .generic import Chainable, ConcurrentExecutor, Consumer, Pipeline
-from .sql import SQLTask
+from .common import Chainable, Consumer, Pipeline
+from .concurrent import ConcurrentExecutor
+from .sql import SimpleSQLSelect, SQLTask
 
 __all__ = [
     "Chainable",
@@ -7,4 +8,5 @@ __all__ = [
     "Consumer",
     "Pipeline",
     "SQLTask",
+    "SimpleSQLSelect",
 ]

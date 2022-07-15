@@ -4,14 +4,16 @@ from typing import Any, Generic, Mapping, Optional, Sequence, Type, TypeVar
 
 from typing_inspect import is_optional_type
 
-# from .mixins import ToTask
+from .mixins import Disposable, InitFromMapping, ToTask
 
 # =============================================================================
 # TYPES
 # =============================================================================
 
+
 _ADO = TypeVar("_ADO", bound="AbstractDomainObject")
-_DS = TypeVar("_DS", bound="DataSource", covariant=True)
+_IN = TypeVar("_IN")
+_RT = TypeVar("_RT")
 
 
 # =============================================================================
@@ -113,7 +115,52 @@ class AbstractDomainObject(metaclass=ABCMeta):
         return _get_required_fields_names(cls)
 
 
-class DataSource(AbstractDomainObject, metaclass=ABCMeta):
+class IdentifiableDomainObject(AbstractDomainObject, metaclass=ABCMeta):
+    """Describes a domain object that has an id property."""
+
+    id: str
+
+
+class ExtractMetadata(
+    Generic[_IN, _RT],
+    IdentifiableDomainObject,
+    InitFromMapping,
+    ToTask[_IN, _RT],
+    metaclass=ABCMeta,
+):
+    """
+    An interface that represents metadata describing the data to be extracted
+    from a :class:`DataSource`.
+    """
+
+    name: str
+    description: Optional[str]
+    preferred_uploads_name: Optional[str]
+
+    def __str__(self) -> str:
+        return "%s::%s" % (self.id, self.name)
+
+    @classmethod
+    def of_mapping(cls, mapping: Mapping[str, Any]) -> "ExtractMetadata":
+        """
+        Initialize and return an extract metadata instance from a mapping
+        describing it's state.
+
+        :param mapping: A mapping that describes the state of an extract
+            metadata.
+
+        :return: The initialized extract metadata instance.
+        """
+        return cls(**mapping)
+
+
+class DataSource(
+    IdentifiableDomainObject,
+    Disposable,
+    InitFromMapping,
+    Generic[_RT],
+    metaclass=ABCMeta,
+):
     """An interface representing an entity that contains data of interest."""
 
     id: str
@@ -122,7 +169,7 @@ class DataSource(AbstractDomainObject, metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def extract_metadata(self) -> Mapping[str, "ExtractMetadata"]:
+    def extract_metadata(self) -> Mapping[str, ExtractMetadata[_RT, Any]]:
         """
         Return a readonly mapping of the extract metadata instances that
         operate on this data source.
@@ -135,7 +182,7 @@ class DataSource(AbstractDomainObject, metaclass=ABCMeta):
     @extract_metadata.setter
     @abstractmethod
     def extract_metadata(
-        self, extract_metadata: Mapping[str, "ExtractMetadata"]
+        self, extract_metadata: Mapping[str, ExtractMetadata]
     ) -> None:
         """Set the extract metadata instances that belong to this data source.
 
@@ -150,11 +197,41 @@ class DataSource(AbstractDomainObject, metaclass=ABCMeta):
         """
         ...
 
+    def get_extract_task_args(self) -> _RT:
+        """
+        Return an argument to be passed to an :class:`ExtractMetadata` task.
+
+        This method is called before performing extraction for each of the
+        extract metadata instances belonging to this data source.
+
+        :return: An argument to be passed to an extract metadata task.
+        """
+        # TODO: Add a better API for this method.
+        ...
+
     def __str__(self) -> str:
         return "%s::%s" % (self.id, self.name)
 
+    @classmethod
+    def of_mapping(cls, mapping: Mapping[str, Any]) -> "DataSource":
+        """
+        Initialize and return a data source from a mapping describing it's
+        state.
 
-class DataSourceType(Generic[_DS], AbstractDomainObject, metaclass=ABCMeta):
+        :param mapping: A mapping that describes the state of a data source.
+
+        :return: The initialized data source instance.
+        """
+        return cls(**mapping)
+
+
+class UploadMetadata(
+    IdentifiableDomainObject, InitFromMapping, metaclass=ABCMeta
+):
+    """An interface that defines a data upload to an IDR Server."""
+
+
+class DataSourceType(AbstractDomainObject, metaclass=ABCMeta):
     """
     An interface representing the different kinds of supported data sources.
     """
@@ -175,7 +252,7 @@ class DataSourceType(Generic[_DS], AbstractDomainObject, metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def data_sources(self) -> Mapping[str, _DS]:
+    def data_sources(self) -> Mapping[str, DataSource]:
         """
         Return a readonly mapping of all data sources that belong to this data
         source type.
@@ -187,7 +264,7 @@ class DataSourceType(Generic[_DS], AbstractDomainObject, metaclass=ABCMeta):
 
     @data_sources.setter
     @abstractmethod
-    def data_sources(self, data_sources: Mapping[str, _DS]) -> None:
+    def data_sources(self, data_sources: Mapping[str, DataSource]) -> None:
         """Set the data sources that belong to this data source type.
 
         .. note::
@@ -204,21 +281,25 @@ class DataSourceType(Generic[_DS], AbstractDomainObject, metaclass=ABCMeta):
     def __str__(self) -> str:
         return "%s::%s" % (self.code, self.name)
 
+    @classmethod
+    @abstractmethod
+    def imp_data_source_klass(cls) -> Type[DataSource]:
+        """
+        Return the :class:`DataSource` concrete implementation class for this
+        data source type.
 
-class ExtractMetadata(
-    Generic[_DS],
-    AbstractDomainObject,
-    # ToTask,
-    metaclass=ABCMeta,
-):
-    """
-    Metadata describing the data to be extracted from a :class:`DataSource`.
-    """
+        :return: The ``DataSource`` implementation for this data source type.
+        """
+        ...
 
-    id: str
-    name: str
-    description: Optional[str]
-    preferred_uploads_name: Optional[str]
+    @classmethod
+    @abstractmethod
+    def imp_extract_metadata_klass(cls) -> Type[ExtractMetadata]:
+        """
+        Return the :class:`ExtractMetadata` concrete implementation class for
+        this dats source type.
 
-    def __str__(self) -> str:
-        return "%s::%s" % (self.id, self.name)
+        :return: The ``ExtractMetadata`` implementation for this data source
+            type.
+        """
+        ...
