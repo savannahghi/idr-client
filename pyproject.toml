@@ -27,7 +27,7 @@ show_missing = true
 
 [tool.coverage.run]
 branch = true
-omit = [".tox/*", "docs/*", "tests/*"]
+omit = [".tox/*", "app/core/serializer.py", "docs/*", "tests/*"]
 source = ["app"]
 
 [tool.isort]

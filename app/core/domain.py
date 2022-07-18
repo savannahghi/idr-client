@@ -197,6 +197,7 @@ class DataSource(
         """
         ...
 
+    @abstractmethod
     def get_extract_task_args(self) -> _RT:
         """
         Return an argument to be passed to an :class:`ExtractMetadata` task.

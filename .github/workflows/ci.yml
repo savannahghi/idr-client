@@ -20,7 +20,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ["3.9", "3.10"]
+        python-version: ["3.8", "3.9", "3.10"]
     steps:
     - uses: actions/checkout@v3
     - name: Set up project using python ${{ matrix.python-version }}
@@ -39,30 +39,11 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements/dev.txt
 
-    - name: Run tests and collect coverage
-      run: |
-        pytest
-        coveralls --service=github
-      env:
-        # use localhost for the host here because we are running the job on the VM.
-        # If we were running the job on in a container this would be mysql
-        MYSQL_TEST_DB_HOST: localhost
-        MYSQL_TEST_DB_PORT: ${{ job.services.mysql.ports[3306] }} # get randomly assigned published port
-        MYSQL_TEST_DB_NAME: mysql
-        MYSQL_TEST_DB_USERNAME: root
-        MYSQL_TEST_DB_PASSWORD: ""
-
-    - name: Coveralls Finished
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        parallel-finished: true
-
     - name: Test with tox
       run: tox -r
       env:
-        # use localhost for the host here because we are running the job on the VM.
-        # If we were running the job on in a container this would be mysql
+        # use localhost for the host here because we are running the job on the
+        # VM. If we were running the job on in a container this would be mysql.
         MYSQL_TEST_DB_HOST: localhost
         MYSQL_TEST_DB_PORT: ${{ job.services.mysql.ports[3306] }} # get randomly assigned published port
         MYSQL_TEST_DB_NAME: mysql
