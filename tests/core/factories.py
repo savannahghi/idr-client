@@ -17,7 +17,7 @@ from app.core import (
 # =============================================================================
 
 
-class _FakeDataSource(DataSource):
+class FakeDataSource(DataSource):
     """A fake data source."""
 
     def __init__(self, **kwargs):
@@ -42,36 +42,39 @@ class _FakeDataSource(DataSource):
     def dispose(self) -> None:
         self._is_disposed = True
 
+    def get_extract_task_args(self) -> Any:
+        return 0
 
-class _FakeDataSourceType(DataSourceType):
+
+class FakeDataSourceType(DataSourceType):
     """A fake data source type."""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._data_sources: Mapping[str, _FakeDataSource] = dict()
+        self._data_sources: Mapping[str, FakeDataSource] = dict()
 
     @property
     def code(self) -> str:
         return "mock_data"
 
     @property
-    def data_sources(self) -> Mapping[str, _FakeDataSource]:
+    def data_sources(self) -> Mapping[str, FakeDataSource]:
         return self._data_sources
 
     @data_sources.setter
-    def data_sources(self, data_sources: Mapping[str, _FakeDataSource]):
+    def data_sources(self, data_sources: Mapping[str, FakeDataSource]):
         self._data_sources = data_sources
 
     @classmethod
     def imp_data_source_klass(cls) -> Type[DataSource]:
-        return _FakeDataSource
+        return FakeDataSource
 
     @classmethod
     def imp_extract_metadata_klass(cls) -> Type[ExtractMetadata]:
-        return _FakeExtractMetadata
+        return FakeExtractMetadata
 
 
-class _FakeExtractMetadata(ExtractMetadata[Any, Any]):
+class FakeExtractMetadata(ExtractMetadata[Any, Any]):
     """A fake extract metadata."""
 
     def to_task(self) -> Task[Any, Any]:
@@ -84,7 +87,7 @@ class _FakeExtractMetadata(ExtractMetadata[Any, Any]):
             return 0
 
 
-class _FakeTransport(Transport):
+class FakeTransport(Transport):
     """A fake transport that returns empty results."""
 
     def __init__(self):
@@ -177,7 +180,7 @@ class FakeDataSourceFactory(DataSourceFactory):
     name = factory.Sequence(lambda _n: "Fake Data Source %d" % _n)
 
     class Meta:
-        model = _FakeDataSource
+        model = FakeDataSource
 
 
 class FakeDataSourceTypeFactory(DataSourceTypeFactory):
@@ -187,7 +190,7 @@ class FakeDataSourceTypeFactory(DataSourceTypeFactory):
     description = factory.Faker("sentence")
 
     class Meta:
-        model = _FakeDataSourceType
+        model = FakeDataSourceType
 
 
 class FakeExtractMetadataFactory(ExtractMetadataFactory):
@@ -202,7 +205,7 @@ class FakeExtractMetadataFactory(ExtractMetadataFactory):
     )
 
     class Meta:
-        model = _FakeExtractMetadata
+        model = FakeExtractMetadata
 
 
 class FakeTransportFactory(factory.Factory):
@@ -211,4 +214,4 @@ class FakeTransportFactory(factory.Factory):
     """
 
     class Meta:
-        model = _FakeTransport
+        model = FakeTransport
