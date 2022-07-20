@@ -37,12 +37,12 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements/dev.txt
+        python -m pip install tox tox-gh-actions
 
     - name: Test with tox
       run: tox -r
       env:
-        # use localhost for the host here because we are running the job on the
+        # Use localhost for the host here because we are running the job on the
         # VM. If we were running the job on in a container this would be mysql.
         MYSQL_TEST_DB_HOST: localhost
         MYSQL_TEST_DB_PORT: ${{ job.services.mysql.ports[3306] }} # get randomly assigned published port

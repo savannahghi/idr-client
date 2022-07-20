@@ -2,6 +2,7 @@ from argparse import ArgumentParser
 from typing import Any, Optional, Sequence
 
 import app
+from app.__version__ import __title__, __version__
 from app.core import DataSourceType, Transport
 from app.lib import Pipeline
 from app.use_cases.main_pipeline import (
@@ -9,8 +10,6 @@ from app.use_cases.main_pipeline import (
     RunExtraction,
     UploadExtracts,
 )
-
-from .__version__ import __title__, __version__
 
 # =============================================================================
 # HELPERS
