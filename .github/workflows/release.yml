@@ -1,0 +1,37 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup NodeJS
+      uses: actions/setup-node@v2
+      with:
+        node-version: 'lts/*'
+
+    - name: Install requirements
+      run: |
+        sudo apt-get update
+        sudo apt-get install python3.10 nodejs
+        pip install -r requirements/base.txt pyinstaller~=5.2 staticx~=0.13.6
+
+    - name: Package the app
+      run: |
+        pyinstaller app/__main__.py  --hidden-import apps/imp --collect-all app --name idr_client_temp -F
+        staticx dist/idr_client_temp dist/idr_client
+        ./dist/idr_client --version
+
+    - name: Create a release
+      run: npx semantic-release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
