@@ -21,9 +21,15 @@ class FakeDataSource(DataSource):
     """A fake data source."""
 
     def __init__(self, **kwargs):
+        data_source_type: DataSourceType = kwargs.pop("data_source_type")
         super().__init__(**kwargs)
+        self._data_source_type: DataSourceType = data_source_type
         self._extract_metadata: Mapping[str, ExtractMetadata] = dict()
         self._is_disposed: bool = False
+
+    @property
+    def data_source_type(self) -> DataSourceType:
+        return self._data_source_type
 
     @property
     def extract_metadata(self) -> Mapping[str, "ExtractMetadata"]:
@@ -76,6 +82,15 @@ class FakeDataSourceType(DataSourceType):
 
 class FakeExtractMetadata(ExtractMetadata[Any, Any]):
     """A fake extract metadata."""
+
+    def __init__(self, **kwargs):
+        data_source: DataSource = kwargs.pop("data_source")
+        super().__init__(**kwargs)
+        self._data_source: DataSource = data_source
+
+    @property
+    def data_source(self) -> DataSource:
+        return self._data_source
 
     def to_task(self) -> Task[Any, Any]:
         return self._FakeExtractTask()
@@ -178,6 +193,9 @@ class FakeDataSourceFactory(DataSourceFactory):
     """A factory for creating mock data source instances."""
 
     name = factory.Sequence(lambda _n: "Fake Data Source %d" % _n)
+    data_source_type = factory.SubFactory(
+        "tests.core.factories.FakeDataSourceTypeFactory"
+    )
 
     class Meta:
         model = FakeDataSource
@@ -203,6 +221,7 @@ class FakeExtractMetadataFactory(ExtractMetadataFactory):
     preferred_uploads_name = factory.LazyAttribute(
         lambda _o: "%s" % _o.name.lower().replace(" ", "_")
     )
+    data_source = factory.SubFactory(FakeDataSource)
 
     class Meta:
         model = FakeExtractMetadata
