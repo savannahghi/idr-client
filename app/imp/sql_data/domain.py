@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Connection, Engine
 
 import app
-from app.core import DataSource, DataSourceType, ExtractMetadata, ToTask
+from app.core import DataSource, DataSourceType, ExtractMetadata
 from app.lib import ImproperlyConfiguredError, SimpleSQLSelect
 
 from .exceptions import SQLDataError, SQLDataSourceDisposedError
@@ -39,7 +39,9 @@ class SQLDataSource(DataSource[Connection]):
     database_vendor: SupportedDBVendors
 
     def __init__(self, **kwargs):
+        data_source_type: SQLDataSourceType = kwargs.pop("data_source_type")
         super().__init__(**kwargs)
+        self._data_source_type: SQLDataSourceType = data_source_type
         self._extract_metadata: Dict[str, "SQLExtractMetadata"] = dict()
         self._engine: Optional[Engine] = None
 
@@ -51,6 +53,10 @@ class SQLDataSource(DataSource[Connection]):
             )
         self.connect_to_db()
         return self
+
+    @property
+    def data_source_type(self) -> "SQLDataSourceType":
+        return self._data_source_type
 
     @property
     def extract_metadata(self) -> Mapping[str, "ExtractMetadata"]:
@@ -192,10 +198,18 @@ class SQLDataSourceType(DataSourceType):
         return SQLExtractMetadata
 
 
-class SQLExtractMetadata(ExtractMetadata, ToTask[Connection, Any]):
+class SQLExtractMetadata(ExtractMetadata[Connection, Any]):
     sql_query: str
     applicable_source_versions: Sequence[str]
 
+    def __init__(self, **kwargs):
+        data_source: SQLDataSource = kwargs.pop("data_source")
+        super().__init__(**kwargs)
+        self._data_source = data_source
+
+    @property
+    def data_source(self) -> SQLDataSource:
+        return self._data_source
+
     def to_task(self) -> SimpleSQLSelect:
-        # TODO: Add a proper implementation here.
         return SimpleSQLSelect(self.sql_query)
