@@ -1,7 +1,5 @@
-from typing import Any, Mapping, Tuple
+from typing import Any, Tuple
 
-from app.core import DataSource, DataSourceType, ExtractMetadata
+from app.core import ExtractMetadata
 
-AppData = Mapping[str, DataSourceType]
-
-RunExtractionResult = Tuple[DataSourceType, DataSource, ExtractMetadata, Any]
+RunExtractionResult = Tuple[ExtractMetadata, Any]
