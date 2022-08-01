@@ -1,15 +1,15 @@
 from typing import Any, Sequence
 
-from app.core import DataSourceType, Task, Transport
+from app.core import DataSourceType, ExtractMetadata, Task, Transport
 from app.lib import Pipeline
 
 from .fetch_metadata import FetchDataSources, FetchExtractMetadata
-from .run_extraction import ExpandDataSourceType, ExtractDataSources
+from .run_extraction import GroupSiblingExtracts, RunDataSourceExtracts
 from .types import RunExtractionResult
 
 
 class FetchMetadata(
-    Pipeline[Sequence[DataSourceType], Sequence[DataSourceType]]
+    Pipeline[Sequence[DataSourceType], Sequence[ExtractMetadata]]
 ):
     """Connect to the remote server and fetch metadata."""
 
@@ -21,12 +21,14 @@ class FetchMetadata(
 
 
 class RunExtraction(
-    Pipeline[Sequence[DataSourceType], Sequence[RunExtractionResult]]
+    Pipeline[Sequence[ExtractMetadata], Sequence[RunExtractionResult]]
 ):
-    """Extract data from a database."""
+    """
+    Run each extracts against their parent data source and return the results.
+    """
 
     def __init__(self):
-        super().__init__(ExpandDataSourceType(), ExtractDataSources())
+        super().__init__(GroupSiblingExtracts(), RunDataSourceExtracts())
 
 
 class UploadExtracts(Task[Sequence[RunExtractionResult], Any]):
@@ -39,9 +41,9 @@ class UploadExtracts(Task[Sequence[RunExtractionResult], Any]):
         # TODO: Add proper implementation.
         for _extract in an_input:
             print("==========================================================")
-            print(_extract[2].name)
+            print(_extract[0].name)
             print("==========================================================")
-            print("\n", _extract[3], "\n")
+            print("\n", _extract[1], "\n")
             print("----------------------------------------------------------")
             print("\n")
 
