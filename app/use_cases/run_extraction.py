@@ -1,7 +1,7 @@
-from itertools import chain, product
-from typing import Any, List, Sequence, Tuple, TypeVar
+from itertools import chain, groupby
+from typing import Any, Sequence, Tuple
 
-from app.core import DataSource, DataSourceType, ExtractMetadata, Task
+from app.core import DataSource, ExtractMetadata, Task
 from app.lib import ConcurrentExecutor
 
 from .types import RunExtractionResult
@@ -11,85 +11,92 @@ from .types import RunExtractionResult
 # =============================================================================
 
 
-_DoExtractResult = Tuple[ExtractMetadata, Any]
-
-_ExpandResult = Tuple[DataSourceType, DataSource]
-
-_R = TypeVar("_R")
+_GroupedSiblingExtracts = Tuple[DataSource, Sequence[ExtractMetadata]]
 
 
 # =============================================================================
-# TASKS
+# HELPER TASKS
 # =============================================================================
 
 
-class ExtractDataSources(
-    Task[Sequence[_ExpandResult], Sequence[RunExtractionResult]]
-):
-    def execute(
-        self, an_input: Sequence[_ExpandResult]
-    ) -> Sequence[RunExtractionResult]:
-        # FIXME: This is a placeholder, add a proper implementation.
-        results: List[RunExtractionResult] = []
-        for _expand in an_input:
-            data_source: DataSource = _expand[1]
-            with data_source:
-                executor: ConcurrentExecutor[
-                    DataSource, Sequence[_DoExtractResult]
-                ]
-                executor = ConcurrentExecutor(
-                    *map(
-                        lambda _e: DoExtract(_e),
-                        data_source.extract_metadata.values(),
-                    ),
-                    initial_value=list(),
-                )
-                extracts: Sequence[_DoExtractResult] = executor.execute(
-                    data_source
-                )
-                for _extract in extracts:
-                    results.append(
-                        (_expand[0], _expand[1], _extract[0], _extract[1])
-                    )
-        return results
+class DoExtract(Task[DataSource, RunExtractionResult]):
+    """
+    Run an extract against a data source and return a tuple of the extract and
+    the extract result.
+    """
 
-
-class DoExtract(Task[DataSource, _DoExtractResult]):
     def __init__(self, extract_metadata: ExtractMetadata):
         self._extract_metadata: ExtractMetadata = extract_metadata
 
-    def execute(self, an_input: DataSource) -> _DoExtractResult:
+    def execute(self, an_input: DataSource) -> RunExtractionResult:
+        # The extract should only be run against its parent data source.
+        assert self._extract_metadata.data_source == an_input
         task_args: Any = an_input.get_extract_task_args()
         extract: Any = self._extract_metadata.to_task().execute(task_args)
         return self._extract_metadata, extract
 
 
-class ExpandDataSourceType(
-    Task[Sequence[DataSourceType], Sequence[_ExpandResult]]
+# =============================================================================
+# MAIN TASKS
+# =============================================================================
+
+
+class GroupSiblingExtracts(
+    Task[Sequence[ExtractMetadata], Sequence[_GroupedSiblingExtracts]]
 ):
     """
-    Expand a :class:`data source type <DataSourceType>` into a sequence of its
-    constituent domain objects. That is, for each data source type, return
-    a sequence consisting of a tuple of:
-    1. The data source type.
-    2. A data source in that data source type.
-    3. An extract metadata instance in that data source.
-
-    Thus the returned sequence will contain elements equal to the total number
-    of extract metadata instances in each data source.
+    Group extracts owned by the same :class:`data source <DataSource>` together
+    in preparation for extraction.
     """
 
     def execute(
-        self, an_input: Sequence[DataSourceType]
-    ) -> Sequence[_ExpandResult]:
+        self, an_input: Sequence[ExtractMetadata]
+    ) -> Sequence[_GroupedSiblingExtracts]:
+        # Sort the given extracts by their parent data source's id.
+        extracts: Sequence[ExtractMetadata] = sorted(
+            an_input, key=lambda _e: _e.data_source.id
+        )
+        # Group extracts by their parent data source. Note unlike the previous
+        # statement, the key function in this statement compares data source
+        # instances directly instead of comparing them by their IDs. That is
+        # intentional.
+        grouped_extracts: Sequence[_GroupedSiblingExtracts] = tuple(
+            (_k, tuple(_v))
+            for _k, _v in groupby(extracts, key=lambda _e: _e.data_source)
+        )
+        return grouped_extracts
+
+
+class RunDataSourceExtracts(
+    Task[Sequence[_GroupedSiblingExtracts], Sequence[RunExtractionResult]]
+):
+    """Run extracts for each data source and return the results."""
+
+    def execute(
+        self, an_input: Sequence[_GroupedSiblingExtracts]
+    ) -> Sequence[RunExtractionResult]:
         return tuple(
             chain.from_iterable(
-                map(
-                    lambda _dst: product((_dst,), _dst.data_sources.values()),
-                    an_input,
+                self.run_data_source_extracts(
+                    _grouped_extract[0], _grouped_extract[1]
                 )
+                for _grouped_extract in an_input
             )
         )
+
+    @staticmethod
+    def run_data_source_extracts(
+        data_source: DataSource, extracts: Sequence[ExtractMetadata]
+    ) -> Sequence[RunExtractionResult]:
+        with data_source:
+            executor: ConcurrentExecutor[
+                DataSource, Sequence[RunExtractionResult]
+            ]
+            executor = ConcurrentExecutor(
+                *(DoExtract(_extract) for _extract in extracts),
+                initial_value=list(),
+            )
+            return executor(data_source)  # noqa
 
 
 # TODO: Add more tasks here to post process extraction results. E.g, handle
