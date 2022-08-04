@@ -1,13 +1,29 @@
+import io
 from enum import Enum
 from logging import getLogger
 from typing import Any, Dict, Final, Mapping, Optional, Sequence, Type
 
+import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Connection, Engine
 
 import app
-from app.core import DataSource, DataSourceType, ExtractMetadata
-from app.lib import ImproperlyConfiguredError, SimpleSQLSelect
+from app.core import (
+    DataSource,
+    DataSourceType,
+    ExtractMetadata,
+    Task,
+    UploadChunk,
+    UploadMetadata,
+)
+from app.lib import (
+    ChunkDataFrame,
+    ImproperlyConfiguredError,
+    Pipeline,
+    SimpleSQLSelect,
+)
 
 from .exceptions import SQLDataError, SQLDataSourceDisposedError
 
@@ -15,9 +31,35 @@ from .exceptions import SQLDataError, SQLDataSourceDisposedError
 # CONSTANTS
 # =============================================================================
 
+
 _LOGGER = getLogger(__name__)
 
 _MYSQL_CONFIG_KEY: Final[str] = "MYSQL_DB_INSTANCE"
+
+
+# =============================================================================
+# HELPERS
+# =============================================================================
+
+
+class _DataFrameChunksToUploadChunks(
+    Task[Sequence[pd.DataFrame], Sequence[bytes]]
+):
+    def execute(self, an_input: Sequence[pd.DataFrame]) -> Sequence[bytes]:
+        return tuple(
+            self.data_frame_as_bytes(_data_frame) for _data_frame in an_input
+        )
+
+    @staticmethod
+    def data_frame_as_bytes(data_frame: pd.DataFrame) -> bytes:
+        with io.BytesIO() as stream:
+            pq.write_table(
+                pa.Table.from_pandas(df=data_frame),
+                where=stream,
+                compression="gzip",
+            )
+            return stream.getvalue()
+
 
 # =============================================================================
 # DOMAIN ITEMS DEFINITIONS
@@ -47,6 +89,8 @@ class SQLDataSource(DataSource[Connection]):
 
     def __enter__(self) -> "SQLDataSource":
         if self._engine is not None:
+            # TODO: Consider moving this check on the "connect_to_db" method
+            #  instead.
             raise SQLDataError(
                 'Incorrect usage of "SQLDataSource". Nesting of context '
                 "managers not allowed."
@@ -197,6 +241,14 @@ class SQLDataSourceType(DataSourceType):
     def imp_extract_metadata_klass(cls) -> Type[ExtractMetadata]:
         return SQLExtractMetadata
 
+    @classmethod
+    def imp_upload_chunk_klass(cls) -> Type[UploadChunk]:
+        return SQLUploadChunk
+
+    @classmethod
+    def imp_upload_metadata_klass(cls) -> Type[UploadMetadata]:
+        return SQLUploadMetadata
+
 
 class SQLExtractMetadata(ExtractMetadata[Connection, Any]):
     sql_query: str
@@ -213,3 +265,25 @@ class SQLExtractMetadata(ExtractMetadata[Connection, Any]):
 
     def to_task(self) -> SimpleSQLSelect:
         return SimpleSQLSelect(self.sql_query)
+
+
+class SQLUploadChunk(UploadChunk):
+    ...
+
+
+class SQLUploadMetadata(UploadMetadata[pd.DataFrame]):
+    def __init__(self, **kwargs):
+        extract_metadata: SQLExtractMetadata = kwargs.pop("extract_metadata")
+        super().__init__(**kwargs)
+        self._extract_metadata: SQLExtractMetadata = extract_metadata
+
+    @property
+    def extract_metadata(self) -> SQLExtractMetadata:
+        return self._extract_metadata
+
+    def to_task(self) -> Pipeline[pd.DataFrame, Sequence[bytes]]:  # noqa
+        return Pipeline(ChunkDataFrame(), _DataFrameChunksToUploadChunks())
+
+    @classmethod
+    def get_content_type(cls) -> str:
+        return "application/vnd.apache-parquet"

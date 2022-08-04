@@ -5,6 +5,7 @@ from typing import Any, Generic, Mapping, Optional, Sequence, Type, TypeVar
 from typing_inspect import is_optional_type
 
 from .mixins import Disposable, InitFromMapping, ToTask
+from .task import Task
 
 # =============================================================================
 # TYPES
@@ -148,6 +149,34 @@ class ExtractMetadata(
         """
         ...
 
+    def get_upload_meta_extra_init_kwargs(  # noqa
+        self,
+    ) -> Optional[Mapping[str, Any]]:
+        """
+        Return an optional mapping of extra keyword arguments to be used when
+        initializing the :class:`upload metadata <UploadMetadata>` instance
+        associated with this extract.
+
+        :return: An optional mapping of extra keyword arguments to use when
+            initializing the upload metadata instance associated with this
+            extract.
+        """
+        return None
+
+    @abstractmethod
+    def to_task(self) -> Task[_IN, _RT]:
+        """
+        Return a :class:`task <Task>` that performs the actual extraction of
+        data from this metadata owning :class:`data source <DataSource>`. The
+        task's execute method will be given as input the return value of the
+        data source's :meth:`~DataSource.get_extract_task_args()` method and
+        the task's output should be the extracted data.
+
+        :return: A task instance that extracts data from this extract metadata
+            parent data source.
+        """
+        ...
+
     def __str__(self) -> str:
         return "%s::%s" % (self.id, self.name)
 
@@ -248,10 +277,114 @@ class DataSource(
         return cls(**mapping)
 
 
-class UploadMetadata(
+class UploadChunk(
     IdentifiableDomainObject, InitFromMapping, metaclass=ABCMeta
 ):
+    """An interface that represents part of an upload's content."""
+
+    chunk_index: int
+    chunk_content: Any
+
+    def __str__(self) -> str:
+        return "Chunk %d" % self.chunk_index
+
+    @classmethod
+    def of_mapping(cls, mapping: Mapping[str, Any]) -> "UploadChunk":
+        """
+        Initialize and return an upload chunk from a mapping describing it's
+        state.
+
+        :param mapping: A mapping that describes the state of an upload chunk
+            instance.
+
+        :return: The initialized upload chunk instance.
+        """
+        return cls(**mapping)
+
+
+class UploadMetadata(
+    Generic[_RT],
+    ToTask[_RT, Sequence[bytes]],
+    IdentifiableDomainObject,
+    InitFromMapping,
+    metaclass=ABCMeta,
+):
     """An interface that defines a data upload to an IDR Server."""
+
+    org_unit_code: str
+    org_unit_name: str
+    content_type: str
+    # chunks: Sequence[UploadChunk]
+
+    @property
+    @abstractmethod
+    def extract_metadata(self) -> ExtractMetadata[Any, _RT]:
+        """
+        Return the :class:`extract metadata <ExtractMetadata>` instance that
+        this upload metadata instance is associated to.
+
+        :return: The extract metadata instance that this instance is associated
+            to.
+        """
+        ...
+
+    def get_upload_chunk_extra_init_kwargs(  # noqa
+        self,
+    ) -> Optional[Mapping[str, Any]]:
+        """
+        Return an optional mapping of extra keyword arguments to be used when
+        initializing the :class:`upload chunk <UploadChunk>` instance
+        associated with this upload metadata.
+
+        :return: An optional mapping of extra keyword arguments to use when
+            initializing the upload metadata instance associated with this
+            upload.
+        """
+        return None
+
+    @abstractmethod
+    def to_task(self) -> Task[_RT, Sequence[bytes]]:
+        """
+        Return a :class:`task <Task>` instance that takes the extracted data
+        as input and performs any processing/transformations that is required
+        on the data, maps the data into a sequence of
+        :class:`upload chunks <UploadChunk>` and returns the chunks.
+
+        :return: A task instance used to process the extracted data and chunk
+            it.
+        """
+        ...
+
+    def __str__(self) -> str:
+        return "Upload %s for extract %s" % (
+            self.id,
+            str(self.extract_metadata),
+        )
+
+    @classmethod
+    def of_mapping(cls, mapping: Mapping[str, Any]) -> "UploadMetadata":
+        """
+        Initialize and return an upload metadata instance from a mapping
+        describing it's state.
+
+        :param mapping: A mapping that describes the state of an upload
+            metadata instance.
+
+        :return: The initialized upload metadata instance.
+        """
+        return cls(**mapping)
+
+    @classmethod
+    @abstractmethod
+    def get_content_type(cls) -> str:
+        """
+        Return the content type of the final data to uploaded to the IDR
+        Server after all transformations and processing has been done on the
+        data.
+
+        :return: The content type of the data to be uploaded to the IDR Server.
+        """
+        ...
 
 
 class DataSourceType(AbstractDomainObject, metaclass=ABCMeta):
@@ -323,6 +456,29 @@ class DataSourceType(AbstractDomainObject, metaclass=ABCMeta):
         this dats source type.
 
         :return: The ``ExtractMetadata`` implementation for this data source
+            type.
+        """
+        ...
+
+    @classmethod
+    @abstractmethod
+    def imp_upload_chunk_klass(cls) -> Type[UploadChunk]:
+        """
+        Return the :class:`UploadChunk` concrete implementation class for this
+        data source type.
+
+        :return: The ``UploadChunk`` implementation for this data source type.
+        """
+        ...
+
+    @classmethod
+    @abstractmethod
+    def imp_upload_metadata_klass(cls) -> Type[UploadMetadata]:
+        """
+        Return the :class:`UploadMetadata` concrete implementation class for
+        this data source type.
+
+        :return: The ``UploadMetadata`` implementation for this data source
             type.
         """
         ...
