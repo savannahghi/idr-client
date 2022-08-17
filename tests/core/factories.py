@@ -138,6 +138,11 @@ class FakeTransport(Transport):
     ) -> Sequence[DataSource]:
         return tuple()
 
+    def mark_upload_as_complete(
+        self, upload_metadata: UploadMetadata, **options: TransportOptions
+    ) -> None:
+        return
+
     def post_upload_chunk(
         self,
         upload_metadata: UploadMetadata,
