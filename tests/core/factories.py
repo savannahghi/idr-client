@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, Mapping, Sequence, Type
+from typing import Any, Mapping, Optional, Sequence, Type
 
 import factory
 
@@ -137,6 +137,27 @@ class FakeTransport(Transport):
         self, data_source_type: DataSourceType, **options: TransportOptions
     ) -> Sequence[DataSource]:
         return tuple()
+
+    def post_upload_chunk(
+        self,
+        upload_metadata: UploadMetadata,
+        chunk_index: int,
+        chunk_content: bytes,
+        extra_init_kwargs: Optional[Mapping[str, Any]] = None,
+        **options: TransportOptions,
+    ) -> UploadChunk:
+        return FakeUploadChunkFactory()
+
+    def post_upload_metadata(
+        self,
+        extract_metadata: ExtractMetadata,
+        content_type: str,
+        org_unit_code: str,
+        org_unit_name: str,
+        extra_init_kwargs: Optional[Mapping[str, Any]] = None,
+        **options: TransportOptions,
+    ) -> UploadMetadata:
+        return FakeUploadMetadataFactory()
 
 
 class FakeUploadChunk(UploadChunk):
@@ -304,6 +325,8 @@ class FakeUploadChunkFactory(UploadChunkFactory):
 
 class FakeUploadMetadataFactory(UploadMetadataFactory):
     """A factory for creating fake upload metadata instances."""
+
+    extract_metadata = factory.SubFactory(FakeExtractMetadataFactory)
 
     class Meta:
         model = FakeUploadMetadata

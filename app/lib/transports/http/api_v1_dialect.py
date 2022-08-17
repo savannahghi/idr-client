@@ -7,6 +7,8 @@ from app.core import (
     DataSourceType,
     ExtractMetadata,
     TransportOptions,
+    UploadChunk,
+    UploadMetadata,
 )
 from app.imp.sql_data import SupportedDBVendors
 
@@ -205,6 +207,107 @@ class IDRServerAPIv1(HTTPAPIDialect):
                 ).value
                 for _result in results
             )
+        )
+
+    # UPLOAD CHUNK POSTAGE
+    # -------------------------------------------------------------------------
+    def post_upload_chunk(
+        self,
+        upload_metadata: UploadMetadata,
+        chunk_index: int,
+        chunk_content: bytes,
+        extra_init_kwargs: Optional[Mapping[str, Any]] = None,
+        **options: TransportOptions,
+    ) -> HTTPRequestParams:
+        parent_ds: DataSource = upload_metadata.extract_metadata.data_source
+        parent_dst: DataSourceType = parent_ds.data_source_type
+        return {
+            "headers": {
+                "Accept": "application/json",
+                # "Content-Type": "multipart/form-data",
+            },
+            "expected_http_status_code": 201,
+            "method": _POST_METHOD,
+            "url": "%s/%s/sql_upload_metadata/%s/start_chunk_upload/"
+            % (self._base_url, parent_dst.code, upload_metadata.id),
+            "data": {"chunk_index": chunk_index},
+            "files": {
+                "chunk_content": (
+                    "%d_%s" % (chunk_index, upload_metadata.id),
+                    chunk_content,
+                    upload_metadata.content_type,
+                )
+            },
+        }
+
+    def response_to_upload_chunk(
+        self,
+        response_content: bytes,
+        upload_metadata: UploadMetadata,
+        **options: TransportOptions,
+    ) -> UploadChunk:
+        result: Mapping[str, Any] = json.loads(response_content)
+
+        parent_ds: DataSource = upload_metadata.extract_metadata.data_source
+        parent_dst: DataSourceType = parent_ds.data_source_type
+        return parent_dst.imp_upload_chunk_klass().of_mapping(result)
+
+    # UPLOAD METADATA POSTAGE
+    # -------------------------------------------------------------------------
+    def post_upload_metadata(
+        self,
+        extract_metadata: ExtractMetadata,
+        content_type: str,
+        org_unit_code: str,
+        org_unit_name: str,
+        extra_init_kwargs: Optional[Mapping[str, Any]] = None,
+        **options: TransportOptions,
+    ) -> HTTPRequestParams:
+        parent_ds: DataSource = extract_metadata.data_source
+        parent_dst: DataSourceType = parent_ds.data_source_type
+        return {
+            "headers": {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            },
+            "expected_http_status_code": 201,
+            "method": _POST_METHOD,
+            "url": "%s/%s/sql_upload_metadata/"
+            % (self._base_url, parent_dst.code),
+            "data": json.dumps(
+                {
+                    "chunks": 1,
+                    "org_unit_code": org_unit_code,
+                    "org_unit_name": org_unit_name,
+                    "content_type": content_type,
+                    "extract_metadata": extract_metadata.id,
+                }
+            ),
+        }
+
+    def response_to_upload_metadata(
+        self,
+        response_content: bytes,
+        extract_metadata: ExtractMetadata,
+        **options: TransportOptions,
+    ) -> UploadMetadata:
+        from app.lib import Chainable
+
+        result: Mapping[str, Any] = json.loads(response_content)
+        parent_ds: DataSource = extract_metadata.data_source
+        parent_dst: DataSourceType = parent_ds.data_source_type
+
+        # Process/clean the response content in preparation for data
+        # source initialization.
+        return (
+            Chainable(value=result)
+            .execute(lambda _r: {**_r, "extract_metadata": extract_metadata})
+            .execute(
+                lambda _r: parent_dst.imp_upload_metadata_klass().of_mapping(
+                    _r
+                )
+            )
+            .value
         )
 
     # HELPERS
