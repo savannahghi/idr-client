@@ -1,5 +1,5 @@
 import logging
-from typing import Mapping, Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence
 
 from requests.auth import AuthBase
 from requests.models import PreparedRequest, Response
@@ -14,6 +14,8 @@ from app.core import (
     TransportClosedError,
     TransportError,
     TransportOptions,
+    UploadChunk,
+    UploadMetadata,
 )
 
 from .http_api_dialect import HTTPAPIDialect
@@ -114,6 +116,60 @@ class HTTPTransport(Transport):
             **options,
         )
 
+    # UPLOAD CHUNK POSTAGE
+    # -------------------------------------------------------------------------
+    def post_upload_chunk(
+        self,
+        upload_metadata: UploadMetadata,
+        chunk_index: int,
+        chunk_content: bytes,
+        extra_init_kwargs: Optional[Mapping[str, Any]] = None,
+        **options: TransportOptions,
+    ) -> UploadChunk:
+        self._ensure_not_closed()
+        response: Response = self._make_request(
+            self._api_dialect.post_upload_chunk(
+                upload_metadata=upload_metadata,
+                chunk_index=chunk_index,
+                chunk_content=chunk_content,
+                extra_init_kwargs=extra_init_kwargs,
+                **options,
+            )
+        )
+        return self._api_dialect.response_to_upload_chunk(
+            response_content=response.content,
+            upload_metadata=upload_metadata,
+            **options,
+        )
+
+    # UPLOAD METADATA POSTAGE
+    # -------------------------------------------------------------------------
+    def post_upload_metadata(
+        self,
+        extract_metadata: ExtractMetadata,
+        content_type: str,
+        org_unit_code: str,
+        org_unit_name: str,
+        extra_init_kwargs: Optional[Mapping[str, Any]] = None,
+        **options: TransportOptions,
+    ) -> UploadMetadata:
+        self._ensure_not_closed()
+        response: Response = self._make_request(
+            self._api_dialect.post_upload_metadata(
+                extract_metadata=extract_metadata,
+                content_type=content_type,
+                org_unit_code=org_unit_code,
+                org_unit_name=org_unit_name,
+                extra_init_kwargs=extra_init_kwargs,
+                **options,
+            )
+        )
+        return self._api_dialect.response_to_upload_metadata(
+            response_content=response.content,
+            extract_metadata=extract_metadata,
+            **options,
+        )
+
     # OTHER HELPERS
     # -------------------------------------------------------------------------
     def _authenticate(self) -> AuthBase:
@@ -157,6 +213,7 @@ class HTTPTransport(Transport):
         _LOGGER.info(request_message)
         response: Response = self._session.request(
             data=request.get("data"),
+            files=request.get("files"),
             headers=request.get("headers"),
             method=request["method"],
             params=request.get("params"),
