@@ -1,4 +1,4 @@
-from typing import Mapping, Sequence
+from typing import Any, Mapping, Optional, Sequence
 
 import factory
 
@@ -7,10 +7,16 @@ from app.core import (
     DataSourceType,
     ExtractMetadata,
     TransportOptions,
+    UploadChunk,
+    UploadMetadata,
 )
 from app.lib.transports.http.http_api_dialect import (
     HTTPAPIDialect,
     HTTPRequestParams,
+)
+from tests.core.factories import (
+    FakeUploadChunkFactory,
+    FakeUploadMetadataFactory,
 )
 
 # =============================================================================
@@ -48,7 +54,7 @@ class _FakeHTTPAPIDialect(HTTPAPIDialect):
         return {
             "headers": {"Accept": "application/json"},
             "expected_http_status_code": 200,
-            "method": "POST",
+            "method": "GET",
             "url": "%s/data_sources_extracts" % self._host,
         }
 
@@ -66,7 +72,7 @@ class _FakeHTTPAPIDialect(HTTPAPIDialect):
         return {
             "headers": {"Accept": "application/json"},
             "expected_http_status_code": 200,
-            "method": "POST",
+            "method": "GET",
             "url": "%s/data_sources" % self._host,
         }
 
@@ -77,6 +83,53 @@ class _FakeHTTPAPIDialect(HTTPAPIDialect):
         **options: TransportOptions,
     ) -> Sequence[DataSource]:
         return tuple()
+
+    def post_upload_chunk(
+        self,
+        upload_metadata: UploadMetadata,
+        chunk_index: int,
+        chunk_content: Any,
+        extra_init_kwargs: Optional[Mapping[str, Any]] = None,
+        **options: TransportOptions,
+    ) -> HTTPRequestParams:
+        return {
+            "headers": {"Accept": "application/json"},
+            "expected_http_status_code": 200,
+            "method": "POST",
+            "url": "%s/create_upload_chunk" % self._host,
+        }
+
+    def response_to_upload_chunk(
+        self,
+        response_content: bytes,
+        upload_metadata: UploadMetadata,
+        **options: TransportOptions,
+    ) -> UploadChunk:
+        return FakeUploadChunkFactory()
+
+    def post_upload_metadata(
+        self,
+        extract_metadata: ExtractMetadata,
+        content_type: str,
+        org_unit_code: str,
+        org_unit_name: str,
+        extra_init_kwargs: Optional[Mapping[str, Any]] = None,
+        **options: TransportOptions,
+    ) -> HTTPRequestParams:
+        return {
+            "headers": {"Accept": "application/json"},
+            "expected_http_status_code": 200,
+            "method": "POST",
+            "url": "%s/create_upload_metadata" % self._host,
+        }
+
+    def response_to_upload_metadata(
+        self,
+        response_content: bytes,
+        extract_metadata: ExtractMetadata,
+        **options: TransportOptions,
+    ) -> UploadMetadata:
+        return FakeUploadMetadataFactory(extract_metadata=extract_metadata)
 
 
 # =============================================================================
