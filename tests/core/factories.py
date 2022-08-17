@@ -10,6 +10,8 @@ from app.core import (
     Task,
     Transport,
     TransportOptions,
+    UploadChunk,
+    UploadMetadata,
 )
 
 # =============================================================================
@@ -79,6 +81,14 @@ class FakeDataSourceType(DataSourceType):
     def imp_extract_metadata_klass(cls) -> Type[ExtractMetadata]:
         return FakeExtractMetadata
 
+    @classmethod
+    def imp_upload_chunk_klass(cls) -> Type[UploadChunk]:
+        return FakeUploadChunk
+
+    @classmethod
+    def imp_upload_metadata_klass(cls) -> Type[UploadMetadata]:
+        return FakeUploadMetadata
+
 
 class FakeExtractMetadata(ExtractMetadata[Any, Any]):
     """A fake extract metadata."""
@@ -129,6 +139,38 @@ class FakeTransport(Transport):
         return tuple()
 
 
+class FakeUploadChunk(UploadChunk):
+    """A mock upload chunk implementation."""
+
+    ...
+
+
+class FakeUploadMetadata(UploadMetadata[Any]):
+    """A mock upload metadata implementation."""
+
+    def __init__(self, **kwargs):
+        extract_metadata: FakeExtractMetadata = kwargs.pop("extract_metadata")
+        super().__init__(**kwargs)
+        self._extract_metadata: FakeExtractMetadata = extract_metadata
+
+    @property
+    def extract_metadata(self) -> FakeExtractMetadata:
+        return self._extract_metadata
+
+    def to_task(self) -> Task[Any, Sequence[bytes]]:
+        return self._FakeUploadTask()
+
+    @classmethod
+    def get_content_type(cls) -> str:
+        return "text/csv"
+
+    class _FakeUploadTask(Task[Any, Sequence[Any]]):
+        """A fake task that returns an empty list."""
+
+        def execute(self, an_input: Any) -> Sequence[Any]:
+            return []
+
+
 # =============================================================================
 # ABSTRACT FACTORIES
 # =============================================================================
@@ -170,15 +212,34 @@ class DataSourceTypeFactory(AbstractDomainObjectFactory):
 
 
 class ExtractMetadataFactory(IdentifiableDomainObjectFactory):
-    """
-    A base factory for ``ExtractMetadata`` implementations.
-    """
+    """A base factory for ``ExtractMetadata`` implementations."""
 
     name = factory.Sequence(lambda _n: "Extract Metadata %d" % _n)
     description = factory.Faker("sentence")
     preferred_uploads_name = factory.LazyAttribute(
         lambda _o: "%s" % _o.name.lower().replace(" ", "_")
     )
+
+    class Meta:
+        abstract = True
+
+
+class UploadChunkFactory(IdentifiableDomainObjectFactory):
+    """A base factory for ``UploadChunk`` implementations."""
+
+    chunk_index = factory.Sequence(lambda _n: _n)
+    chunk_content = factory.Faker("csv")
+
+    class Meta:
+        abstract = True
+
+
+class UploadMetadataFactory(IdentifiableDomainObjectFactory):
+    """A base factory for ``UploadMetadata`` implementations."""
+
+    org_unit_code = factory.Sequence(lambda _n: "%1234d" % _n)
+    org_unit_name = factory.Sequence(lambda _n: "Facility %d" % _n)
+    content_type = "text/csv"
 
     class Meta:
         abstract = True
@@ -212,9 +273,7 @@ class FakeDataSourceTypeFactory(DataSourceTypeFactory):
 
 
 class FakeExtractMetadataFactory(ExtractMetadataFactory):
-    """
-    A factory for creating fake extract metadata instances.
-    """
+    """A factory for creating fake extract metadata instances."""
 
     name = factory.Sequence(lambda _n: "Fake Extract Metadata %d" % _n)
     description = factory.Faker("sentence")
@@ -234,3 +293,17 @@ class FakeTransportFactory(factory.Factory):
 
     class Meta:
         model = FakeTransport
+
+
+class FakeUploadChunkFactory(UploadChunkFactory):
+    """A factory for creating fake upload chunk instances."""
+
+    class Meta:
+        model = FakeUploadChunk
+
+
+class FakeUploadMetadataFactory(UploadMetadataFactory):
+    """A factory for creating fake upload metadata instances."""
+
+    class Meta:
+        model = FakeUploadMetadata
