@@ -116,6 +116,19 @@ class HTTPTransport(Transport):
             **options,
         )
 
+    # MARK UPLOAD COMPLETION
+    # -------------------------------------------------------------------------
+    def mark_upload_as_complete(
+        self, upload_metadata: UploadMetadata, **options: TransportOptions
+    ) -> None:
+        self._ensure_not_closed()
+        self._make_request(
+            self._api_dialect.mark_upload_as_complete(
+                upload_metadata, **options
+            )
+        )
+        return None
+
     # UPLOAD CHUNK POSTAGE
     # -------------------------------------------------------------------------
     def post_upload_chunk(
