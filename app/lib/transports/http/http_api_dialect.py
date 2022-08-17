@@ -1,11 +1,13 @@
 from abc import ABCMeta, abstractmethod
-from typing import Mapping, Sequence
+from typing import Any, Mapping, Optional, Sequence
 
 from app.core import (
     DataSource,
     DataSourceType,
     ExtractMetadata,
     TransportOptions,
+    UploadChunk,
+    UploadMetadata,
 )
 
 from .types import HTTPRequestParams
@@ -119,7 +121,7 @@ class HTTPAPIDialect(metaclass=ABCMeta):
         """
         Construct and return a request object to fetch all
         :class:`data sources <app.core.DataSource>` relating to the given
-        :class:`data source type <app.core.DataSourceType>` from an IDR server.
+        :class:`data source type <app.core.DataSourceType>` from an IDR Server.
 
         :param data_source_type: The data source type whose data sources are to
             be retrieved from an IDR Server.
@@ -147,5 +149,112 @@ class HTTPAPIDialect(metaclass=ABCMeta):
         :param options: Optional transport options.
 
         :return: A sequence of the retrieved data sources.
+        """
+        ...
+
+    # UPLOAD CHUNK POSTAGE
+    # -------------------------------------------------------------------------
+    @abstractmethod
+    def post_upload_chunk(
+        self,
+        upload_metadata: UploadMetadata,
+        chunk_index: int,
+        chunk_content: Any,
+        extra_init_kwargs: Optional[Mapping[str, Any]] = None,
+        **options: TransportOptions,
+    ) -> HTTPRequestParams:
+        """
+        Construct and return a request object used to register and create a new
+        :class:`upload chunk <app.core.UploadChunk>` on the IDR Server.
+
+        :param upload_metadata: The upload metadata instance whose chunk is to
+            be posted/created.
+        :param chunk_index: The precedence of the chunk when compared against
+            other chunks belonging to the same upload metadata.
+        :param chunk_content: The segment of data contained by the chunk.
+        :param extra_init_kwargs: Extra initialization keyword arguments to
+            pass to the returned upload chunk instance.
+        :param options: Optional transport options.
+
+        :return: A request object to create and register a new chunk instance
+            with the given properties.
+        """
+        ...
+
+    @abstractmethod
+    def response_to_upload_chunk(
+        self,
+        response_content: bytes,
+        upload_metadata: UploadMetadata,
+        **options: TransportOptions,
+    ) -> UploadChunk:
+        """
+        Process the contents of a *post upload chunk* response and construct
+        and return an :class:`upload chunk <app.core.UploadChunk>` instance.
+
+        :param response_content: The contents of a post upload chunk response.
+        :param upload_metadata: The upload metadata instance whose chunk is
+            being posted.
+        :param options: Optional transport options.
+
+        :return: An upload chunk instance created after a successful posting.
+        """
+        ...
+
+    # UPLOAD METADATA POSTAGE
+    # -------------------------------------------------------------------------
+    @abstractmethod
+    def post_upload_metadata(
+        self,
+        extract_metadata: ExtractMetadata,
+        content_type: str,
+        org_unit_code: str,
+        org_unit_name: str,
+        extra_init_kwargs: Optional[Mapping[str, Any]] = None,
+        **options: TransportOptions,
+    ) -> HTTPRequestParams:
+        """
+        Construct and return a request object used to register and create a new
+        :class:`upload metadata <app.core.UploadMetadata>` on the IDR Server.
+
+        :param extract_metadata: The extract metadata instance whose upload
+            metadata instance is being posted/created.
+        :param content_type: The final format that the (chunked) data will have
+            when it's finally uploaded to the IDR Server.
+        :param org_unit_code: A unique code that identifies the location where
+            the data being uploaded was extracted from. This is most likely the
+            same location that the IDR Client process is running on.
+        :param org_unit_name: A human readable identifying the location where
+            the data being uploaded was extracted from. This is most likely the
+            same location that the IDR Client process is running on.
+        :param extra_init_kwargs: Extra initialization keyword arguments to
+            pass to the returned upload metadata.
+        :param options: Optional transport options.
+
+        :return: A request object to create and register a new upload metadata
+            instance with the given properties.
+        """
+        ...
+
+    @abstractmethod
+    def response_to_upload_metadata(
+        self,
+        response_content: bytes,
+        extract_metadata: ExtractMetadata,
+        **options: TransportOptions,
+    ) -> UploadMetadata:
+        """
+        Process the contents of a *post upload metadata* response and construct
+        and return an :class:`upload metadata <app.core.UploadMetadata>`
+        instance.
+
+        :param response_content: The contents of a post upload metadata
+            response.
+        :param extract_metadata: The extract metadata instance whose upload
+            metadata instance is being posted/created.
+        :param options: Optional transport options.
+
+        :return: An upload metadata instance created after a successful
+            posting.
         """
         ...
