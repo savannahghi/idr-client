@@ -461,7 +461,7 @@ class DataSourceType(AbstractDomainObject, metaclass=ABCMeta):
         ...
 
     @classmethod
-    @abstractmethod
+    # @abstractmethod
     def imp_upload_chunk_klass(cls) -> Type[UploadChunk]:
         """
         Return the :class:`UploadChunk` concrete implementation class for this
@@ -472,7 +472,7 @@ class DataSourceType(AbstractDomainObject, metaclass=ABCMeta):
         ...
 
     @classmethod
-    @abstractmethod
+    # @abstractmethod
     def imp_upload_metadata_klass(cls) -> Type[UploadMetadata]:
         """
         Return the :class:`UploadMetadata` concrete implementation class for

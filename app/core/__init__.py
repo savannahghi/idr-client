@@ -4,8 +4,6 @@ from .domain import (
     DataSourceType,
     ExtractMetadata,
     IdentifiableDomainObject,
-    UploadChunk,
-    UploadMetadata,
 )
 from .exceptions import (
     IDRClientException,
@@ -31,6 +29,4 @@ __all__ = [
     "TransportClosedError",
     "TransportError",
     "TransportOptions",
-    "UploadChunk",
-    "UploadMetadata",
 ]
