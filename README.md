@@ -109,7 +109,7 @@ project. These are:
 * __Extract Metadata__ - This a description of the data to be extracted from a
   data source. An extract metadata also defines how data is extracted from a
   data source.
-* __Upload Metadata__ - This describes data that has been extracted and how
+* __Upload Metadat*__ - This describes data that has been extracted and how
   it's packaged for uploading to the remote server. Each upload metadata is
   always associated with a given *extract metadata*.
 
