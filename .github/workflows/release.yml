@@ -25,12 +25,32 @@ jobs:
         sudo apt-get install python3.10 nodejs
         pip install -r requirements/base.txt pyinstaller~=5.2 staticx~=0.13.6
         npm install @semantic-release/changelog @semantic-release/git conventional-changelog-conventionalcommits
+
     - name: Package the app
       run: |
         pyinstaller app/__main__.py --collect-all app --name idr_client_temp -F
         staticx dist/idr_client_temp dist/idr_client
         ./dist/idr_client --version
+
+    - name: Import GPG key
+      uses: crazy-max/ghaction-import-gpg@v5
+      env:
+        GPG_KEY: ${{ secrets.GPG_KEY }}
+      with:
+        git_commit_gpgsign: true
+        git_committer_email: ${{ secrets.GIT_COMMITTER_EMAIL }}
+        git_committer_name: ${{ secrets.GIT_COMMITTER_NAME }}
+        git_tag_gpgsign: false
+        git_user_signingkey: true
+        gpg_private_key: ${{ secrets.GPG_KEY }}
+        passphrase: ${{ secrets.GPG_KEY_PASSPHRASE }}
+
     - name: Create a release
       run: npx semantic-release
       env:
+        DEBUG: "semantic-release:*"
+        GIT_AUTHOR_EMAIL: ${{ secrets.GIT_COMMITTER_EMAIL }}
+        GIT_AUTHOR_NAME: ${{ secrets.GIT_COMMITTER_NAME }}
+        GIT_COMMITTER_EMAIL: ${{ secrets.GIT_COMMITTER_EMAIL }}
+        GIT_COMMITTER_NAME: ${{ secrets.GIT_COMMITTER_NAME }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
