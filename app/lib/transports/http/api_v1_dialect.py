@@ -144,11 +144,7 @@ class IDRServerAPIv1(HTTPAPIDialect):
                 # Process/clean the response content in preparation for data
                 # source initialization.
                 execute(
-                    lambda _r: {
-                        **_r,
-                        "applicable_source_version": tuple(),
-                        "data_source": data_source,
-                    }
+                    lambda _r: {**_r, "applicable_source_version": tuple()}
                 ).
                 # Initialize the data source.
                 execute(
@@ -194,7 +190,6 @@ class IDRServerAPIv1(HTTPAPIDialect):
                     lambda _r: {
                         **_r,
                         "database_vendor": SupportedDBVendors.MYSQL,
-                        "data_source_type": data_source_type,
                     }
                 ).
                 # Initialize the data source.

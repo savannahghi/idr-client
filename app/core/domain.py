@@ -137,17 +137,6 @@ class ExtractMetadata(
     description: Optional[str]
     preferred_uploads_name: Optional[str]
 
-    @property
-    @abstractmethod
-    def data_source(self) -> "DataSource":
-        """
-        Return the :class:`data source <DataSource>` that contains this extract
-        metadata.
-
-        :return: The data source that contains this extract metadata.
-        """
-        ...
-
     def __str__(self) -> str:
         return "%s::%s" % (self.id, self.name)
 
@@ -180,17 +169,6 @@ class DataSource(
 
     @property
     @abstractmethod
-    def data_source_type(self) -> "DataSourceType":
-        """
-        Return the :class:`data source type <DataSourceType>` that this data
-        source belongs to.
-
-        :return: The data source type that this data source belongs to.
-        """
-        ...
-
-    @property
-    @abstractmethod
     def extract_metadata(self) -> Mapping[str, ExtractMetadata[_RT, Any]]:
         """
         Return a readonly mapping of the extract metadata instances that
@@ -204,7 +182,7 @@ class DataSource(
     @extract_metadata.setter
     @abstractmethod
     def extract_metadata(
-        self, extract_metadata: Mapping[str, ExtractMetadata[_RT, Any]]
+        self, extract_metadata: Mapping[str, ExtractMetadata]
     ) -> None:
         """Set the extract metadata instances that belong to this data source.
 

@@ -20,9 +20,6 @@ class SQLDataSourceFactory(DataSourceFactory):
 
     database_name = factory.Sequence(lambda _n: "Database %d" % _n)
     database_vendor = SupportedDBVendors.SQLITE_MEM
-    data_source_type = factory.SubFactory(
-        "tests.imp.sql_data.factories.SQLDataSourceTypeFactory"
-    )
 
     @factory.post_generation
     def extract_metadata(
@@ -35,8 +32,7 @@ class SQLDataSourceFactory(DataSourceFactory):
             "extract_metadata_count", 5
         )
         extract_metadata: Generator[SQLExtractMetadata, Any, Any] = (
-            SQLExtractMetadataFactory(data_source=obj)
-            for _ in range(extract_metadata_count)
+            SQLExtractMetadataFactory() for _ in range(extract_metadata_count)
         )
         obj.extract_metadata = {  # noqa
             _extract_meta.id: _extract_meta
@@ -62,8 +58,7 @@ class SQLDataSourceTypeFactory(DataSourceTypeFactory):
     ) -> None:
         data_sources_count: int = kwargs.setdefault("data_sources_count", 5)
         data_sources: Generator[SQLDataSource, Any, Any] = (
-            SQLDataSourceFactory(data_source_type=obj)
-            for _ in range(data_sources_count)
+            SQLDataSourceFactory() for _ in range(data_sources_count)
         )
         obj.data_sources = {  # noqa
             _data_source.id: _data_source for _data_source in data_sources
@@ -81,7 +76,6 @@ class SQLExtractMetadataFactory(ExtractMetadataFactory):
 
     sql_query = "select 'hello world'"
     applicable_source_versions = tuple()
-    data_source = factory.SubFactory(SQLDataSourceFactory)
 
     class Meta:
         model = SQLExtractMetadata

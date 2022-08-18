@@ -5,13 +5,7 @@ import pytest
 
 from app.core import AbstractDomainObject, IdentifiableDomainObject
 
-from .factories import (
-    FakeDataSource,
-    FakeDataSourceFactory,
-    FakeDataSourceType,
-    FakeDataSourceTypeFactory,
-    FakeExtractMetadata,
-)
+from .factories import FakeDataSource, FakeDataSourceType, FakeExtractMetadata
 
 
 class _SimpleDomainObject(AbstractDomainObject):
@@ -97,11 +91,7 @@ class TestFakeDataSourceInterface(TestCase):
         Assert that the default ``DataSource.__str__()`` implementation
         returns the expected value.
         """
-        data_source = FakeDataSource(
-            id="1",
-            name="Some data source",
-            data_source_type=FakeDataSourceTypeFactory(),
-        )
+        data_source = FakeDataSource(id="1", name="Some data source")
         assert str(data_source) == "1::Some data source"
 
     def test_of_mapping_class_method(self) -> None:
@@ -115,7 +105,6 @@ class TestFakeDataSourceInterface(TestCase):
                 "id": "1",
                 "name": "Some data source",
                 "description": "A very good description.",
-                "data_source_type": FakeDataSourceTypeFactory(),
             }
         )
         data_source2 = FakeDataSource.of_mapping(
@@ -123,7 +112,6 @@ class TestFakeDataSourceInterface(TestCase):
                 "id": "2",
                 "name": "Some other data source",
                 "preferred_uploads_name": "some_data",
-                "data_source_type": FakeDataSourceTypeFactory(),
             }
         )
 
@@ -157,9 +145,7 @@ class TestExtractMetadataInterface(TestCase):
         Assert that the default ``ExtractMetadata.__str__()`` implementation
         returns the expected value.
         """
-        extract = FakeExtractMetadata(
-            id="1", name="Some data", data_source=FakeDataSourceFactory()
-        )
+        extract = FakeExtractMetadata(id="1", name="Some data")
         assert str(extract) == "1::Some data"
 
     def test_of_mapping_class_method(self) -> None:
@@ -173,7 +159,6 @@ class TestExtractMetadataInterface(TestCase):
                 "id": "1",
                 "name": "Some data",
                 "description": "A very good description.",
-                "data_source": FakeDataSourceFactory(),
             }
         )
         extract2 = FakeExtractMetadata.of_mapping(
@@ -181,7 +166,6 @@ class TestExtractMetadataInterface(TestCase):
                 "id": "2",
                 "name": "Some other data",
                 "preferred_uploads_name": "some_data",
-                "data_source": FakeDataSourceFactory(),
             }
         )
 

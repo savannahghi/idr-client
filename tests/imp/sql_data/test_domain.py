@@ -61,7 +61,6 @@ class TestSQLDataSource(TestCase):
         )
         # This should remain true until after `self.connect_to_db()` is called.
         assert self._data_source.is_disposed
-        assert self._data_source.data_source_type is not None
 
     def test_connect_to_db(self) -> None:
         """Assert that the ``connect_to_db()`` method works as expected."""
@@ -172,7 +171,6 @@ class TestSQLDataSource(TestCase):
             "description": "Bla bla bla",
             "database_name": "test_db",
             "database_vendor": SupportedDBVendors.SQLITE_MEM,
-            "data_source_type": SQLDataSourceTypeFactory(),
         }
         data_source: SQLDataSource = SQLDataSource.of_mapping(mapping)
 
@@ -238,4 +236,3 @@ class TestSQLExtractMetadata(TestCase):
 
         task = self._extract_meta.to_task()
         assert task is not None
-        assert self._extract_meta.data_source is not None

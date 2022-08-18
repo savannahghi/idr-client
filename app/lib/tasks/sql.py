@@ -27,7 +27,7 @@ class SQLTask(Generic[_R], Task[Connection, _R], metaclass=ABCMeta):
 
 class SimpleSQLSelect(SQLTask[pd.DataFrame]):
     """
-    A task that fetches data from a database and returns the result as a pandas
+    A task that fetches data from a dat and returns the result as a pandas
     ``DataFrame``.
     """
 
