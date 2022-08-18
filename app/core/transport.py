@@ -67,7 +67,7 @@ class Transport(Disposable, metaclass=ABCMeta):
         """
         ...
 
-    @abstractmethod
+    # @abstractmethod
     def mark_upload_as_complete(
         self, upload_metadata: UploadMetadata, **options: TransportOptions
     ) -> None:

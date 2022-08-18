@@ -22,7 +22,6 @@ from .types import HTTPRequestParams
 _AUTH_TRIGGER_STATUS: Final[Sequence[int]] = (401,)
 
 _GET_METHOD: Final[str] = "GET"
-_PATCH_METHOD: Final[str] = "PATCH"
 _POST_METHOD: Final[str] = "POST"
 
 _REMOTE_SERVER_CONFIG_KEY: Final[str] = "REMOTE_SERVER"
@@ -209,25 +208,6 @@ class IDRServerAPIv1(HTTPAPIDialect):
                 for _result in results
             )
         )
-
-    # MARK UPLOAD COMPLETION
-    # -------------------------------------------------------------------------
-    def mark_upload_as_complete(
-        self, upload_metadata: UploadMetadata, **options: TransportOptions
-    ) -> HTTPRequestParams:
-        parent_ds: DataSource = upload_metadata.extract_metadata.data_source
-        parent_dst: DataSourceType = parent_ds.data_source_type
-        return {
-            "headers": {
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-            },
-            "expected_http_status_code": 200,
-            "method": _PATCH_METHOD,
-            "url": "%s/%s/sql_upload_metadata/%s/mark_as_complete/"
-            % (self._base_url, parent_dst.code, upload_metadata.id),
-            "data": json.dumps({}),
-        }
 
     # UPLOAD CHUNK POSTAGE
     # -------------------------------------------------------------------------

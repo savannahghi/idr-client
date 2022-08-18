@@ -84,16 +84,6 @@ class _FakeHTTPAPIDialect(HTTPAPIDialect):
     ) -> Sequence[DataSource]:
         return tuple()
 
-    def mark_upload_as_complete(
-        self, upload_metadata: UploadMetadata, **options: TransportOptions
-    ) -> HTTPRequestParams:
-        return {
-            "headers": {"Accept": "application/json"},
-            "expected_http_status_code": 200,
-            "method": "PATCH",
-            "url": "%s/mark_upload_as_complete" % self._host,
-        }
-
     def post_upload_chunk(
         self,
         upload_metadata: UploadMetadata,

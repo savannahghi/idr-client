@@ -152,27 +152,6 @@ class HTTPAPIDialect(metaclass=ABCMeta):
         """
         ...
 
-    # MARK UPLOAD COMPLETION
-    # -------------------------------------------------------------------------
-    @abstractmethod
-    def mark_upload_as_complete(
-        self, upload_metadata: UploadMetadata, **options: TransportOptions
-    ) -> HTTPRequestParams:
-        """
-        Construct and return a request object used to mark an
-        :class:`upload metadata instance <UploadMetadata>` as completed.
-
-        :param upload_metadata: The upload metadata instance to be marked as
-            completed.
-        :param options: Optional transport options.
-
-        :return: A request object to mark an upload metadata instance as
-            completed.
-        """
-        ...
-
-    # TODO: Consider adding `response_to_mark_upload_as_completed` method.
-
     # UPLOAD CHUNK POSTAGE
     # -------------------------------------------------------------------------
     @abstractmethod
