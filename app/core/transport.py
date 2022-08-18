@@ -67,7 +67,7 @@ class Transport(Disposable, metaclass=ABCMeta):
         """
         ...
 
-    @abstractmethod
+    # @abstractmethod
     def post_upload_chunk(
         self,
         upload_metadata: UploadMetadata,
@@ -98,7 +98,7 @@ class Transport(Disposable, metaclass=ABCMeta):
         """
         ...
 
-    @abstractmethod
+    # @abstractmethod
     def post_upload_metadata(
         self,
         extract_metadata: ExtractMetadata,
