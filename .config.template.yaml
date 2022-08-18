@@ -78,18 +78,3 @@ MYSQL_DB_INSTANCE:
   port: 3306
   username: "idr_client"
   password: "securePa$$word"
-
-
-
-# =============================================================================
-# ORGANIZATION UNIT/LOCATION SETTINGS
-# =============================================================================
-
-# The location details indicating where the client is being executed from. This
-# will also be marked as the source of the uploaded data on the IDR Server. The
-# location data is composed of a unique code for ease of indexing and a
-# human-readable name.
-# Both of these settings are required.
-ORG_UNIT_CODE: "12345"
-
-ORG_UNIT_NAME: "Test Facility"
