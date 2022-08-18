@@ -1,5 +1,4 @@
 from itertools import chain, groupby
-from logging import getLogger
 from typing import Any, Sequence, Tuple
 
 from app.core import DataSource, ExtractMetadata, Task
@@ -8,15 +7,9 @@ from app.lib import ConcurrentExecutor
 from .types import RunExtractionResult
 
 # =============================================================================
-# CONSTANTS
-# =============================================================================
-
-_LOGGER = getLogger(__name__)
-
-
-# =============================================================================
 # TYPES
 # =============================================================================
+
 
 _GroupedSiblingExtracts = Tuple[DataSource, Sequence[ExtractMetadata]]
 
@@ -38,11 +31,6 @@ class DoExtract(Task[DataSource, RunExtractionResult]):
     def execute(self, an_input: DataSource) -> RunExtractionResult:
         # The extract should only be run against its parent data source.
         assert self._extract_metadata.data_source == an_input
-
-        _LOGGER.info(
-            'Running extraction for extract metadata="%s".',
-            str(self._extract_metadata),
-        )
         task_args: Any = an_input.get_extract_task_args()
         extract: Any = self._extract_metadata.to_task().execute(task_args)
         return self._extract_metadata, extract
@@ -64,7 +52,6 @@ class GroupSiblingExtracts(
     def execute(
         self, an_input: Sequence[ExtractMetadata]
     ) -> Sequence[_GroupedSiblingExtracts]:
-        _LOGGER.debug("Grouping extracts.")
         # Sort the given extracts by their parent data source's id.
         extracts: Sequence[ExtractMetadata] = sorted(
             an_input, key=lambda _e: _e.data_source.id
@@ -88,7 +75,6 @@ class RunDataSourceExtracts(
     def execute(
         self, an_input: Sequence[_GroupedSiblingExtracts]
     ) -> Sequence[RunExtractionResult]:
-        _LOGGER.debug("Running extraction for all data sources.")
         return tuple(
             chain.from_iterable(
                 self.run_data_source_extracts(
@@ -102,9 +88,6 @@ class RunDataSourceExtracts(
     def run_data_source_extracts(
         data_source: DataSource, extracts: Sequence[ExtractMetadata]
     ) -> Sequence[RunExtractionResult]:
-        _LOGGER.info(
-            'Running extraction for data source="%s"', str(data_source)
-        )
         with data_source:
             executor: ConcurrentExecutor[
                 DataSource, Sequence[RunExtractionResult]

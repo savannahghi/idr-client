@@ -100,8 +100,12 @@ class FetchDataSources(Task[Sequence[DataSourceType], Sequence[DataSource]]):
         data_source_types: Iterable[DataSourceType],
     ) -> Sequence[DoFetchDataSourceTypeSources]:
         return tuple(
-            DoFetchDataSourceTypeSources(data_source_type=_data_source_type)
-            for _data_source_type in data_source_types
+            (
+                DoFetchDataSourceTypeSources(
+                    data_source_type=_data_source_type
+                )
+                for _data_source_type in data_source_types
+            )
         )
 
 
@@ -135,6 +139,8 @@ class FetchExtractMetadata(
         data_sources: Iterable[DataSource],
     ) -> Sequence[DoFetchDataSourceExtracts]:
         return tuple(
-            DoFetchDataSourceExtracts(data_source=_data_source)
-            for _data_source in data_sources
+            (
+                DoFetchDataSourceExtracts(data_source=_data_source)
+                for _data_source in data_sources
+            )
         )
