@@ -1,5 +1,5 @@
 branches: ["main"]
-dryRun: true
+dryRun: false
 plugins:
   - [ "@semantic-release/commit-analyzer", {
         parserOpts: {
