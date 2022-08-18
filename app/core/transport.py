@@ -67,26 +67,6 @@ class Transport(Disposable, metaclass=ABCMeta):
         """
         ...
 
-    # @abstractmethod
-    def mark_upload_as_complete(
-        self, upload_metadata: UploadMetadata, **options: TransportOptions
-    ) -> None:
-        """
-        Mark the given :class:`upload metadata instance <UploadMetadata>` as
-        completed on the IDR Server. This should be called after all the chunks
-        of the given upload metadata have been uploaded successfully.
-
-        :param upload_metadata: The upload metadata instance to mark as
-            completed.
-        :param options: Optional transport options.
-
-        :return: None.
-
-        :raise TransportClosedError: If this transport is closed.
-        :raise TransportError: If an error occurs during the fetch.
-        """
-        ...
-
     @abstractmethod
     def post_upload_chunk(
         self,
