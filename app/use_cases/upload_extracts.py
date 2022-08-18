@@ -168,8 +168,4 @@ class PostUploadChunks(Task[Sequence[_PreparedUpload], Sequence[UploadChunk]]):
             ),
             initial_value=list(),
         )
-        uploaded_chunks: Sequence[UploadChunk] = executor(transport)  # noqa
-        # TODO: This should be it's own task, refactor this to reflect that.
-        _LOGGER.info('Marking upload metadata="%s" as complete.', str(upload))
-        transport.mark_upload_as_complete(upload_metadata=upload)
-        return uploaded_chunks
+        return executor(transport)  # noqa
