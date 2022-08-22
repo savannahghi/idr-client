@@ -66,7 +66,10 @@ class HTTPTransport(Transport):
         )
         self._session: Session = Session()
         self._session.headers.update(
-            {"Accept": "*/*", "User-Agent": "%s/%s" % (__title__, __version__)}
+            {
+                "Accept": "*/*",
+                "User-Agent": f"{__title__}/{__version__}",
+            }
         )
         self._auth: AuthBase = _NoAuth()
         self._is_closed: bool = False
@@ -219,7 +222,7 @@ class HTTPTransport(Transport):
 
     def _make_request(self, request: HTTPRequestParams) -> Response:
         self._ensure_not_closed()
-        request_message: str = "HTTP Request (%s | %s)" % (
+        request_message: str = "HTTP Request ({} | {})".format(
             request["method"],
             request["url"],
         )

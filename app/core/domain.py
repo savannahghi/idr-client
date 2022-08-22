@@ -178,7 +178,7 @@ class ExtractMetadata(
         ...
 
     def __str__(self) -> str:
-        return "%s::%s" % (self.id, self.name)
+        return f"{self.id}::{self.name}"
 
     @classmethod
     def of_mapping(cls, mapping: Mapping[str, Any]) -> "ExtractMetadata":
@@ -262,7 +262,7 @@ class DataSource(
         ...
 
     def __str__(self) -> str:
-        return "%s::%s" % (self.id, self.name)
+        return f"{self.id}::{self.name}"
 
     @classmethod
     def of_mapping(cls, mapping: Mapping[str, Any]) -> "DataSource":
@@ -356,7 +356,7 @@ class UploadMetadata(
         ...
 
     def __str__(self) -> str:
-        return "Upload %s for extract %s" % (
+        return "Upload {} for extract {}".format(
             self.id,
             str(self.extract_metadata),
         )
@@ -435,7 +435,7 @@ class DataSourceType(AbstractDomainObject, metaclass=ABCMeta):
         ...
 
     def __str__(self) -> str:
-        return "%s::%s" % (self.code, self.name)
+        return f"{self.code}::{self.name}"
 
     @classmethod
     @abstractmethod

@@ -142,25 +142,21 @@ class IDRServerAPIv1(HTTPAPIDialect):
             response_content
         ).get("results", tuple())
         return tuple(
-            (
-                Chainable(_result).
-                # Process/clean the response content in preparation for data
-                # source initialization.
-                execute(
-                    lambda _r: {
-                        **_r,
-                        "applicable_source_version": tuple(),
-                        "data_source": data_source,
-                    }
-                ).
-                # Initialize the data source.
-                execute(
-                    lambda _r: (
-                        dst.imp_extract_metadata_klass().of_mapping(_r)
-                    )
-                ).value
-                for _result in results
-            )
+            Chainable(_result).
+            # Process/clean the response content in preparation for data
+            # source initialization.
+            execute(
+                lambda _r: {
+                    **_r,
+                    "applicable_source_version": tuple(),
+                    "data_source": data_source,
+                }
+            ).
+            # Initialize the data source.
+            execute(
+                lambda _r: (dst.imp_extract_metadata_klass().of_mapping(_r))
+            ).value
+            for _result in results
         )
 
     # DATA SOURCES RETRIEVAL
@@ -189,25 +185,23 @@ class IDRServerAPIv1(HTTPAPIDialect):
             response_content
         ).get("results", tuple())
         return tuple(
-            (
-                Chainable(_result).
-                # Process/clean the response content in preparation for data
-                # source initialization.
-                execute(
-                    lambda _r: {
-                        **_r,
-                        "database_vendor": SupportedDBVendors.MYSQL,
-                        "data_source_type": data_source_type,
-                    }
-                ).
-                # Initialize the data source.
-                execute(
-                    lambda _r: (
-                        data_source_type.imp_data_source_klass().of_mapping(_r)
-                    )
-                ).value
-                for _result in results
-            )
+            Chainable(_result).
+            # Process/clean the response content in preparation for data
+            # source initialization.
+            execute(
+                lambda _r: {
+                    **_r,
+                    "database_vendor": SupportedDBVendors.MYSQL,
+                    "data_source_type": data_source_type,
+                }
+            ).
+            # Initialize the data source.
+            execute(
+                lambda _r: (
+                    data_source_type.imp_data_source_klass().of_mapping(_r)
+                )
+            ).value
+            for _result in results
         )
 
     # MARK UPLOAD COMPLETION
