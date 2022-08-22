@@ -11,7 +11,7 @@ class IDRClientException(Exception):
         :param args: args to pass to forward to the base exception.
         """
         self._message: Optional[str] = message
-        super(IDRClientException, self).__init__(self._message, *args)
+        super().__init__(self._message, *args)
 
     @property
     def message(self) -> Optional[str]:
