@@ -1,9 +1,10 @@
 import os
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 from unittest import TestCase
 from unittest.mock import patch
 
 import pytest
+from pandas import DataFrame
 from sqlalchemy.engine import Connection
 
 from app.imp.sql_data import (
@@ -12,6 +13,8 @@ from app.imp.sql_data import (
     SQLDataSourceDisposedError,
     SQLDataSourceType,
     SQLExtractMetadata,
+    SQLUploadChunk,
+    SQLUploadMetadata,
     SupportedDBVendors,
 )
 from app.lib import ImproperlyConfiguredError
@@ -20,6 +23,7 @@ from .factories import (
     SQLDataSourceFactory,
     SQLDataSourceTypeFactory,
     SQLExtractMetadataFactory,
+    SQLUploadMetadataFactory,
 )
 
 
@@ -224,6 +228,13 @@ class TestSQLDataSourceType(TestCase):
             self._data_source_type.imp_extract_metadata_klass()
             == SQLExtractMetadata
         )  # noqa
+        assert (
+            self._data_source_type.imp_upload_chunk_klass() == SQLUploadChunk
+        )
+        assert (
+            self._data_source_type.imp_upload_metadata_klass()
+            == SQLUploadMetadata
+        )
 
 
 class TestSQLExtractMetadata(TestCase):
@@ -239,3 +250,43 @@ class TestSQLExtractMetadata(TestCase):
         task = self._extract_meta.to_task()
         assert task is not None
         assert self._extract_meta.data_source is not None
+
+
+class TestSQLUploadMetadata(TestCase):
+    """Test for the :class:`SQLUploadMetadata` class."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self._upload_meta: SQLUploadMetadata = SQLUploadMetadataFactory()
+
+    def test_accessors(self) -> None:
+        """Assert that accessors return the expected value."""
+
+        content_type = "application/vnd.apache-parquet"
+        assert self._upload_meta.extract_metadata is not None
+        assert isinstance(
+            self._upload_meta.extract_metadata, SQLExtractMetadata
+        )
+        assert self._upload_meta.get_content_type() == content_type
+        assert self._upload_meta.to_task() is not None
+
+    def test_to_task(self) -> None:
+        """
+        Assert that the ``SQLUploadMetadata.to_task()`` method returns a task
+        with the expected implementation.
+        """
+
+        extract_meta: SQLExtractMetadata = self._upload_meta.extract_metadata
+        data_source: SQLDataSource = extract_meta.data_source
+        with data_source:
+            extracted_data: DataFrame = extract_meta.to_task().execute(
+                data_source.get_extract_task_args()
+            )
+
+        upload_task = self._upload_meta.to_task()
+        processed_extract: Sequence[bytes] = upload_task.execute(
+            extracted_data
+        )
+
+        assert len(processed_extract) > 0
+        assert isinstance(processed_extract[0], bytes)

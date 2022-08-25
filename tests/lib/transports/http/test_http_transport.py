@@ -8,6 +8,8 @@ from app.lib.transports.http import HTTPAPIDialect, HTTPTransport
 from tests.core.factories import (
     FakeDataSourceFactory,
     FakeDataSourceTypeFactory,
+    FakeExtractMetadataFactory,
+    FakeUploadMetadataFactory,
 )
 from tests.lib.transports.http.factories import FakeHTTPAPIDialectFactory
 
@@ -63,6 +65,8 @@ class TestHTTPTransport(TestCase):
         """
         data_source = FakeDataSourceFactory()
         data_source_type = FakeDataSourceTypeFactory()
+        extract_meta = FakeExtractMetadataFactory()
+        upload_meta = FakeUploadMetadataFactory()
         self._transport.dispose()
         with patch("requests.sessions.Session.request", autospec=True) as s:
             s.return_value = self._mock_response_factory()
@@ -70,10 +74,28 @@ class TestHTTPTransport(TestCase):
                 self._transport.fetch_data_sources(
                     data_source_type=data_source_type
                 )
-
             with pytest.raises(TransportClosedError):
                 self._transport.fetch_data_source_extracts(
                     data_source_type=data_source_type, data_source=data_source
+                )
+            with pytest.raises(TransportClosedError):
+                self._transport.mark_upload_as_complete(
+                    upload_metadata=upload_meta
+                )
+
+            s.return_value = self._mock_response_factory(status_code=201)
+            with pytest.raises(TransportClosedError):
+                self._transport.post_upload_chunk(
+                    upload_metadata=upload_meta,
+                    chunk_content=b"Bla bla bla ...",
+                    chunk_index=0,
+                )
+            with pytest.raises(TransportClosedError):
+                self._transport.post_upload_metadata(
+                    extract_metadata=extract_meta,
+                    content_type="application/json",
+                    org_unit_code="12345",
+                    org_unit_name="Test Facility",
                 )
 
     def test_fetch_data_source_extracts_returns_expected_value(self) -> None:
@@ -100,6 +122,51 @@ class TestHTTPTransport(TestCase):
             s.return_value = self._mock_response_factory()
             results = self._transport.fetch_data_sources(data_source_type)
             self.assertListEqual(list(results), [])
+
+    def test_mark_upload_as_complete_exits_cleanly_on_valid_data(self) -> None:
+        """
+        Assert that the ``mark_upload_as_complete()`` method returns without
+        raising any errors when given the correct data.
+        """
+        upload_meta = FakeUploadMetadataFactory()
+        with patch("requests.sessions.Session.request", autospec=True) as s:
+            s.return_value = self._mock_response_factory()
+            self._transport.mark_upload_as_complete(
+                upload_metadata=upload_meta
+            )
+
+    def test_post_upload_chunk_returns_expected_value(self) -> None:
+        """
+        Assert that the ``post_upload_chunk`` method returns the expected
+        value.
+        """
+        upload_meta = FakeUploadMetadataFactory()
+        with patch("requests.sessions.Session.request", autospec=True) as s:
+            s.return_value = self._mock_response_factory(status_code=201)
+            result = self._transport.post_upload_chunk(
+                upload_metadata=upload_meta,
+                chunk_index=0,
+                chunk_content=b"Bla bla bla ...",
+            )
+
+            assert result  # Should not be None or empty.
+
+    def test_post_upload_metadata_returns_expected_value(self) -> None:
+        """
+        Assert that the ``post_upload_metadata`` method returns the expected
+        value.
+        """
+        extract_meta = FakeExtractMetadataFactory()
+        with patch("requests.sessions.Session.request", autospec=True) as s:
+            s.return_value = self._mock_response_factory(status_code=201)
+            result = self._transport.post_upload_metadata(
+                extract_metadata=extract_meta,
+                content_type="application/json",
+                org_unit_code="12345",
+                org_unit_name="Test Facility",
+            )
+
+            assert result  # Should not be None or empty.
 
     def test_transport_re_authentication_failure(self) -> None:
         """

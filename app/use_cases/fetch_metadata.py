@@ -24,7 +24,7 @@ _LOGGER = getLogger(__name__)
 # =============================================================================
 
 
-class DoFetchDataSourceTypeSources(Task[DataSourceType, Sequence[DataSource]]):
+class DoFetchDataSources(Task[DataSourceType, Sequence[DataSource]]):
     """Fetches all the data sources of a given data source type."""
 
     def __init__(self, data_source_type: DataSourceType):
@@ -45,7 +45,7 @@ class DoFetchDataSourceTypeSources(Task[DataSourceType, Sequence[DataSource]]):
         return data_sources
 
 
-class DoFetchDataSourceExtracts(Task[DataSource, Sequence[ExtractMetadata]]):
+class DoFetchExtractMetadata(Task[DataSource, Sequence[ExtractMetadata]]):
     """Fetch all the extract metadata of a given data source."""
 
     def __init__(self, data_source: DataSource):
@@ -98,9 +98,9 @@ class FetchDataSources(Task[Sequence[DataSourceType], Sequence[DataSource]]):
     @staticmethod
     def _data_source_types_to_tasks(
         data_source_types: Iterable[DataSourceType],
-    ) -> Sequence[DoFetchDataSourceTypeSources]:
+    ) -> Sequence[DoFetchDataSources]:
         return tuple(
-            DoFetchDataSourceTypeSources(data_source_type=_data_source_type)
+            DoFetchDataSources(data_source_type=_data_source_type)
             for _data_source_type in data_source_types
         )
 
@@ -133,8 +133,8 @@ class FetchExtractMetadata(
     @staticmethod
     def _data_sources_to_tasks(
         data_sources: Iterable[DataSource],
-    ) -> Sequence[DoFetchDataSourceExtracts]:
+    ) -> Sequence[DoFetchExtractMetadata]:
         return tuple(
-            DoFetchDataSourceExtracts(data_source=_data_source)
+            DoFetchExtractMetadata(data_source=_data_source)
             for _data_source in data_sources
         )
