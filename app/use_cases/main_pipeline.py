@@ -6,7 +6,12 @@ from app.lib import Pipeline
 from .fetch_metadata import FetchDataSources, FetchExtractMetadata
 from .run_extraction import GroupSiblingExtracts, RunDataSourceExtracts
 from .types import RunExtractionResult
-from .upload_extracts import PostUploadChunks, PostUploads, PrepareUploads
+from .upload_extracts import (
+    MarkUploadsAsComplete,
+    PostUploadChunks,
+    PostUploads,
+    PrepareUploadChunks,
+)
 
 
 class FetchMetadata(
@@ -33,11 +38,12 @@ class RunExtraction(
 
 
 class UploadExtracts(Pipeline[Sequence[RunExtractionResult], Any]):
-    """Upload the extracted metadata to the remote server."""
+    """Upload the extracted metadata to their final destination."""
 
     def __init__(self, transport: Transport):
         super().__init__(
             PostUploads(transport=transport),
-            PrepareUploads(),
+            PrepareUploadChunks(),
             PostUploadChunks(transport=transport),
+            MarkUploadsAsComplete(transport=transport),
         )
