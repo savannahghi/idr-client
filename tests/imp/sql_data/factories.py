@@ -6,12 +6,16 @@ from app.imp.sql_data import (
     SQLDataSource,
     SQLDataSourceType,
     SQLExtractMetadata,
+    SQLUploadChunk,
+    SQLUploadMetadata,
     SupportedDBVendors,
 )
 from tests.core.factories import (
     DataSourceFactory,
     DataSourceTypeFactory,
     ExtractMetadataFactory,
+    UploadChunkFactory,
+    UploadMetadataFactory,
 )
 
 
@@ -85,3 +89,19 @@ class SQLExtractMetadataFactory(ExtractMetadataFactory):
 
     class Meta:
         model = SQLExtractMetadata
+
+
+class SQLUploadChunkFactory(UploadChunkFactory):
+    """A factory for ``SQLUploadChunk`` instances."""
+
+    class Meta:
+        model = SQLUploadChunk
+
+
+class SQLUploadMetadataFactory(UploadMetadataFactory):
+    """A factory for ``SQLUploadMetadata`` instances."""
+
+    extract_metadata = factory.SubFactory(SQLExtractMetadataFactory)
+
+    class Meta:
+        model = SQLUploadMetadata

@@ -11,6 +11,9 @@ from .factories import (
     FakeDataSourceType,
     FakeDataSourceTypeFactory,
     FakeExtractMetadata,
+    FakeExtractMetadataFactory,
+    FakeUploadChunk,
+    FakeUploadMetadata,
 )
 
 
@@ -89,20 +92,8 @@ class TestAbstractDomainObject(TestCase):
         )
 
 
-class TestFakeDataSourceInterface(TestCase):
+class TestDataSourceInterface(TestCase):
     """Tests for the ``DataSource`` interface default implementations."""
-
-    def test_string_representation(self) -> None:
-        """
-        Assert that the default ``DataSource.__str__()`` implementation
-        returns the expected value.
-        """
-        data_source = FakeDataSource(
-            id="1",
-            name="Some data source",
-            data_source_type=FakeDataSourceTypeFactory(),
-        )
-        assert str(data_source) == "1::Some data source"
 
     def test_of_mapping_class_method(self) -> None:
         """
@@ -136,8 +127,20 @@ class TestFakeDataSourceInterface(TestCase):
         assert data_source2.name == "Some other data source"
         assert data_source2.description is None
 
+    def test_string_representation(self) -> None:
+        """
+        Assert that the default ``DataSource.__str__()`` implementation
+        returns the expected value.
+        """
+        data_source = FakeDataSource(
+            id="1",
+            name="Some data source",
+            data_source_type=FakeDataSourceTypeFactory(),
+        )
+        assert str(data_source) == "1::Some data source"
 
-class TestFakeDataSourceTypeInterface(TestCase):
+
+class TestDataSourceTypeInterface(TestCase):
     """Tests for the ``DataSourceType`` interface default implementations."""
 
     def test_string_representation(self) -> None:
@@ -152,15 +155,20 @@ class TestFakeDataSourceTypeInterface(TestCase):
 class TestExtractMetadataInterface(TestCase):
     """Tests for the ``ExtractMetadata`` interface default implementations."""
 
-    def test_string_representation(self) -> None:
-        """
-        Assert that the default ``ExtractMetadata.__str__()`` implementation
-        returns the expected value.
-        """
-        extract = FakeExtractMetadata(
+    def setUp(self) -> None:
+        super().setUp()
+        self._extract = FakeExtractMetadata(
             id="1", name="Some data", data_source=FakeDataSourceFactory()
         )
-        assert str(extract) == "1::Some data"
+
+    def test_get_upload_meta_extra_init_kwargs(self) -> None:
+        """
+        Assert that the default implementation of
+        ``ExtractMetadata.get_upload_meta_extra_init_kwargs()`` instance
+        method returns ``None``.
+        """
+
+        assert self._extract.get_upload_meta_extra_init_kwargs() is None
 
     def test_of_mapping_class_method(self) -> None:
         """
@@ -195,3 +203,113 @@ class TestExtractMetadataInterface(TestCase):
         assert extract2.name == "Some other data"
         assert extract2.description is None
         assert extract2.preferred_uploads_name == "some_data"
+
+    def test_string_representation(self) -> None:
+        """
+        Assert that the default ``ExtractMetadata.__str__()`` implementation
+        returns the expected value.
+        """
+        assert str(self._extract) == "1::Some data"
+
+
+class TestUploadChunkInterface(TestCase):
+    """Tests for the ``UploadChunk`` interface default implementations."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self._upload_chunk = FakeUploadChunk(
+            id="1", chunk_index=0, chunk_content=b"Bla bla bla ..."
+        )
+
+    def test_of_mapping_class_method(self) -> None:
+        """
+        Assert that the ``UploadChunk.of_mapping()`` class method returns
+        the expected value.
+        """
+
+        upload_chunk1 = FakeUploadChunk.of_mapping(
+            {"id": "1", "chunk_index": 0, "chunk_content": b"Bla bla bla ..."}
+        )
+        upload_chunk2 = FakeUploadChunk.of_mapping(
+            {
+                "id": "2",
+                "chunk_index": 1,
+                "chunk_content": b"Bla bla bla bla ...",
+            }
+        )
+
+        assert upload_chunk1 is not None
+        assert upload_chunk1.id == "1"
+        assert upload_chunk1.chunk_index == 0
+        assert upload_chunk1.chunk_content == b"Bla bla bla ..."
+        assert upload_chunk2 is not None
+        assert upload_chunk2.id == "2"
+        assert upload_chunk2.chunk_index == 1
+        assert upload_chunk2.chunk_content == b"Bla bla bla bla ..."
+
+    def test_string_representation(self) -> None:
+        """
+        Assert that the default ``UploadChunk.__str__()`` implementation
+        returns the expected value.
+        """
+        assert str(self._upload_chunk) == "Chunk 0"
+
+
+class TestUploadMetadataInterface(TestCase):
+    """Tests for the ``UploadMetadata`` interface default implementations."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self._extract_metadata = FakeExtractMetadataFactory()
+        self._upload_metadata = FakeUploadMetadata(
+            id="1",
+            org_unit_code="12345",
+            org_unit_name="Test Facility",
+            content_type="application/json",
+            extract_metadata=self._extract_metadata,
+        )
+
+    def test_get_upload_meta_extra_init_kwargs(self) -> None:
+        """
+        Assert that the default implementation of
+        ``UploadMetadata.get_upload_chunk_extra_init_kwargs()`` instance
+        method returns ``None``.
+        """
+
+        kwargs = self._upload_metadata.get_upload_chunk_extra_init_kwargs()
+        assert kwargs is None
+
+    def test_of_mapping_class_method(self) -> None:
+        """
+        Assert that the ``UploadMetadata.of_mapping()`` class method returns
+        the expected value.
+        """
+
+        org_unit_code = "12345"
+        org_unit_name = "Test Facility"
+        content_type = "application/json"
+        upload_metadata = FakeUploadMetadata.of_mapping(
+            {
+                "id": "1",
+                "org_unit_code": org_unit_code,
+                "org_unit_name": org_unit_name,
+                "content_type": content_type,
+                "extract_metadata": self._extract_metadata,
+            }
+        )
+
+        assert upload_metadata is not None
+        assert upload_metadata.id == "1"
+        assert upload_metadata.org_unit_code == org_unit_code
+        assert upload_metadata.org_unit_name == org_unit_name
+        assert upload_metadata.content_type == content_type
+        assert upload_metadata.extract_metadata == self._extract_metadata
+
+    def test_string_representation(self) -> None:
+        """
+        Assert that the default ``UploadMetadata.__str__()`` implementation
+        returns the expected value.
+        """
+        assert str(self._upload_metadata) == "Upload {} for extract {}".format(
+            self._upload_metadata.id, str(self._extract_metadata)
+        )

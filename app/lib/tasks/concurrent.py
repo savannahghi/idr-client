@@ -51,7 +51,7 @@ class ConcurrentExecutor(Generic[_IN, _RT], Task[_IN, _RT]):
             lambda _partial, _tsk: self._accumulator(
                 _partial, _tsk.execute(an_input)
             ),
-            self._tasks,
+            self.tasks,
             self._initial_value,
         )
 
