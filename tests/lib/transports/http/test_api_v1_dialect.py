@@ -13,6 +13,10 @@ from app.lib.transports.http import (
 from tests.core.factories import (
     FakeDataSourceFactory,
     FakeDataSourceTypeFactory,
+    FakeExtractMetadataFactory,
+    FakeUploadChunkFactory,
+    FakeUploadMetadataFactory,
+    UploadMetadata,
 )
 
 
@@ -168,3 +172,106 @@ class TestIDRServerAPIv1(TestCase):
             ),
             [],
         )
+
+    def test_mark_upload_as_complete_return_value(self) -> None:
+        """
+        Assert that the ``mark_upload_as_complete`` method returns the expected
+        value.
+        """
+        upload_meta = FakeUploadMetadataFactory()
+        request_params = self._api_dialect.mark_upload_as_complete(
+            upload_metadata=upload_meta
+        )
+
+        assert request_params  # Should not be None or empty.
+        assert request_params["expected_http_status_code"] == 200
+        assert request_params["method"].upper() == "PATCH"
+
+    def test_post_upload_chunk_return_value(self) -> None:
+        """
+        Assert that the ``post_upload_chunk`` method returns the expected
+        value.
+        """
+        upload_meta = FakeUploadMetadataFactory()
+        chunk_index = 0
+        chunk_content = b"Bla bla bla ..."
+        request_params = self._api_dialect.post_upload_chunk(
+            upload_metadata=upload_meta,
+            chunk_index=chunk_index,
+            chunk_content=chunk_content,
+        )
+
+        assert request_params  # Should not be None or empty.
+        assert request_params.get("data")  # Should not be None or empty.
+        assert request_params["expected_http_status_code"] == 201
+        assert request_params["method"].upper() == "POST"
+
+    def test_response_to_upload_chunk_return_value(self) -> None:
+        """
+        Assert that the ``response_to_upload_chunk`` method returns the
+        expected value.
+        """
+        source_upload_chunk = FakeUploadChunkFactory(chunk_content="")
+        upload_meta = FakeUploadMetadataFactory()
+        response_content = {
+            "id": source_upload_chunk.id,
+            "chunk_index": source_upload_chunk.chunk_index,
+            "chunk_content": source_upload_chunk.chunk_content,
+        }
+        upload_chunk = self._api_dialect.response_to_upload_chunk(
+            json.dumps(response_content).encode("ascii"),
+            upload_metadata=upload_meta,
+        )
+
+        assert upload_chunk is not None
+        assert upload_chunk.id == source_upload_chunk.id
+        assert upload_chunk.chunk_index == source_upload_chunk.chunk_index
+
+    def test_post_upload_metadata_return_value(self) -> None:
+        """
+        Assert that the ``post_upload_metadata`` method returns the expected
+        value.
+        """
+        content_type = "application/json"
+        extract_meta = FakeExtractMetadataFactory()
+        org_unit_code = "12345"
+        org_unit_name = "Test Facility"
+        request_params = self._api_dialect.post_upload_metadata(
+            extract_metadata=extract_meta,
+            content_type=content_type,
+            org_unit_code=org_unit_code,
+            org_unit_name=org_unit_name,
+        )
+
+        assert request_params  # Should not be None or empty.
+        assert request_params.get("data")  # Should not be None or empty.
+        assert request_params["expected_http_status_code"] == 201
+        assert request_params["method"].upper() == "POST"
+
+    def test_response_to_upload_metadata_return_value(self) -> None:
+        """
+        Assert that the ``response_to_upload_metadata`` method returns the
+        expected value.
+        """
+        source_upload_meta: UploadMetadata = FakeUploadMetadataFactory()
+        response_content = {
+            "id": source_upload_meta.id,
+            "extract_metadata": source_upload_meta.extract_metadata.id,
+            "org_unit_code": source_upload_meta.org_unit_code,
+            "org_unit_name": source_upload_meta.org_unit_name,
+            "content_type": source_upload_meta.content_type,
+        }
+
+        upload_meta = self._api_dialect.response_to_upload_metadata(
+            json.dumps(response_content).encode("ascii"),
+            extract_metadata=source_upload_meta.extract_metadata,
+        )
+
+        assert upload_meta is not None
+        assert upload_meta.id == source_upload_meta.id
+        assert (
+            upload_meta.extract_metadata == source_upload_meta.extract_metadata
+        )
+        assert upload_meta.org_unit_code == source_upload_meta.org_unit_code
+        assert upload_meta.org_unit_name == source_upload_meta.org_unit_name
+        assert upload_meta.content_type == source_upload_meta.content_type

@@ -104,7 +104,7 @@ class _FakeHTTPAPIDialect(HTTPAPIDialect):
     ) -> HTTPRequestParams:
         return {
             "headers": {"Accept": "application/json"},
-            "expected_http_status_code": 200,
+            "expected_http_status_code": 201,
             "method": "POST",
             "url": "%s/create_upload_chunk" % self._host,
         }
@@ -128,7 +128,7 @@ class _FakeHTTPAPIDialect(HTTPAPIDialect):
     ) -> HTTPRequestParams:
         return {
             "headers": {"Accept": "application/json"},
-            "expected_http_status_code": 200,
+            "expected_http_status_code": 201,
             "method": "POST",
             "url": "%s/create_upload_metadata" % self._host,
         }

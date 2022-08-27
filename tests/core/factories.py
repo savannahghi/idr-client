@@ -113,10 +113,17 @@ class FakeExtractMetadata(ExtractMetadata[Any, Any]):
 
 
 class FakeTransport(Transport):
-    """A fake transport that returns empty results."""
+    """A fake transport that returns dummy data."""
 
-    def __init__(self):
-        self._is_closed: bool = False
+    def __init__(
+        self,
+        is_closed: bool = False,
+        fetch_data_source_extracts_count: int = 0,
+        fetch_data_sources_count: int = 0,
+    ):
+        self._is_closed: bool = is_closed
+        self._data_sources_count: int = fetch_data_sources_count
+        self._extracts_count: int = fetch_data_source_extracts_count
 
     @property
     def is_disposed(self) -> bool:
@@ -131,12 +138,21 @@ class FakeTransport(Transport):
         data_source: DataSource,
         **options: TransportOptions,
     ) -> Sequence[ExtractMetadata]:
-        return tuple()
+        return tuple(
+            FakeExtractMetadataFactory.create_batch(
+                size=self._extracts_count, data_source=data_source
+            )
+        )
 
     def fetch_data_sources(
         self, data_source_type: DataSourceType, **options: TransportOptions
     ) -> Sequence[DataSource]:
-        return tuple()
+        return tuple(
+            FakeDataSourceFactory.create_batch(
+                size=self._data_sources_count,
+                data_source_type=data_source_type,
+            )
+        )
 
     def mark_upload_as_complete(
         self, upload_metadata: UploadMetadata, **options: TransportOptions
@@ -151,7 +167,9 @@ class FakeTransport(Transport):
         extra_init_kwargs: Optional[Mapping[str, Any]] = None,
         **options: TransportOptions,
     ) -> UploadChunk:
-        return FakeUploadChunkFactory()
+        return FakeUploadChunkFactory(
+            chunk_index=chunk_index, chunk_content=chunk_content
+        )
 
     def post_upload_metadata(
         self,
@@ -162,7 +180,12 @@ class FakeTransport(Transport):
         extra_init_kwargs: Optional[Mapping[str, Any]] = None,
         **options: TransportOptions,
     ) -> UploadMetadata:
-        return FakeUploadMetadataFactory()
+        return FakeUploadMetadataFactory(
+            extract_metadata=extract_metadata,
+            content_type=content_type,
+            org_unit_code=org_unit_code,
+            org_unit_name=org_unit_name,
+        )
 
 
 class FakeUploadChunk(UploadChunk):
@@ -174,9 +197,10 @@ class FakeUploadChunk(UploadChunk):
 class FakeUploadMetadata(UploadMetadata[Any]):
     """A mock upload metadata implementation."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, chunk_count: int = 0, **kwargs):
         extract_metadata: FakeExtractMetadata = kwargs.pop("extract_metadata")
         super().__init__(**kwargs)
+        self._chunk_count: int = chunk_count
         self._extract_metadata: FakeExtractMetadata = extract_metadata
 
     @property
@@ -184,17 +208,23 @@ class FakeUploadMetadata(UploadMetadata[Any]):
         return self._extract_metadata
 
     def to_task(self) -> Task[Any, Sequence[bytes]]:
-        return self._FakeUploadTask()
+        return self._FakeUploadTask(chunk_count=self._chunk_count)
 
     @classmethod
     def get_content_type(cls) -> str:
         return "text/csv"
 
-    class _FakeUploadTask(Task[Any, Sequence[Any]]):
-        """A fake task that returns an empty list."""
+    class _FakeUploadTask(Task[Any, Sequence[bytes]]):
+        """A fake task that returns a sequence of random bytes."""
 
-        def execute(self, an_input: Any) -> Sequence[Any]:
-            return []
+        def __init__(self, chunk_count: int):
+            self._chunk_count: int = chunk_count
+
+        def execute(self, an_input: Any) -> Sequence[bytes]:
+            return tuple(
+                f"Bla bla bla {_index} ...".encode()
+                for _index in range(self._chunk_count)
+            )
 
 
 # =============================================================================
@@ -306,7 +336,7 @@ class FakeExtractMetadataFactory(ExtractMetadataFactory):
     preferred_uploads_name = factory.LazyAttribute(
         lambda _o: "%s" % _o.name.lower().replace(" ", "_")
     )
-    data_source = factory.SubFactory(FakeDataSource)
+    data_source = factory.SubFactory(FakeDataSourceFactory)
 
     class Meta:
         model = FakeExtractMetadata
@@ -317,12 +347,18 @@ class FakeTransportFactory(factory.Factory):
     A factory for creating fake transport instances that return empty results.
     """
 
+    is_closed: bool = False
+    fetch_data_source_extracts_count: int = 0
+    fetch_data_sources_count: int = 0
+
     class Meta:
         model = FakeTransport
 
 
 class FakeUploadChunkFactory(UploadChunkFactory):
     """A factory for creating fake upload chunk instances."""
+
+    chunk_content = b"Bla bla bla ..."
 
     class Meta:
         model = FakeUploadChunk
@@ -331,6 +367,7 @@ class FakeUploadChunkFactory(UploadChunkFactory):
 class FakeUploadMetadataFactory(UploadMetadataFactory):
     """A factory for creating fake upload metadata instances."""
 
+    chunk_count = 0
     extract_metadata = factory.SubFactory(FakeExtractMetadataFactory)
 
     class Meta:
