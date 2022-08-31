@@ -3,6 +3,7 @@ from .checkers import ensure_not_none, ensure_not_none_nor_empty
 from .config import *  # noqa: F401,F403
 from .config import __all__ as _all_config
 from .module_loading import import_string, import_string_as_klass
+from .retry import Retry
 from .tasks import *  # noqa: F401,F403
 from .tasks import __all__ as _all_tasks
 from .transports import *  # noqa: F401,F403
@@ -11,6 +12,7 @@ from .transports import __all__ as _all_transports
 __all__ = [
     "AppRegistry",
     "DefaultTransportFactory",
+    "Retry",
     "ensure_not_none",
     "ensure_not_none_nor_empty",
     "import_string",

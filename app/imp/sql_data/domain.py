@@ -8,6 +8,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Connection, Engine
+from sqlalchemy.exc import SQLAlchemyError
 
 import app
 from app.core import (
@@ -22,6 +23,7 @@ from app.lib import (
     ChunkDataFrame,
     ImproperlyConfiguredError,
     Pipeline,
+    Retry,
     SimpleSQLSelect,
 )
 
@@ -145,6 +147,7 @@ class SQLDataSource(DataSource[Connection]):
             self._engine.dispose()
         self._engine = None
 
+    @Retry(predicate=lambda _e: isinstance(_e, SQLAlchemyError))
     def get_extract_task_args(self) -> Connection:
         self._ensure_not_disposed()
         assert self._engine is not None

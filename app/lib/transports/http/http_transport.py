@@ -1,7 +1,9 @@
 import logging
+from threading import RLock
 from typing import Any, Mapping, Optional, Sequence
 
 from requests.auth import AuthBase
+from requests.exceptions import RequestException
 from requests.models import PreparedRequest, Response
 from requests.sessions import Session
 
@@ -18,6 +20,7 @@ from app.core import (
     UploadMetadata,
 )
 
+from ...retry import Retry
 from .http_api_dialect import HTTPAPIDialect
 from .types import HTTPRequestParams
 
@@ -26,6 +29,24 @@ from .types import HTTPRequestParams
 # =============================================================================
 
 _LOGGER = logging.getLogger(__name__)
+
+
+# =============================================================================
+# HELPER TASKS
+# =============================================================================
+
+
+def _log_response(response: Response, *args, **kwargs) -> None:
+    request = response.request
+    request_message: str = "HTTP Request ({} | {})".format(
+        request.method,
+        request.url,
+    )
+    _LOGGER.debug(request_message)
+
+
+def _retry_predicate(exp: Exception) -> bool:
+    return isinstance(exp, RequestException)
 
 
 # =============================================================================
@@ -38,6 +59,9 @@ class HTTPTransport(Transport):
     An implementation of the :class:`transport <Transport>` interface that uses
     the HTTP protocol for data transmission between an IDR Server and IDR
     client.
+
+    .. note::
+        This implementation is thread safe.
     """
 
     def __init__(
@@ -71,6 +95,10 @@ class HTTPTransport(Transport):
                 "User-Agent": f"{__title__}/{__version__}",
             }
         )
+        self._session.hooks["response"].append(_log_response)
+        self._lock: RLock = RLock()
+        # Mutable state. This properties should be guarded under a lock when
+        # being modified.
         self._auth: AuthBase = _NoAuth()
         self._is_closed: bool = False
 
@@ -78,13 +106,17 @@ class HTTPTransport(Transport):
     def is_disposed(self) -> bool:
         return self._is_closed
 
+    @Retry(predicate=_retry_predicate, deadline=30.0)
     def dispose(self) -> None:
         _LOGGER.debug("Closing transport")
-        self._is_closed = True
-        self._session.close()
+        if not self._is_closed:
+            with self._lock:
+                self._is_closed = True
+                self._session.close()
 
     #  FETCH DATA SOURCE EXTRACTS
     # -------------------------------------------------------------------------
+    @Retry(predicate=_retry_predicate)
     def fetch_data_source_extracts(
         self,
         data_source_type: DataSourceType,
@@ -106,6 +138,7 @@ class HTTPTransport(Transport):
 
     #  FETCH DATA SOURCES
     # -------------------------------------------------------------------------
+    @Retry(predicate=_retry_predicate)
     def fetch_data_sources(
         self, data_source_type: DataSourceType, **options: TransportOptions
     ) -> Sequence[DataSource]:
@@ -121,6 +154,7 @@ class HTTPTransport(Transport):
 
     # MARK UPLOAD COMPLETION
     # -------------------------------------------------------------------------
+    @Retry(predicate=_retry_predicate)
     def mark_upload_as_complete(
         self, upload_metadata: UploadMetadata, **options: TransportOptions
     ) -> None:
@@ -134,6 +168,7 @@ class HTTPTransport(Transport):
 
     # UPLOAD CHUNK POSTAGE
     # -------------------------------------------------------------------------
+    @Retry(predicate=_retry_predicate)
     def post_upload_chunk(
         self,
         upload_metadata: UploadMetadata,
@@ -160,6 +195,7 @@ class HTTPTransport(Transport):
 
     # UPLOAD METADATA POSTAGE
     # -------------------------------------------------------------------------
+    @Retry(predicate=_retry_predicate)
     def post_upload_metadata(
         self,
         extract_metadata: ExtractMetadata,
@@ -188,6 +224,7 @@ class HTTPTransport(Transport):
 
     # OTHER HELPERS
     # -------------------------------------------------------------------------
+    @Retry(predicate=_retry_predicate)
     def _authenticate(self) -> AuthBase:
         self._ensure_not_closed()
         _LOGGER.info("Authenticating HTTP transport.")
@@ -226,7 +263,6 @@ class HTTPTransport(Transport):
             request["method"],
             request["url"],
         )
-        _LOGGER.info(request_message)
         response: Response = self._session.request(
             data=request.get("data"),
             files=request.get("files"),
@@ -248,15 +284,16 @@ class HTTPTransport(Transport):
             # if the status is among the re-authentication trigger status and
             # if so, re-authenticate and then retry this request.
             if response.status_code in self._api_dialect.auth_trigger_statuses:
-                _LOGGER.debug(
-                    'Encountered an authentication trigger status("%d"), '
-                    "re-authenticating.",
-                    response.status_code,
-                )
-                self._auth = self._authenticate()
-                _LOGGER.debug(
-                    "Re-authentication successful, retrying the request."
-                )
+                with self._lock:
+                    _LOGGER.debug(
+                        'Encountered an authentication trigger status("%d"), '
+                        "re-authenticating.",
+                        response.status_code,
+                    )
+                    self._auth = self._authenticate()
+                    _LOGGER.debug(
+                        "Re-authentication successful, retrying the request."
+                    )
                 # FIXME: This could lead into a stack overflow, revisit this.
                 return self._make_request(request)
 

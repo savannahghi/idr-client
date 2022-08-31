@@ -1,3 +1,4 @@
+from concurrent.futures import Future, as_completed
 from itertools import chain
 from logging import getLogger
 from typing import Iterable, Mapping, Sequence
@@ -9,7 +10,7 @@ from app.core import (
     Task,
     Transport,
 )
-from app.lib import ConcurrentExecutor
+from app.lib import ConcurrentExecutor, completed_successfully
 
 # =============================================================================
 # CONSTANTS
@@ -24,7 +25,7 @@ _LOGGER = getLogger(__name__)
 # =============================================================================
 
 
-class DoFetchDataSources(Task[DataSourceType, Sequence[DataSource]]):
+class DoFetchDataSources(Task[Transport, Sequence[DataSource]]):
     """Fetches all the data sources of a given data source type."""
 
     def __init__(self, data_source_type: DataSourceType):
@@ -45,7 +46,7 @@ class DoFetchDataSources(Task[DataSourceType, Sequence[DataSource]]):
         return data_sources
 
 
-class DoFetchExtractMetadata(Task[DataSource, Sequence[ExtractMetadata]]):
+class DoFetchExtractMetadata(Task[Transport, Sequence[ExtractMetadata]]):
     """Fetch all the extract metadata of a given data source."""
 
     def __init__(self, data_source: DataSource):
@@ -86,14 +87,26 @@ class FetchDataSources(Task[Sequence[DataSourceType], Sequence[DataSource]]):
         self, an_input: Sequence[DataSourceType]
     ) -> Sequence[DataSource]:
         _LOGGER.info("Fetching data sources.")
-        executor: ConcurrentExecutor[
-            Transport, Sequence[Sequence[DataSource]]
-        ] = ConcurrentExecutor(
-            *self._data_source_types_to_tasks(an_input), initial_value=list()
+        executor: ConcurrentExecutor[Transport, Sequence[DataSource]]
+        executor = ConcurrentExecutor(
+            *self._data_source_types_to_tasks(an_input)
         )
-        data_sources: Sequence[Sequence[DataSource]]
-        data_sources = executor(self._transport)  # noqa
-        return tuple(chain.from_iterable(data_sources))
+        with executor:
+            futures: Sequence[Future[Sequence[DataSource]]]
+            futures = executor(self._transport)  # noqa
+            # Focus on completed tasks and ignore the ones that failed.
+            completed_futures = as_completed(futures)
+        return tuple(
+            chain.from_iterable(
+                map(
+                    lambda _f: _f.result(),
+                    filter(
+                        lambda _f: completed_successfully(_f),
+                        completed_futures,
+                    ),
+                )
+            )
+        )
 
     @staticmethod
     def _data_source_types_to_tasks(
@@ -121,14 +134,24 @@ class FetchExtractMetadata(
         self, an_input: Sequence[DataSource]
     ) -> Sequence[ExtractMetadata]:
         _LOGGER.info("Fetching extract metadata.")
-        executor: ConcurrentExecutor[
-            Transport, Sequence[Sequence[ExtractMetadata]]
-        ] = ConcurrentExecutor(
-            *self._data_sources_to_tasks(an_input), initial_value=list()
+        executor: ConcurrentExecutor[Transport, Sequence[ExtractMetadata]]
+        executor = ConcurrentExecutor(*self._data_sources_to_tasks(an_input))
+        with executor:
+            futures: Sequence[Future[Sequence[ExtractMetadata]]]
+            futures = executor(self._transport)  # noqa
+            # Focus on completed tasks and ignore the ones that failed.
+            completed_futures = as_completed(futures)
+        return tuple(
+            chain.from_iterable(
+                map(
+                    lambda _f: _f.result(),
+                    filter(
+                        lambda _f: completed_successfully(_f),
+                        completed_futures,
+                    ),
+                )
+            )
         )
-        extracts: Sequence[Sequence[ExtractMetadata]]
-        extracts = executor(self._transport)  # noqa
-        return tuple(chain.from_iterable(extracts))
 
     @staticmethod
     def _data_sources_to_tasks(
