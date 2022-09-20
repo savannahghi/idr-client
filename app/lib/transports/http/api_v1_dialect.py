@@ -121,6 +121,7 @@ class IDRServerAPIv1(HTTPAPIDialect):
     ) -> HTTPRequestParams:
         return {
             "headers": {"Accept": "application/json"},
+            "params": {"data_source": data_source.id},
             "expected_http_status_code": 200,
             "method": _GET_METHOD,
             "url": "%s/%s/sql_extract_metadata/"
