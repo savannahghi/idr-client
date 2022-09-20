@@ -29,6 +29,21 @@ _LOGGER = logging.getLogger(__name__)
 
 
 # =============================================================================
+# HELPER TASKS
+# =============================================================================
+
+
+def _log_response(
+    response: Response, *args, **kwargs
+) -> None:  # pragma: no cover
+    request_message: str = "HTTP Request ({} | {})".format(
+        response.request.method,
+        response.request.url,
+    )
+    _LOGGER.debug(request_message)
+
+
+# =============================================================================
 # HTTP TRANSPORT
 # =============================================================================
 
@@ -71,6 +86,7 @@ class HTTPTransport(Transport):
                 "User-Agent": f"{__title__}/{__version__}",
             }
         )
+        self._session.hooks["response"].append(_log_response)
         self._auth: AuthBase = _NoAuth()
         self._is_closed: bool = False
 
@@ -190,7 +206,7 @@ class HTTPTransport(Transport):
     # -------------------------------------------------------------------------
     def _authenticate(self) -> AuthBase:
         self._ensure_not_closed()
-        _LOGGER.info("Authenticating HTTP transport.")
+        _LOGGER.debug("Authenticating HTTP transport.")
         request: HTTPRequestParams = self._api_dialect.authenticate()
         response: Response = self._session.request(
             data=request.get("data"),
@@ -226,7 +242,6 @@ class HTTPTransport(Transport):
             request["method"],
             request["url"],
         )
-        _LOGGER.info(request_message)
         response: Response = self._session.request(
             data=request.get("data"),
             files=request.get("files"),
