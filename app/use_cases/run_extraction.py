@@ -1,9 +1,10 @@
+from concurrent.futures import Future, as_completed
 from itertools import chain, groupby
 from logging import getLogger
 from typing import Any, Sequence, Tuple
 
 from app.core import DataSource, ExtractMetadata, Task
-from app.lib import ConcurrentExecutor
+from app.lib import ConcurrentExecutor, completed_successfully
 
 from .types import RunExtractionResult
 
@@ -106,14 +107,24 @@ class RunDataSourceExtracts(
             'Running extraction for data source="%s"', str(data_source)
         )
         with data_source:
-            executor: ConcurrentExecutor[
-                DataSource, Sequence[RunExtractionResult]
-            ]
+            executor: ConcurrentExecutor[DataSource, RunExtractionResult]
             executor = ConcurrentExecutor(
                 *(DoExtract(_extract) for _extract in extracts),
-                initial_value=list(),
             )
-            return executor(data_source)  # noqa
+            with executor:
+                futures: Sequence[Future[RunExtractionResult]]
+                futures = executor(data_source)  # noqa
+                # Focus on completed tasks and ignore the ones that failed.
+                completed_futures = as_completed(futures)
+            return tuple(
+                map(
+                    lambda _f: _f.result(),
+                    filter(
+                        lambda _f: completed_successfully(_f),
+                        completed_futures,
+                    ),
+                )
+            )
 
 
 # TODO: Add more tasks here to post process extraction results. E.g, handle
