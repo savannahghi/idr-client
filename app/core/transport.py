@@ -23,7 +23,14 @@ TransportOptions = Mapping[str, Any]
 
 
 class Transport(Disposable, metaclass=ABCMeta):
-    """Represents the flow of data between an IDR Server and this app."""
+    """
+    Represents the flow of data between an IDR Server and this app.
+
+    .. note::
+        It is highly recommended that implementors of this interface make their
+        implementations thread safe as a transport is likely to be used in a
+        concurrent context.
+    """
 
     @abstractmethod
     def fetch_data_source_extracts(
