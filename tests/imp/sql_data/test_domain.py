@@ -17,7 +17,7 @@ from app.imp.sql_data import (
     SQLUploadMetadata,
     SupportedDBVendors,
 )
-from app.lib import ImproperlyConfiguredError
+from app.lib import Config, ImproperlyConfiguredError
 
 from .factories import (
     SQLDataSourceFactory,
@@ -79,11 +79,12 @@ class TestSQLDataSource(TestCase):
         Assert that the ``get_extract_task_method()`` returns the expected
         value.
         """
-
-        self._data_source.connect_to_db()
-        connection: Connection = self._data_source.get_extract_task_args()
-        with connection:
-            assert connection is not None
+        config: Config = Config(settings={"RETRY": {"enable_retries": False}})
+        with patch("app.settings", config):
+            self._data_source.connect_to_db()
+            connection: Connection = self._data_source.get_extract_task_args()
+            with connection:
+                assert connection is not None
 
     def test_load_mysql_config_with_valid_config(self) -> None:
         """
@@ -96,7 +97,8 @@ class TestSQLDataSource(TestCase):
                 "port": os.environ["MYSQL_TEST_DB_PORT"],
                 "username": os.environ["MYSQL_TEST_DB_USERNAME"],
                 "password": os.environ["MYSQL_TEST_DB_PASSWORD"],
-            }
+            },
+            "RETRY": {"enable_retries": False},
         }
         self._data_source.database_name = os.environ["MYSQL_TEST_DB_NAME"]
         self._data_source.database_vendor = SupportedDBVendors.MYSQL
@@ -112,8 +114,11 @@ class TestSQLDataSource(TestCase):
         Assert that the expected exceptions are raised when given an invalid
         MySQL config.
         """
-        config1: Mapping[str, Any] = {}
-        config2: Mapping[str, Any] = {"MYSQL_DB_INSTANCE": 3}
+        config1: Mapping[str, Any] = {"RETRY": {"enable_retries": False}}
+        config2: Mapping[str, Any] = {
+            "MYSQL_DB_INSTANCE": 3,
+            "RETRY": {"enable_retries": False},
+        }
         config3: Mapping[str, Any] = {"MYSQL_DB_INSTANCE": {}}
         config4: Mapping[str, Any] = {
             "MYSQL_DB_INSTANCE": {
@@ -121,7 +126,8 @@ class TestSQLDataSource(TestCase):
                 "port": "not_an_int",
                 "username": "mysql_user",
                 "password": "very_strong_password",
-            }
+            },
+            "RETRY": {"enable_retries": False},
         }
         config5: Mapping[str, Any] = {
             "MYSQL_DB_INSTANCE": {
@@ -129,7 +135,8 @@ class TestSQLDataSource(TestCase):
                 "port": -23,  # Negative port
                 "username": "mysql_user",
                 "password": "very_strong_password",
-            }
+            },
+            "RETRY": {"enable_retries": False},
         }
         config6: Mapping[str, Any] = {
             "MYSQL_DB_INSTANCE": {
@@ -137,7 +144,8 @@ class TestSQLDataSource(TestCase):
                 "port": 70000,  # Port larger than 65535
                 "username": "mysql_user",
                 "password": "very_strong_password",
-            }
+            },
+            "RETRY": {"enable_retries": False},
         }
 
         self._data_source.database_vendor = SupportedDBVendors.MYSQL
@@ -190,12 +198,14 @@ class TestSQLDataSource(TestCase):
     def test_sql_data_source_as_a_context_manager(self) -> None:
         """Assert that ``SQLDataSource`` can be used as a context manager."""
 
-        with self._data_source:
-            # This should work without raising any errors as the using an
-            # SQLDataSource as a context manager should automatically result
-            # connect_to_db() being called.
-            with self._data_source.get_extract_task_args() as connection:
-                assert connection is not None
+        config: Config = Config(settings={"RETRY": {"enable_retries": False}})
+        with patch("app.settings", config):
+            with self._data_source:
+                # This should work without raising any errors as using an
+                # SQLDataSource as a context manager should automatically
+                # result connect_to_db() being called.
+                with self._data_source.get_extract_task_args() as connection:
+                    assert connection is not None
 
     def test_sql_data_source_context_manager_nesting_is_disallowed(
         self,

@@ -1,16 +1,51 @@
-from typing import Optional, Sized, TypeVar
+from abc import abstractmethod
+from typing import Optional, Protocol, Sized, SupportsFloat, TypeVar
 
 # =============================================================================
 # TYPES
 # =============================================================================
 
+
+_C = TypeVar("_C", bound="Comparable")
+
 _S = TypeVar("_S", bound=Sized)
+
 _T = TypeVar("_T")
+
+
+class Comparable(Protocol):
+    """This denotes a type that supports comparisons."""
+
+    @abstractmethod
+    def __lt__(self: _C, other: _C) -> bool:
+        ...
 
 
 # =============================================================================
 # CHECKERS
 # =============================================================================
+
+
+def ensure_greater_than(
+    value: SupportsFloat,
+    base_value: SupportsFloat,
+    message: str = '"value" must greater than "base_value"',
+) -> SupportsFloat:
+    """Check that the given value is greater that the given base value.
+
+    :param value: The value to check for greatness.
+    :param base_value: The value to compare for greatness against.
+    :param message: An optional error message to be shown when value is
+        ``None``.
+
+    :return: ``value`` if it is greater than ``base_value``.
+
+    :raise ValueError: If the given ``value`` is less than or equal to the
+         given ``base_value``.
+    """
+    if value < base_value:  # type: ignore
+        raise ValueError(message)
+    return value
 
 
 def ensure_not_none(

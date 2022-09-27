@@ -11,6 +11,10 @@ def config_factory() -> Dict[str, Any]:
         "DEFAULT_TRANSPORT_FACTORY": (
             "tests.core.factories.FakeTransportFactory"
         ),
+        "RETRY": {
+            "enable_retries": False,
+            "default_maximum_delay": 10.0,  # 10 seconds
+        },
         "SETTINGS_INITIALIZERS": [
             "tests.test_app.FakeDataSourceTypesConfigInitializer"
         ],

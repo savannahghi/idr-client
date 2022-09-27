@@ -32,12 +32,22 @@ LOGGING:
     level: "INFO"
     handlers": [ "console" ]
 
+# The retry module global configuration. The values here will be used for each
+# retry instance when not specified.
+# This setting is not required and defaults to the values given below.
+RETRY:
+  default_deadline: 60.0
+  default_initial_delay: 1.0
+  default_maximum_delay: 60.0
+  default_multiplicative_factor: 2.0
+  enable_retries: true
+
 # The different data source types supported by the app. This determines the
 # kinds of data that the app can extract and operations that can be performed
 # on that data including what is uploaded to the server.
 # This setting is not required and defaults to an empty list.
-SUPPORTED_DATA_SOURCE_TYPES:
-  - "app.imp.sql_data.SQLDataSourceType"
+#SUPPORTED_DATA_SOURCE_TYPES:
+#  - "app.imp.sql_data.SQLDataSourceType"
 
 
 
