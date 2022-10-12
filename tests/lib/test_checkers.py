@@ -1,8 +1,55 @@
-from typing import Sequence
+from typing import Iterable, Sequence, SupportsFloat, Tuple
 
 import pytest
 
-from app.lib import ensure_not_none, ensure_not_none_nor_empty
+from app.lib import (
+    ensure_greater_than,
+    ensure_not_none,
+    ensure_not_none_nor_empty,
+)
+
+
+def test_ensure_greater_than_return_value_on_valid_input() -> None:
+    """
+    Assert ``ensure_greater_than`` returns the input value if the given
+    ``value`` is greater than the given ``base_value``.
+    """
+
+    assert ensure_greater_than(1, 0) == 1
+    assert ensure_greater_than(0, -1) == 0
+    assert ensure_greater_than(-0.0, -1.0) == 0.0
+    assert ensure_greater_than(0.999999, 0) == 0.999999
+    assert ensure_greater_than(-19, -30) == -19
+
+
+def test_ensure_fails_on_invalid_input() -> None:
+    """
+    Assert ``ensure_not_none`` raises ``ValueError`` when the given ``value``
+    is not greater than the given ``base_value``.
+    """
+
+    inputs: Iterable[Tuple[SupportsFloat, SupportsFloat]] = (
+        (0, 1),
+        (-1, 0),
+        (-1.0, -0.0),
+        (0, 0.999999),
+        (-30, -19),
+    )
+    for value, base_value in inputs:
+        with pytest.raises(ValueError) as exp_info1:
+            message: str = "{} must be greater than {}".format(
+                value, base_value
+            )
+            ensure_greater_than(value, base_value, message=message)
+
+            assert exp_info1.value.args[0] == message.format(value, base_value)
+
+    with pytest.raises(ValueError) as exp_info2:
+        ensure_greater_than(0.0, 1.0)
+
+        assert exp_info2.value.args[0] == (
+            '"value" must greater than "base_value"'
+        )
 
 
 def test_ensure_not_none_returns_input_value_if_valid() -> None:
