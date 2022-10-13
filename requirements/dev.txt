@@ -1,5 +1,5 @@
 -r test.txt
 
 pre-commit~=2.20.0
-pyinstaller~=5.2
-staticx~=0.13.6
+pyinstaller~=5.5
+staticx~=0.13.8
