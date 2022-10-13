@@ -81,7 +81,7 @@ pip install -r requirements/dev.txt
 
 And then create the binary using the following command:-
 ```bash
-pyinstaller app/__main__.py  --hidden-import apps/imp --collect-all app --name idr_client_temp -F
+pyinstaller app/__main__.py --collect-all app --name idr_client_temp -F
 ```
 This will create an executable but the executable will still depend on the
 target system/computer having the correct system libraries. More details on this
@@ -96,22 +96,15 @@ The executable binary can be found on the `dist` directory of the project. To
 learn more about the `staticx` command, check the docs [here](https://staticx.readthedocs.io).
 
 
-## Concepts
-This section is for the curious and those wishing to contribute. It provides a
-summary description of how the app works and the concepts and terms used in the
-project. These are:
-* __Data Source Type__ - A data source type is just that, it describes a kind
-  of data source together with the operations that can be performed around those
-  data sources. Each data source type can have multiple *data sources*.
-* __Data Source__ - A data source represents an entity that contains data of
-  interest such as a database or a file. Each data source has multiple
-  *extra metadata*.
-* __Extract Metadata__ - This a description of the data to be extracted from a
-  data source. An extract metadata also defines how data is extracted from a
-  data source.
-* __Upload Metadata__ - This describes data that has been extracted and how
-  it's packaged for uploading to the remote server. Each upload metadata is
-  always associated with a given *extract metadata*.
+## Contributing
+This section is for the curious and those wishing to contribute. For those who
+are curious about how the app works and the architecture of the project,
+check out the [architecture docs](https://github.com/savannahghi/idr-client/blob/develop/docs/ARCHITECTURE.rst).
+For those wishing to contribute, it is highly recommended that they start by
+reading the [contribution guidelines](https://github.com/savannahghi/idr-client/blob/develop/docs/CONTRIBUTING.rst).
+
+All contributions are welcome.
+
 
 ## License
 
