@@ -2,6 +2,7 @@ from unittest import TestCase
 from unittest.mock import patch
 
 import pytest
+from requests.exceptions import ChunkedEncodingError, ConnectionError
 
 from app.core import TransportClosedError, TransportError
 from app.lib.transports.http import HTTPAPIDialect, HTTPTransport
@@ -168,6 +169,28 @@ class TestHTTPTransport(TestCase):
 
             assert result  # Should not be None or empty.
 
+    def test_transport_authentication_errors(self) -> None:
+        """
+        Assert that when an authenticates error occurs, the error is handled
+        correctly and wrapped inside a TransportError.
+        """
+        data_source = FakeDataSourceFactory()
+        data_source_type = FakeDataSourceTypeFactory()
+        with patch("requests.sessions.Session.request", autospec=True) as s:
+            s.side_effect = [
+                # The first response should trigger the client to
+                # re-authenticate.
+                self._mock_response_factory(status_code=401),
+                ConnectionError,
+            ]
+            with pytest.raises(
+                TransportError, match="Error authenticating the client"
+            ) as exc_info:
+                self._transport.fetch_data_source_extracts(
+                    data_source_type=data_source_type, data_source=data_source
+                )
+                assert isinstance(exc_info.value.__cause__, ConnectionError)
+
     def test_transport_re_authentication_failure(self) -> None:
         """
         Assert that if transport re-authenticates fails, the expected error is
@@ -211,6 +234,26 @@ class TestHTTPTransport(TestCase):
                 data_source_type=data_source_type, data_source=data_source
             )
             self.assertListEqual(list(results), [])
+
+    def test_request_errors(self) -> None:
+        """
+        Assert that when an request error occurs, the error is handled
+        correctly and wrapped inside a TransportError.
+        """
+        data_source = FakeDataSourceFactory()
+        data_source_type = FakeDataSourceTypeFactory()
+        with patch("requests.sessions.Session.request", autospec=True) as s:
+            s.side_effect = ChunkedEncodingError
+            with pytest.raises(
+                TransportError,
+                match="Unable to make a request to the remote server",
+            ) as exc_info:
+                self._transport.fetch_data_source_extracts(
+                    data_source_type=data_source_type, data_source=data_source
+                )
+                assert isinstance(
+                    exc_info.value.__cause__, ChunkedEncodingError
+                )
 
     def test_request_failure(self) -> None:
         """Assert that a request failure raises the expected errors."""
