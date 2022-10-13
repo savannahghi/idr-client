@@ -83,6 +83,38 @@ class TestRetry(TestCase):
 
             assert self._instance.calculate_deadline_time() == deadline_time
 
+    def test_config_is_auto_loaded_when_used_as_a_decorator(self) -> None:
+        """
+        Assert that when a ``Retry`` instance is used as decorator, the
+        instance is automatically configured and a call to the ``load_config``
+        method is not necessary.
+        """
+        # Callable that fails initially but eventually succeeds.
+        a_callable = MagicMock(side_effect=[ValueError, AttributeError, 10])
+        app_config: Config = Config(
+            settings={
+                "RETRY": {
+                    "default_deadline": 5,
+                    "default_initial_delay": 1.0,
+                    "default_maximum_delay": 1.0,
+                    "default_multiplicative_factor": 5,
+                    "enable_retries": True,
+                }
+            },
+            settings_initializers=(RetryInitializer(),),
+        )
+        instance: Retry = Retry(
+            predicate=if_exception_type_factory(ValueError, AttributeError),
+        )
+        with patch("app.settings", app_config):
+            result = instance(a_callable, None, (5, 5))()
+
+        assert instance._deadline == 5  # type: ignore
+        assert instance._initial_delay == 1.0  # type: ignore
+        assert instance._maximum_delay == 1.0  # type: ignore
+        assert instance._multiplicative_factor == 5  # type: ignore
+        assert result == 10
+
     def test_deliberate_next_retry_value_with_deadline_time(self) -> None:
         """
         Assert that the ``deliberate_next_retry`` method returns the next delay

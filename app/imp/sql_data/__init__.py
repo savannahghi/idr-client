@@ -6,10 +6,15 @@ from .domain import (
     SQLUploadMetadata,
     SupportedDBVendors,
 )
-from .exceptions import SQLDataError, SQLDataSourceDisposedError
+from .exceptions import (
+    SQLDataError,
+    SQLDataExtractionOperationError,
+    SQLDataSourceDisposedError,
+)
 
 __all__ = [
     "SQLDataError",
+    "SQLDataExtractionOperationError",
     "SQLDataSource",
     "SQLDataSourceDisposedError",
     "SQLDataSourceType",

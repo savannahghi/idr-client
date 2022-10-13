@@ -189,7 +189,8 @@ class TestHTTPTransport(TestCase):
                 self._transport.fetch_data_source_extracts(
                     data_source_type=data_source_type, data_source=data_source
                 )
-                assert isinstance(exc_info.value.__cause__, ConnectionError)
+
+            assert isinstance(exc_info.value.__cause__, ConnectionError)
 
     def test_transport_re_authentication_failure(self) -> None:
         """
@@ -251,9 +252,8 @@ class TestHTTPTransport(TestCase):
                 self._transport.fetch_data_source_extracts(
                     data_source_type=data_source_type, data_source=data_source
                 )
-                assert isinstance(
-                    exc_info.value.__cause__, ChunkedEncodingError
-                )
+
+            assert isinstance(exc_info.value.__cause__, ChunkedEncodingError)
 
     def test_request_failure(self) -> None:
         """Assert that a request failure raises the expected errors."""

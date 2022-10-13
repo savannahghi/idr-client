@@ -23,12 +23,14 @@ from app.lib import (
     ChunkDataFrame,
     ImproperlyConfiguredError,
     Pipeline,
-    Retry,
     SimpleSQLSelect,
-    if_exception_type_factory,
 )
 
-from .exceptions import SQLDataError, SQLDataSourceDisposedError
+from .exceptions import (
+    SQLDataError,
+    SQLDataExtractionOperationError,
+    SQLDataSourceDisposedError,
+)
 
 # =============================================================================
 # CONSTANTS
@@ -148,11 +150,16 @@ class SQLDataSource(DataSource[Connection]):
             self._engine.dispose()
         self._engine = None
 
-    @Retry(predicate=if_exception_type_factory(SQLAlchemyError))
     def get_extract_task_args(self) -> Connection:
         self._ensure_not_disposed()
-        assert self._engine is not None
-        return self._engine.connect()
+        try:
+            return self._engine.connect()  # type: ignore
+        except SQLAlchemyError as exp:
+            error_message: str = (
+                f"Error getting a connection to the database: {exp}"
+            )
+            _LOGGER.exception(error_message)
+            raise SQLDataExtractionOperationError(error_message) from exp
 
     def _ensure_not_disposed(self) -> None:
         """
@@ -162,9 +169,7 @@ class SQLDataSource(DataSource[Connection]):
         :return: None.
         """
         if self.is_disposed:
-            raise SQLDataSourceDisposedError(
-                message="Data source is disposed."
-            )
+            raise SQLDataSourceDisposedError()
 
     def _load_mysql_config(self) -> Engine:
         _LOGGER.debug(

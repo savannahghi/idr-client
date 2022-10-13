@@ -129,7 +129,7 @@ class Retry:
         # Types and default values are included on the rest of the arguments to
         # quiet pyright.
         instance: Any = None,
-        args: Tuple[Any] = tuple(),
+        args: Tuple[Any, ...] = tuple(),
         kwargs: Optional[Mapping[str, Any]] = None,
     ) -> Any:
         self.load_config()
