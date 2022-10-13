@@ -23,7 +23,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install python3.10 nodejs
-        pip install -r requirements/base.txt pyinstaller~=5.2 staticx~=0.13.6
+        pip install -r requirements/dev.txt
         npm install @semantic-release/changelog @semantic-release/git conventional-changelog-conventionalcommits
 
     - name: Package the app
