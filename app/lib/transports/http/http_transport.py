@@ -3,6 +3,7 @@ from threading import RLock
 from typing import Any, Mapping, Optional, Sequence
 
 from requests.auth import AuthBase
+from requests.exceptions import RequestException
 from requests.models import PreparedRequest, Response
 from requests.sessions import Session
 
@@ -217,14 +218,21 @@ class HTTPTransport(Transport):
         self._ensure_not_closed()
         _LOGGER.debug("Authenticating HTTP transport.")
         request: HTTPRequestParams = self._api_dialect.authenticate()
-        response: Response = self._session.request(
-            data=request.get("data"),
-            headers=request.get("headers"),
-            method=request["method"],
-            params=request.get("params"),
-            url=request["url"],
-            timeout=self._timeout,  # type: ignore
-        )
+        try:
+            response: Response = self._session.request(
+                data=request.get("data"),
+                headers=request.get("headers"),
+                method=request["method"],
+                params=request.get("params"),
+                url=request["url"],
+                timeout=self._timeout,  # type: ignore
+            )
+        except RequestException as exp:
+            error_message: str = "Error authenticating the client: %s." % str(
+                exp
+            )
+            _LOGGER.exception(error_message)
+            raise TransportError(message=error_message) from exp
 
         # If authentication was unsuccessful, there is not much that can be
         # done, just log it and raise an exception.
@@ -251,16 +259,24 @@ class HTTPTransport(Transport):
             request["method"],
             request["url"],
         )
-        response: Response = self._session.request(
-            data=request.get("data"),
-            files=request.get("files"),
-            headers=request.get("headers"),
-            method=request["method"],
-            params=request.get("params"),
-            url=request["url"],
-            auth=self._auth,
-            timeout=self._timeout,  # type: ignore
-        )
+        try:
+            response: Response = self._session.request(
+                data=request.get("data"),
+                files=request.get("files"),
+                headers=request.get("headers"),
+                method=request["method"],
+                params=request.get("params"),
+                url=request["url"],
+                auth=self._auth,
+                timeout=self._timeout,  # type: ignore
+            )
+        except RequestException as exp:
+            error_message: str = (
+                "Unable to make a request to the remote server: %s." % str(exp)
+            )
+            _LOGGER.exception(error_message)
+            raise TransportError(message=error_message) from exp
+
         if response.status_code != request["expected_http_status_code"]:
             _LOGGER.debug(
                 'Got an unexpected HTTP status, expected="%d", but got'
