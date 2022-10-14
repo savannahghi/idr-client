@@ -48,7 +48,9 @@ jobs:
         git_commit_gpgsign: true
         git_committer_email: ${{ secrets.GIT_COMMITTER_EMAIL }}
         git_committer_name: ${{ secrets.GIT_COMMITTER_NAME }}
-        git_tag_gpgsign: true
+        # Turn off tag signing because there is bug on semantic release that
+        # causes it freeze when this is set to true.
+        git_tag_gpgsign: false
         git_user_signingkey: true
         gpg_private_key: ${{ secrets.GPG_KEY }}
         passphrase: ${{ secrets.GPG_KEY_PASSPHRASE }}
