@@ -1,7 +1,7 @@
-from typing import Any, Dict
+from typing import Any
 
 
-def config_factory() -> Dict[str, Any]:
+def config_factory() -> dict[str, Any]:
     """
     A factory that returns a configuration object that can be used for testing.
 

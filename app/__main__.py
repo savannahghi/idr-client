@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
-from typing import Optional, Sequence
+from collections.abc import Sequence
+from typing import Optional
 
 import app
 from app.__version__ import __title__, __version__

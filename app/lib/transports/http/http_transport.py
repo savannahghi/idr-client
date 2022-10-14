@@ -1,6 +1,7 @@
 import logging
+from collections.abc import Mapping, Sequence
 from threading import RLock
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Optional
 
 from requests.auth import AuthBase
 from requests.exceptions import RequestException

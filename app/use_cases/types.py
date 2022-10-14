@@ -1,7 +1,8 @@
-from typing import Any, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Any
 
 from app.core import ExtractMetadata, UploadChunk, UploadMetadata
 
-RunExtractionResult = Tuple[ExtractMetadata, Any]
+RunExtractionResult = tuple[ExtractMetadata, Any]
 
-UploadExtractResult = Tuple[UploadMetadata, Sequence[UploadChunk]]
+UploadExtractResult = tuple[UploadMetadata, Sequence[UploadChunk]]

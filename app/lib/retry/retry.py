@@ -1,18 +1,10 @@
 import random
 import time
+from collections.abc import Generator, Mapping
 from datetime import datetime, timedelta
 from functools import partial
 from logging import Logger, getLogger
-from typing import (
-    Any,
-    Callable,
-    Final,
-    Generator,
-    Mapping,
-    Optional,
-    Tuple,
-    Type,
-)
+from typing import Any, Callable, Final, Optional
 
 import wrapt
 
@@ -49,7 +41,7 @@ def _enable_retries() -> bool:
     )
 
 
-def if_exception_type_factory(*exp_types: Type[BaseException]) -> Predicate:
+def if_exception_type_factory(*exp_types: type[BaseException]) -> Predicate:
     """Create a retry predicate for the given exception types.
 
     :param exp_types: The exception types to check for.
@@ -129,7 +121,7 @@ class Retry:
         # Types and default values are included on the rest of the arguments to
         # quiet pyright.
         instance: Any = None,
-        args: Tuple[Any, ...] = tuple(),
+        args: tuple[Any, ...] = tuple(),
         kwargs: Optional[Mapping[str, Any]] = None,
     ) -> Any:
         self.load_config()

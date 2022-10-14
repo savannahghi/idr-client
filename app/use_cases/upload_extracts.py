@@ -1,6 +1,7 @@
+from collections.abc import Iterable, Sequence
 from concurrent.futures import Future, as_completed
 from logging import getLogger
-from typing import Any, Iterable, Sequence, Tuple, Type
+from typing import Any
 
 import app
 from app.core import (
@@ -34,9 +35,9 @@ _LOGGER = getLogger(__name__)
 # TYPES
 # =============================================================================
 
-_PostedUpload = Tuple[UploadMetadata, Any]
+_PostedUpload = tuple[UploadMetadata, Any]
 
-_PreparedChunks = Tuple[UploadMetadata, Sequence[bytes]]
+_PreparedChunks = tuple[UploadMetadata, Sequence[bytes]]
 
 
 # =============================================================================
@@ -57,7 +58,7 @@ class DoPostUpload(Task[Transport, _PostedUpload]):
         extract_meta: ExtractMetadata = self._extract[0]
         parent_ds: DataSource = extract_meta.data_source
         parent_dst: DataSourceType = parent_ds.data_source_type
-        upload_meta_klass: Type[
+        upload_meta_klass: type[
             UploadMetadata
         ] = parent_dst.imp_upload_metadata_klass()
         content_type: str = upload_meta_klass.get_content_type()

@@ -1,15 +1,6 @@
+from collections.abc import Mapping, Sequence
 from logging.config import dictConfig
-from typing import (
-    Any,
-    Dict,
-    Final,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Type,
-    cast,
-)
+from typing import Any, Final, Optional, cast
 
 import yaml
 from yaml import Loader
@@ -39,7 +30,7 @@ _SUPPORTED_DATA_SOURCE_TYPES_CONFIG_KEY: Final[
     str
 ] = "SUPPORTED_DATA_SOURCE_TYPES"  # noqa
 
-_DEFAULT_CONFIG: Final[Dict[str, Any]] = {
+_DEFAULT_CONFIG: Final[dict[str, Any]] = {
     _LOGGING_CONFIG_KEY: {
         "version": 1,
         "disable_existing_loggers": False,
@@ -101,10 +92,10 @@ def _load_config_file(
 def _load_settings_initializers(
     initializers_dotted_paths: Sequence[str],
 ) -> Sequence[SettingInitializer]:
-    initializers: List[SettingInitializer] = list()
+    initializers: list[SettingInitializer] = list()
     for _initializer_dotted_path in initializers_dotted_paths:
         try:
-            initializer_klass: Type[SettingInitializer]
+            initializer_klass: type[SettingInitializer]
             initializer_klass = import_string_as_klass(
                 _initializer_dotted_path, SettingInitializer
             )
@@ -172,7 +163,7 @@ class _LoggingInitializer(SettingInitializer):
         return _LOGGING_CONFIG_KEY
 
     def execute(self, an_input: Optional[Mapping[str, Any]]) -> Any:
-        logging_config: Dict[str, Any] = dict(
+        logging_config: dict[str, Any] = dict(
             an_input or _DEFAULT_CONFIG[self.setting]
         )
         dictConfig(logging_config)
@@ -207,9 +198,9 @@ class _SupportedDataSourceTypesInitializer(SettingInitializer):
     @staticmethod
     def _dotted_path_to_data_source_type_klass(
         dotted_path: str,
-    ) -> Type[DataSourceType]:
+    ) -> type[DataSourceType]:
         try:
-            data_source_type_klass: Type[DataSourceType]
+            data_source_type_klass: type[DataSourceType]
             data_source_type_klass = import_string_as_klass(
                 dotted_path, DataSourceType
             )
@@ -252,13 +243,13 @@ def setup(
     registry = AppRegistry()  # type: ignore
 
     # Load the application settings
-    _settings_dict: Dict[str, Any] = dict(initial_settings or _DEFAULT_CONFIG)
+    _settings_dict: dict[str, Any] = dict(initial_settings or _DEFAULT_CONFIG)
     # Load config from a file when provided
     if config_file_path:  # pragma: no branch
         _settings_dict.update(_load_config_file(config_file_path))
 
     # Load initializers
-    _initializers: List[Any] = list(settings_initializers or [])
+    _initializers: list[Any] = list(settings_initializers or [])
     _initializers.extend(
         _load_settings_initializers(
             _settings_dict.get(_SETTINGS_INITIALIZERS_CONFIG_KEY, tuple())

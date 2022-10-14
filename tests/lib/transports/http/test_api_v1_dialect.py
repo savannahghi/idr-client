@@ -1,5 +1,6 @@
 import json
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 from unittest import TestCase
 from unittest.mock import patch
 

@@ -1,20 +1,12 @@
-from typing import (
-    Any,
-    Iterable,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    TypedDict,
-    Union,
-)
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any, Optional, TypedDict, Union
 
-_FileSpec = Tuple[
+_FileSpec = tuple[
     str, bytes, str  # File name  # File content  # File content type
 ]
 
 
-_Files = Union[Mapping[str, _FileSpec], Iterable[Tuple[str, _FileSpec]]]
+_Files = Union[Mapping[str, _FileSpec], Iterable[tuple[str, _FileSpec]]]
 
 
 class _OptionalAdapterRequestParams(TypedDict, total=False):

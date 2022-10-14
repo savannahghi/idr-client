@@ -1,7 +1,8 @@
 import io
+from collections.abc import Mapping, Sequence
 from enum import Enum
 from logging import getLogger
-from typing import Any, Dict, Final, Mapping, Optional, Sequence, Type
+from typing import Any, Final, Optional
 
 import pandas as pd
 import pyarrow as pa
@@ -89,7 +90,7 @@ class SQLDataSource(DataSource[Connection]):
         data_source_type: SQLDataSourceType = kwargs.pop("data_source_type")
         super().__init__(**kwargs)
         self._data_source_type: SQLDataSourceType = data_source_type
-        self._extract_metadata: Dict[str, "SQLExtractMetadata"] = dict()
+        self._extract_metadata: dict[str, "SQLExtractMetadata"] = dict()
         self._engine: Optional[Engine] = None
 
     def __enter__(self) -> "SQLDataSource":
@@ -228,7 +229,7 @@ class SQLDataSourceType(DataSourceType):
             "description", "Represents SQL databases as a source type."
         )
         super().__init__(**kwargs)
-        self._data_sources: Dict[str, SQLDataSource] = dict()
+        self._data_sources: dict[str, SQLDataSource] = dict()
 
     @property
     def code(self) -> str:
@@ -243,19 +244,19 @@ class SQLDataSourceType(DataSourceType):
         self._data_sources = dict(**data_sources)
 
     @classmethod
-    def imp_data_source_klass(cls) -> Type[DataSource]:
+    def imp_data_source_klass(cls) -> type[DataSource]:
         return SQLDataSource
 
     @classmethod
-    def imp_extract_metadata_klass(cls) -> Type[ExtractMetadata]:
+    def imp_extract_metadata_klass(cls) -> type[ExtractMetadata]:
         return SQLExtractMetadata
 
     @classmethod
-    def imp_upload_chunk_klass(cls) -> Type[UploadChunk]:
+    def imp_upload_chunk_klass(cls) -> type[UploadChunk]:
         return SQLUploadChunk
 
     @classmethod
-    def imp_upload_metadata_klass(cls) -> Type[UploadMetadata]:
+    def imp_upload_metadata_klass(cls) -> type[UploadMetadata]:
         return SQLUploadMetadata
 
 

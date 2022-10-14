@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
+from collections.abc import Mapping, Sequence
 from functools import lru_cache
-from typing import Any, Generic, Mapping, Optional, Sequence, Type, TypeVar
+from typing import Any, Generic, Optional, TypeVar
 
 from typing_inspect import is_optional_type
 
@@ -23,7 +24,7 @@ _RT = TypeVar("_RT")
 
 
 @lru_cache(maxsize=None)
-def _get_available_annotations(do_klass: Type[_ADO]) -> Mapping[str, Any]:
+def _get_available_annotations(do_klass: type[_ADO]) -> Mapping[str, Any]:
     """Extract all annotations available on a domain object class.
 
     This includes all annotations defined on the class's ancestors.
@@ -45,7 +46,7 @@ def _get_available_annotations(do_klass: Type[_ADO]) -> Mapping[str, Any]:
 
 
 @lru_cache(maxsize=None)
-def _get_required_fields_names(do_klass: Type[_ADO]) -> Sequence[str]:
+def _get_required_fields_names(do_klass: type[_ADO]) -> Sequence[str]:
     """Determine and return the required fields of a domain object class.
 
     A required field in the context of this method is defined as one whose
@@ -444,7 +445,7 @@ class DataSourceType(AbstractDomainObject, metaclass=ABCMeta):
 
     @classmethod
     @abstractmethod
-    def imp_data_source_klass(cls) -> Type[DataSource]:
+    def imp_data_source_klass(cls) -> type[DataSource]:
         """
         Return the :class:`DataSource` concrete implementation class for this
         data source type.
@@ -455,7 +456,7 @@ class DataSourceType(AbstractDomainObject, metaclass=ABCMeta):
 
     @classmethod
     @abstractmethod
-    def imp_extract_metadata_klass(cls) -> Type[ExtractMetadata]:
+    def imp_extract_metadata_klass(cls) -> type[ExtractMetadata]:
         """
         Return the :class:`ExtractMetadata` concrete implementation class for
         this dats source type.
@@ -467,7 +468,7 @@ class DataSourceType(AbstractDomainObject, metaclass=ABCMeta):
 
     @classmethod
     @abstractmethod
-    def imp_upload_chunk_klass(cls) -> Type[UploadChunk]:
+    def imp_upload_chunk_klass(cls) -> type[UploadChunk]:
         """
         Return the :class:`UploadChunk` concrete implementation class for this
         data source type.
@@ -478,7 +479,7 @@ class DataSourceType(AbstractDomainObject, metaclass=ABCMeta):
 
     @classmethod
     @abstractmethod
-    def imp_upload_metadata_klass(cls) -> Type[UploadMetadata]:
+    def imp_upload_metadata_klass(cls) -> type[UploadMetadata]:
         """
         Return the :class:`UploadMetadata` concrete implementation class for
         this data source type.

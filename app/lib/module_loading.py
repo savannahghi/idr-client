@@ -3,7 +3,7 @@ import inspect
 import sys
 from importlib import import_module
 from types import ModuleType
-from typing import Type, TypeVar, cast
+from typing import TypeVar, cast
 
 # =============================================================================
 # TYPES
@@ -62,8 +62,8 @@ def import_string(dotted_path: str) -> ModuleType:
 
 
 def import_string_as_klass(
-    dotted_path: str, target_klass: Type[_T]
-) -> Type[_T]:
+    dotted_path: str, target_klass: type[_T]
+) -> type[_T]:
     """
     Import a dotted module as the given class type. Raise ``ImportError`` if
     the import failed and a ``TypeError`` if the imported module is not of the
@@ -88,4 +88,4 @@ def import_string_as_klass(
             % (dotted_path, target_klass.__qualname__)
         )
 
-    return cast(Type[target_klass], _module)
+    return cast(type[target_klass], _module)

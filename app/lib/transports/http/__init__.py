@@ -1,4 +1,5 @@
-from typing import Any, Callable, Final, Mapping, Optional, cast
+from collections.abc import Mapping
+from typing import Any, Callable, Final, Optional, cast
 
 from .api_v1_dialect import IDRServerAPIv1, idr_server_api_v1_dialect_factory
 from .http_api_dialect import HTTPAPIDialect

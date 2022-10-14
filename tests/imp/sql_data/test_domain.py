@@ -1,5 +1,6 @@
 import os
-from typing import Any, Mapping, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any
 from unittest import TestCase
 from unittest.mock import patch
 

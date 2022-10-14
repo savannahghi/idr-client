@@ -1,5 +1,6 @@
 from abc import abstractmethod
-from typing import Optional, Protocol, Sized, SupportsFloat, TypeVar
+from collections.abc import Sized
+from typing import Optional, Protocol, SupportsFloat, TypeVar
 
 # =============================================================================
 # TYPES
