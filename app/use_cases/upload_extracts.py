@@ -9,10 +9,17 @@ from app.core import (
     ExtractMetadata,
     Task,
     Transport,
+    TransportError,
     UploadChunk,
     UploadMetadata,
 )
-from app.lib import ConcurrentExecutor, Consumer, completed_successfully
+from app.lib import (
+    ConcurrentExecutor,
+    Consumer,
+    Retry,
+    completed_successfully,
+    if_exception_type_factory,
+)
 
 from .types import RunExtractionResult, UploadExtractResult
 
@@ -41,6 +48,7 @@ class DoPostUpload(Task[Transport, _PostedUpload]):
     def __init__(self, extract: RunExtractionResult):
         self._extract: RunExtractionResult = extract
 
+    @Retry(predicate=if_exception_type_factory(TransportError))
     def execute(self, an_input: Transport) -> _PostedUpload:
         _LOGGER.info(
             'Posting upload metadata for extract metadata="%s".',
@@ -72,6 +80,7 @@ class DoPostChunk(Task[Transport, UploadChunk]):
         self._chunk_index: int = chunk_index
         self._chunk_content: bytes = chunk_content
 
+    @Retry(predicate=if_exception_type_factory(TransportError))
     def execute(self, an_input: Transport) -> UploadChunk:
         _LOGGER.info(
             'Posting upload chunks for upload metadata="%s".',
@@ -91,6 +100,7 @@ class DoMarkUploadAsComplete(Task[Transport, UploadMetadata]):
     def __init__(self, upload: UploadMetadata):
         self._upload: UploadMetadata = upload
 
+    @Retry(predicate=if_exception_type_factory(TransportError))
     def execute(self, an_input: Transport) -> UploadMetadata:
         _LOGGER.info('Marking upload="%s" as complete.', str(self._upload))
         an_input.mark_upload_as_complete(self._upload)
