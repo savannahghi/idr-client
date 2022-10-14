@@ -6,9 +6,11 @@ from unittest.mock import patch
 import pytest
 from pandas import DataFrame
 from sqlalchemy.engine import Connection
+from sqlalchemy.exc import DisconnectionError
 
 from app.imp.sql_data import (
     SQLDataError,
+    SQLDataExtractionOperationError,
     SQLDataSource,
     SQLDataSourceDisposedError,
     SQLDataSourceType,
@@ -74,10 +76,23 @@ class TestSQLDataSource(TestCase):
 
         assert not self._data_source.is_disposed
 
+    def test_get_extract_task_args_errors(self) -> None:
+        """
+        Assert that when an error occurs during a call to
+        ``get_extract_task_args()`` method, the error is handled correctly
+        and wrapped inside in a ``SQLDataExtractionOperationError``.
+        """
+        with patch("sqlalchemy.engine.Engine.connect", autospec=True) as c:
+            c.side_effect = DisconnectionError
+            with pytest.raises(SQLDataExtractionOperationError) as exc_info:
+                with self._data_source as ds:
+                    ds.get_extract_task_args()
+
+            assert isinstance(exc_info.value.__cause__, DisconnectionError)
+
     def test_get_extract_task_args_return_value(self) -> None:
         """
-        Assert that the ``get_extract_task_method()`` returns the expected
-        value.
+        Assert that the ``get_extract_task_args()`` returns the expected value.
         """
         config: Config = Config(settings={"RETRY": {"enable_retries": False}})
         with patch("app.settings", config):

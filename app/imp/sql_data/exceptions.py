@@ -1,4 +1,8 @@
-from app.core import IDRClientException
+from app.core import (
+    DataSourceDisposedError,
+    ExtractionOperationError,
+    IDRClientException,
+)
 
 
 class SQLDataError(IDRClientException):
@@ -7,7 +11,16 @@ class SQLDataError(IDRClientException):
     """
 
 
-class SQLDataSourceDisposedError(SQLDataError):
+class SQLDataExtractionOperationError(SQLDataError, ExtractionOperationError):
+    """
+    An exception indicating that an error occurred while extracting data from
+    an ``SQLDataSource``.
+    """
+
+
+class SQLDataSourceDisposedError(
+    SQLDataExtractionOperationError, DataSourceDisposedError
+):
     """
     An exception indicating that a forbidden operation was attempted on a
     disposed ``SQLDataSource`` instance.
