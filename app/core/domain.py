@@ -257,6 +257,11 @@ class DataSource(
         extract metadata instances belonging to this data source.
 
         :return: An argument to be passed to an extract metadata task.
+
+        :raise ExtractionOperationError: If an error occurs during this
+            operation.
+        :raise DataSourceDisposedError: If this method is called on a disposed
+            data source.
         """
         # TODO: Add a better API for this method.
         ...

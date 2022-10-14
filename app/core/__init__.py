@@ -8,6 +8,8 @@ from .domain import (
     UploadMetadata,
 )
 from .exceptions import (
+    DataSourceDisposedError,
+    ExtractionOperationError,
     IDRClientException,
     TransportClosedError,
     TransportError,
@@ -19,8 +21,10 @@ from .transport import Transport, TransportOptions
 __all__ = [
     "AbstractDomainObject",
     "DataSource",
+    "DataSourceDisposedError",
     "DataSourceType",
     "Disposable",
+    "ExtractionOperationError",
     "ExtractMetadata",
     "IDRClientException",
     "IdentifiableDomainObject",
