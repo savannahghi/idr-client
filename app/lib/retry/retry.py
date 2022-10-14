@@ -223,7 +223,7 @@ class Retry:
                 last_exp=last_exp,
             )
             _LOGGER.debug(
-                "Retrying due to {}, sleeping for {:.1f}s ...".format(
+                'Retrying due to "{}", sleeping for {:.1f}s ...'.format(
                     last_exp, sleep
                 )
             )

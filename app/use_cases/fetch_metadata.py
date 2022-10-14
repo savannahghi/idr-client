@@ -9,8 +9,14 @@ from app.core import (
     ExtractMetadata,
     Task,
     Transport,
+    TransportError,
 )
-from app.lib import ConcurrentExecutor, completed_successfully
+from app.lib import (
+    ConcurrentExecutor,
+    Retry,
+    completed_successfully,
+    if_exception_type_factory,
+)
 
 # =============================================================================
 # CONSTANTS
@@ -31,6 +37,7 @@ class DoFetchDataSources(Task[Transport, Sequence[DataSource]]):
     def __init__(self, data_source_type: DataSourceType):
         self._data_source_type: DataSourceType = data_source_type
 
+    @Retry(predicate=if_exception_type_factory(TransportError))
     def execute(self, an_input: Transport) -> Sequence[DataSource]:
         _LOGGER.info(
             'Fetching data sources for data source type="%s".',
@@ -52,6 +59,7 @@ class DoFetchExtractMetadata(Task[Transport, Sequence[ExtractMetadata]]):
     def __init__(self, data_source: DataSource):
         self._data_source: DataSource = data_source
 
+    @Retry(predicate=if_exception_type_factory(TransportError))
     def execute(self, an_input: Transport) -> Sequence[ExtractMetadata]:
         _LOGGER.info(
             'Fetching extract metadata for data source="%s".',

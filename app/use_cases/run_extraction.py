@@ -3,8 +3,18 @@ from itertools import chain, groupby
 from logging import getLogger
 from typing import Any, Sequence, Tuple
 
-from app.core import DataSource, ExtractMetadata, Task
-from app.lib import ConcurrentExecutor, completed_successfully
+from app.core import (
+    DataSource,
+    ExtractionOperationError,
+    ExtractMetadata,
+    Task,
+)
+from app.lib import (
+    ConcurrentExecutor,
+    Retry,
+    completed_successfully,
+    if_exception_type_factory,
+)
 
 from .types import RunExtractionResult
 
@@ -36,6 +46,7 @@ class DoExtract(Task[DataSource, RunExtractionResult]):
     def __init__(self, extract_metadata: ExtractMetadata):
         self._extract_metadata: ExtractMetadata = extract_metadata
 
+    @Retry(predicate=if_exception_type_factory(ExtractionOperationError))
     def execute(self, an_input: DataSource) -> RunExtractionResult:
         # The extract should only be run against its parent data source.
         assert self._extract_metadata.data_source == an_input
@@ -125,7 +136,3 @@ class RunDataSourceExtracts(
                     ),
                 )
             )
-
-
-# TODO: Add more tasks here to post process extraction results. E.g, handle
-#  errors if they occurred, etc.
