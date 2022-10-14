@@ -1,3 +1,33 @@
+## [0.3.0](https://github.com/savannahghi/idr-client/compare/v0.2.0...v0.3.0) (2022-10-14)
+
+
+### Features
+
+* **lib:** implement concurrent executor task ([#55](https://github.com/savannahghi/idr-client/issues/55)) ([2f6020e](https://github.com/savannahghi/idr-client/commit/2f6020edf764fe4af0851d147d8423202ac5de70))
+* **lib:** implement the retry functionality ([#57](https://github.com/savannahghi/idr-client/issues/57)) ([bc1bf4d](https://github.com/savannahghi/idr-client/commit/bc1bf4d55f688d2fe647bafddf76f272c8736f2c))
+
+
+### Bug Fixes
+
+* **http:** extract metadata fetching ([#54](https://github.com/savannahghi/idr-client/issues/54)) ([8c62944](https://github.com/savannahghi/idr-client/commit/8c62944b2edc69e9d711a4aa826c9d7238aeea6c))
+* **http:** make the HTTP transport threadsafe ([#56](https://github.com/savannahghi/idr-client/issues/56)) ([b1a56a9](https://github.com/savannahghi/idr-client/commit/b1a56a91002feeccb3c25aa88fa4308a53262771))
+* **ci:** release CI ([#64](https://github.com/savannahghi/idr-client/issues/64)) ([d59ec0e](https://github.com/savannahghi/idr-client/commit/d59ec0e23a7d37a6d81536dd9b78970b04056b33))
+
+
+### Dependency Updates
+
+* **deps:** update project dependencies ([#58](https://github.com/savannahghi/idr-client/issues/58)) ([8ddd4ab](https://github.com/savannahghi/idr-client/commit/8ddd4abbe0b25d00500d07031cde2519cba01d9f))
+
+
+### Refactors
+
+* **http:** encapsulate HTTPTransport ([#59](https://github.com/savannahghi/idr-client/issues/59)) ([38c3fd1](https://github.com/savannahghi/idr-client/commit/38c3fd1d92f488332f2f1aaae8bd43e0ba74dc3f))
+* **sql_data:** encapsulate sql_data implementation ([#60](https://github.com/savannahghi/idr-client/issues/60)) ([30f2741](https://github.com/savannahghi/idr-client/commit/30f274187fe996862208fb2a2184c7fca68c2f24))
+* **build:** migrate to python3.9 ([#62](https://github.com/savannahghi/idr-client/issues/62)) ([436152a](https://github.com/savannahghi/idr-client/commit/436152adb6fec01109af4479d07ab5a5e04a9369))
+* **use_cases:** move the retry functionality to use cases ([#61](https://github.com/savannahghi/idr-client/issues/61)) ([fa2d44a](https://github.com/savannahghi/idr-client/commit/fa2d44a24c24c2ddb42b5dd7cfd98edd5a53bb28)), closes [#59](https://github.com/savannahghi/idr-client/issues/59) [#60](https://github.com/savannahghi/idr-client/issues/60)
+* **use_cases:** move upload completion to separate task ([#50](https://github.com/savannahghi/idr-client/issues/50)) ([5c5919e](https://github.com/savannahghi/idr-client/commit/5c5919e82f036f12a51147ea56dc3f6357b4a21b))
+* **use_cases:** refactor main pipeline use_cases ([#51](https://github.com/savannahghi/idr-client/issues/51)) ([2cc16bd](https://github.com/savannahghi/idr-client/commit/2cc16bd10d2fc73d0cb77a4e912ad345d8711d8c))
+
 ## [0.2.0](https://github.com/savannahghi/idr-client/compare/v0.1.0...v0.2.0) (2022-08-18)
 
 
