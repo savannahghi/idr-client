@@ -4,7 +4,7 @@ IDR(Integrated Data Repository) Client is a tool that extracts data from a
 source(most likely a database), performs any transformations that may be required
 on the data and then transmits it to a remote
 [server](https://github.com/savannahghi/idr-server) for further processing and
-consumption. The tool is authored in Python(3.8+) but working executable binaries
+consumption. The tool is authored in Python(3.9+) but working executable binaries
 for Linux can be found on the [release section](https://github.com/savannahghi/idr-client/releases).
 
  [![Coverage Status](https://coveralls.io/repos/github/savannahghi/idr-client/badge.svg?branch=develop)](https://coveralls.io/github/savannahghi/idr-client?branch=develop)
@@ -46,7 +46,7 @@ achieved using the following steps:
    You are now good to go :thumbsup:.
 
 #### 2. Cloning the Repo.
-For this method, you will need have [Python 3.8.0](https://www.python.org/downloads/release/python-380/)
+For this method, you will need have [Python 3.9.0](https://www.python.org/downloads/release/python-390/)
 (3.10 is recommended) or above installed. You could optionally create a
 [virtualenv](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment)
 for the project separate from the system Python. Next, perform the following
@@ -81,7 +81,7 @@ pip install -r requirements/dev.txt
 
 And then create the binary using the following command:-
 ```bash
-pyinstaller app/__main__.py  --hidden-import apps/imp --collect-all app --name idr_client_temp -F
+pyinstaller app/__main__.py idr_client.spec
 ```
 This will create an executable but the executable will still depend on the
 target system/computer having the correct system libraries. More details on this

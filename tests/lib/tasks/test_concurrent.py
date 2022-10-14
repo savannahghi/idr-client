@@ -1,5 +1,5 @@
+from collections.abc import Sequence
 from concurrent.futures import Executor, ThreadPoolExecutor, wait
-from typing import Sequence
 from unittest import TestCase
 
 import pytest

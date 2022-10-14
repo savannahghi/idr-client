@@ -1,4 +1,5 @@
-from typing import Any, Dict, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Any
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -81,7 +82,7 @@ class TestDoPostUpload(TestCase):
 
     def test_execute_return_value(self) -> None:
         """Assert that the ``execute()`` method returns the expected value."""
-        config: Dict[str, Any] = {
+        config: dict[str, Any] = {
             "ORG_UNIT_CODE": self._org_unit_code,
             "ORG_UNIT_NAME": self._org_unit_name,
         }
@@ -119,7 +120,7 @@ class TestPostUploads(TestCase):
 
     def test_execute_return_value(self) -> None:
         """Assert that the ``execute()`` method returns the expected value."""
-        config: Dict[str, Any] = {
+        config: dict[str, Any] = {
             "ORG_UNIT_CODE": self._org_unit_code,
             "ORG_UNIT_NAME": self._org_unit_name,
         }
@@ -150,7 +151,7 @@ class TestPrepareUploadChunks(TestCase):
             size=self._max_items,
             chunk_count=self._chunk_count,
         )
-        self._posted_uploads: Sequence[Tuple[UploadMetadata, Any]] = tuple(
+        self._posted_uploads: Sequence[tuple[UploadMetadata, Any]] = tuple(
             (_upload, _data)
             for _upload, _data in zip(self._upload_metas, self._extract_data)
         )
@@ -169,7 +170,7 @@ class TestPostUploadChunks(TestPrepareUploadChunks):
 
     def setUp(self) -> None:
         super().setUp()
-        self._prepared_chunks: Sequence[Tuple[UploadMetadata, Sequence[bytes]]]
+        self._prepared_chunks: Sequence[tuple[UploadMetadata, Sequence[bytes]]]
         self._prepared_chunks = PrepareUploadChunks().execute(
             self._posted_uploads
         )

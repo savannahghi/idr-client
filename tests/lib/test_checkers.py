@@ -1,4 +1,5 @@
-from typing import Iterable, Sequence, SupportsFloat, Tuple
+from collections.abc import Iterable, Sequence
+from typing import SupportsFloat
 
 import pytest
 
@@ -28,7 +29,7 @@ def test_ensure_fails_on_invalid_input() -> None:
     is not greater than the given ``base_value``.
     """
 
-    inputs: Iterable[Tuple[SupportsFloat, SupportsFloat]] = (
+    inputs: Iterable[tuple[SupportsFloat, SupportsFloat]] = (
         (0, 1),
         (-1, 0),
         (-1.0, -0.0),

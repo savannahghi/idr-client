@@ -1,4 +1,5 @@
-from typing import Callable, Dict, Mapping, Optional
+from collections.abc import Mapping
+from typing import Callable, Optional
 
 from app.core import DataSourceType, Transport
 
@@ -24,7 +25,7 @@ class AppRegistry:
     """
 
     def __init__(self):
-        self._data_source_types: Dict[str, DataSourceType] = dict()
+        self._data_source_types: dict[str, DataSourceType] = dict()
         self._default_transport_factory: Optional[
             DefaultTransportFactory
         ] = None

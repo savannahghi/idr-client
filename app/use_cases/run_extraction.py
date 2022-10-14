@@ -1,7 +1,8 @@
+from collections.abc import Sequence
 from concurrent.futures import Future, as_completed
 from itertools import chain, groupby
 from logging import getLogger
-from typing import Any, Sequence, Tuple
+from typing import Any
 
 from app.core import (
     DataSource,
@@ -29,7 +30,7 @@ _LOGGER = getLogger(__name__)
 # TYPES
 # =============================================================================
 
-_GroupedSiblingExtracts = Tuple[DataSource, Sequence[ExtractMetadata]]
+_GroupedSiblingExtracts = tuple[DataSource, Sequence[ExtractMetadata]]
 
 
 # =============================================================================

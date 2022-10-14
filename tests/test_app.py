@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 from unittest import TestCase
 
 import pytest
@@ -45,7 +45,7 @@ class TestAppModule(TestCase):
 
     def setUp(self) -> None:
         super().setUp()
-        self._default_config: Dict[str, Any] = dict()
+        self._default_config: dict[str, Any] = dict()
         self._some_state: int = 0
 
     def test_valid_config_is_successful(self) -> None:
@@ -59,8 +59,8 @@ class TestAppModule(TestCase):
         :config:`setting initializers <SettingInitializer>` on the
         *SETTINGS_INITIALIZERS* setting results in errors.
         """
-        config1: Dict[str, Any] = dict(self._default_config)
-        config2: Dict[str, Any] = dict(self._default_config)
+        config1: dict[str, Any] = dict(self._default_config)
+        config2: dict[str, Any] = dict(self._default_config)
 
         config1["SETTINGS_INITIALIZERS"] = ["invalid_dotted_path"]
         config2["SETTINGS_INITIALIZERS"] = ["app.core.Task"]
@@ -77,8 +77,8 @@ class TestAppModule(TestCase):
         :config:`data source types <DataSourceType>` on the
         *SUPPORTED_DATA_SOURCE_TYPES* setting result in errors.
         """
-        config1: Dict[str, Any] = dict(self._default_config)
-        config2: Dict[str, Any] = dict(self._default_config)
+        config1: dict[str, Any] = dict(self._default_config)
+        config2: dict[str, Any] = dict(self._default_config)
 
         config1["SUPPORTED_DATA_SOURCE_TYPES"] = ["invalid_dotted_path"]
         config2["SUPPORTED_DATA_SOURCE_TYPES"] = ["app.core.Task"]
@@ -94,7 +94,7 @@ class TestAppModule(TestCase):
         Assert that a missing setting for the default transport factory is
         allowed.
         """
-        config: Dict[str, Any] = dict()
+        config: dict[str, Any] = dict()
         app.setup(initial_settings=config)
 
         assert app.settings.get("DEFAULT_TRANSPORT_FACTORY") is None
@@ -104,8 +104,8 @@ class TestAppModule(TestCase):
         Assert that invalid values for the default transport factory setting
         cause expected errors.
         """
-        config1: Dict[str, Any] = {"DEFAULT_TRANSPORT_FACTORY": 4}
-        config2: Dict[str, Any] = {"DEFAULT_TRANSPORT_FACTORY": "invalid_path"}
+        config1: dict[str, Any] = {"DEFAULT_TRANSPORT_FACTORY": 4}
+        config2: dict[str, Any] = {"DEFAULT_TRANSPORT_FACTORY": "invalid_path"}
 
         # The setting value must be a string
         with pytest.raises(ImproperlyConfiguredError):

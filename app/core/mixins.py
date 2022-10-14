@@ -1,14 +1,7 @@
 from abc import ABCMeta, abstractmethod
+from collections.abc import Mapping
 from types import TracebackType
-from typing import (
-    Any,
-    ContextManager,
-    Generic,
-    Mapping,
-    Optional,
-    Type,
-    TypeVar,
-)
+from typing import Any, ContextManager, Generic, Optional, TypeVar
 
 from .task import Task
 
@@ -30,7 +23,7 @@ class Disposable(ContextManager, metaclass=ABCMeta):
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
+        exc_type: Optional[type[BaseException]],
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> Optional[bool]:

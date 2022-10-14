@@ -1,4 +1,4 @@
-from typing import Sequence, Tuple
+from collections.abc import Sequence
 from unittest import TestCase
 
 from app.core import DataSource, ExtractMetadata
@@ -70,7 +70,7 @@ class TestRunDataSourceExtracts(TestGroupSiblingExtracts):
     def setUp(self) -> None:
         super().setUp()
         self._grouped_extracts: Sequence[
-            Tuple[DataSource, Sequence[ExtractMetadata]]
+            tuple[DataSource, Sequence[ExtractMetadata]]
         ] = GroupSiblingExtracts().execute(self._all_extracts)
         self._instance: RunDataSourceExtracts = RunDataSourceExtracts()
 

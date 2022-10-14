@@ -1,4 +1,5 @@
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 from app.core import DataSourceType, ExtractMetadata, Transport
 from app.lib import Pipeline

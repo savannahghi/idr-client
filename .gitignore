@@ -309,5 +309,6 @@ config.yaml
 local.sh
 logs/*
 !logs/.gitkeep
+!idr_client.spec
 secrets/*
 cloud_sql_proxy
