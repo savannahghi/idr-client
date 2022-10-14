@@ -1,7 +1,7 @@
+from collections.abc import Iterable, Mapping, Sequence
 from concurrent.futures import Future, as_completed
 from itertools import chain
 from logging import getLogger
-from typing import Iterable, Mapping, Sequence
 
 from app.core import (
     DataSource,

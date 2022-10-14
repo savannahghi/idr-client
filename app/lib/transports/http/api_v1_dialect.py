@@ -1,6 +1,7 @@
 import json
 from base64 import b64encode
-from typing import Any, Final, Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any, Final, Optional
 
 from app.core import (
     DataSource,

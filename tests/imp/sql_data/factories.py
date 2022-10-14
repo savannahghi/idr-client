@@ -1,4 +1,5 @@
-from typing import Any, Generator, Optional
+from collections.abc import Generator
+from typing import Any, Optional
 
 import factory
 

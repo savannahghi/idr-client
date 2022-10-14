@@ -1,4 +1,4 @@
-from typing import Dict, Mapping
+from collections.abc import Mapping
 from unittest import TestCase
 
 import pytest
@@ -24,7 +24,7 @@ class TestAppRegistry(TestCase):
         Assert that once set, the contents of the ``data_source_types``
         property cannot be modified by modifying the original mapping.
         """
-        data_source_types: Dict[str, DataSourceType] = {
+        data_source_types: dict[str, DataSourceType] = {
             **self._data_source_types
         }
         self._app_registry.data_source_types = data_source_types

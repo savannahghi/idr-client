@@ -1,5 +1,6 @@
 import uuid
-from typing import Any, Mapping, Optional, Sequence, Type
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional
 
 import factory
 
@@ -74,19 +75,19 @@ class FakeDataSourceType(DataSourceType):
         self._data_sources = data_sources
 
     @classmethod
-    def imp_data_source_klass(cls) -> Type[DataSource]:
+    def imp_data_source_klass(cls) -> type[DataSource]:
         return FakeDataSource
 
     @classmethod
-    def imp_extract_metadata_klass(cls) -> Type[ExtractMetadata]:
+    def imp_extract_metadata_klass(cls) -> type[ExtractMetadata]:
         return FakeExtractMetadata
 
     @classmethod
-    def imp_upload_chunk_klass(cls) -> Type[UploadChunk]:
+    def imp_upload_chunk_klass(cls) -> type[UploadChunk]:
         return FakeUploadChunk
 
     @classmethod
-    def imp_upload_metadata_klass(cls) -> Type[UploadMetadata]:
+    def imp_upload_metadata_klass(cls) -> type[UploadMetadata]:
         return FakeUploadMetadata
 
 

@@ -21,14 +21,22 @@ jobs:
 
     - name: Install requirements
       run: |
+        sudo add-apt-repository ppa:deadsnakes/ppa
         sudo apt-get update
-        sudo apt-get install python3.10 nodejs
-        pip install -r requirements/dev.txt
+        sudo apt-get install python3.10 python3.10-dev python3.10-distutils nodejs
+        sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.8 1
+        sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.10 2
+        sudo update-alternatives --set python /usr/bin/python3.10
+        sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 1
+        sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 2
+        sudo update-alternatives --set python3 /usr/bin/python3.10
+        curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10
+        python3.10 -m pip install -r requirements/dev.txt
         npm install @semantic-release/changelog @semantic-release/git conventional-changelog-conventionalcommits
 
     - name: Package the app
       run: |
-        pyinstaller app/__main__.py --collect-all app --name idr_client_temp -F
+        pyinstaller idr_client.spec
         staticx dist/idr_client_temp dist/idr_client
         ./dist/idr_client --version
 
@@ -40,7 +48,7 @@ jobs:
         git_commit_gpgsign: true
         git_committer_email: ${{ secrets.GIT_COMMITTER_EMAIL }}
         git_committer_name: ${{ secrets.GIT_COMMITTER_NAME }}
-        git_tag_gpgsign: false
+        git_tag_gpgsign: true
         git_user_signingkey: true
         gpg_private_key: ${{ secrets.GPG_KEY }}
         passphrase: ${{ secrets.GPG_KEY_PASSPHRASE }}

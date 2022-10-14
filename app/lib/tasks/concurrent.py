@@ -1,15 +1,8 @@
-import sys
+from collections.abc import MutableSequence, Sequence
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from functools import reduce
 from logging import getLogger
-from typing import (
-    Callable,
-    Generic,
-    MutableSequence,
-    Optional,
-    Sequence,
-    TypeVar,
-)
+from typing import Any, Callable, Generic, Optional, TypeVar
 
 from app.core import Disposable, IDRClientException, Task
 
@@ -22,15 +15,10 @@ _IN = TypeVar("_IN")
 
 _RT = TypeVar("_RT")
 
-if sys.version_info >= (3, 9):  # pragma: no branch
-    Accumulator = Callable[
-        [MutableSequence[Future[_RT]], Future[_RT]],
-        MutableSequence[Future[_RT]],
-    ]
-else:  # pragma: no branch
-    Accumulator = Callable[
-        [MutableSequence[Future], Future], MutableSequence[Future]
-    ]
+Accumulator = Callable[
+    [MutableSequence[Future[_RT]], Future[_RT]],
+    MutableSequence[Future[_RT]],
+]
 
 
 # =============================================================================
@@ -46,7 +34,7 @@ _LOGGER = getLogger(__name__)
 # =============================================================================
 
 
-def completed_successfully(future: Future) -> bool:
+def completed_successfully(future: Future[Any]) -> bool:
     """
     Checks if a :class:`future <Future>` completed successfully and returns
     ``True`` if so and ``False`` otherwise. In this context a *future* is
@@ -106,7 +94,7 @@ class ConcurrentExecutor(
         self,
         *tasks: Task[_IN, _RT],
         accumulator: Optional[Accumulator] = None,
-        initial_value: Optional[MutableSequence["Future[_RT]"]] = None,
+        initial_value: Optional[MutableSequence[Future[_RT]]] = None,
         executor: Optional[Executor] = None,
     ):
         """
@@ -129,7 +117,7 @@ class ConcurrentExecutor(
         self._accumulator: Accumulator = (
             accumulator or self._default_accumulator
         )
-        self._initial_value: MutableSequence["Future[_RT]"]
+        self._initial_value: MutableSequence[Future[_RT]]
         self._initial_value = initial_value or list()
         self._executor: Executor = executor or ThreadPoolExecutor()
         self._is_disposed: bool = False
@@ -150,7 +138,7 @@ class ConcurrentExecutor(
         self._executor.shutdown(wait=True)
         self._is_disposed = True
 
-    def execute(self, an_input: _IN) -> MutableSequence["Future[_RT]"]:
+    def execute(self, an_input: _IN) -> MutableSequence[Future[_RT]]:
         self._ensure_not_disposed()
         return reduce(
             lambda _partial, _tsk: self._accumulator(
@@ -167,9 +155,9 @@ class ConcurrentExecutor(
 
     @staticmethod
     def _default_accumulator(
-        partial_results: MutableSequence["Future[_RT]"],
-        task_output: "Future[_RT]",
-    ) -> MutableSequence["Future[_RT]"]:
+        partial_results: MutableSequence[Future[_RT]],
+        task_output: Future[_RT],
+    ) -> MutableSequence[Future[_RT]]:
         partial_results.append(task_output)
         return partial_results
 

@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
-from typing import Any, Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional
 
 from .domain import (
     DataSource,

@@ -1,5 +1,6 @@
 import logging
-from typing import Any, Dict, List, Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional
 
 from .exceptions import MissingSettingError
 from .setting_initializer import SettingInitializer
@@ -55,7 +56,7 @@ class Config:
         :param settings_initializers: Optional initializers to perform post
             initialization tasks.
         """
-        self._settings: Dict[str, Any] = dict(settings or {})
+        self._settings: dict[str, Any] = dict(settings or {})
         self._initializers: Mapping[
             str, Sequence[SettingInitializer]
         ] = self._group_related_initializers(settings_initializers or tuple())
@@ -111,7 +112,7 @@ class Config:
     def _group_related_initializers(
         initializers: Sequence[SettingInitializer],
     ) -> Mapping[str, Sequence[SettingInitializer]]:
-        grouped_initializers: Dict[str, List[SettingInitializer]] = dict()
+        grouped_initializers: dict[str, list[SettingInitializer]] = dict()
         for _initializer in initializers:
             grouped_initializers.setdefault(_initializer.setting, []).append(
                 _initializer
