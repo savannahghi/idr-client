@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Mapping, Sequence
 from threading import RLock
-from typing import Any, Optional
+from typing import Any
 
 from requests.auth import AuthBase
 from requests.exceptions import RequestException
@@ -64,8 +64,8 @@ class HTTPTransport(Transport):
     def __init__(
         self,
         api_dialect: HTTPAPIDialect,
-        connect_timeout: Optional[float] = None,
-        read_timeout: Optional[float] = None,
+        connect_timeout: float | None = None,
+        read_timeout: float | None = None,
     ):
         """
         Initialize a new ``HTTPTransport`` with the given options.
@@ -166,7 +166,7 @@ class HTTPTransport(Transport):
         upload_metadata: UploadMetadata,
         chunk_index: int,
         chunk_content: bytes,
-        extra_init_kwargs: Optional[Mapping[str, Any]] = None,
+        extra_init_kwargs: Mapping[str, Any] | None = None,
         **options: TransportOptions,
     ) -> UploadChunk:
         self._ensure_not_closed()
@@ -193,7 +193,7 @@ class HTTPTransport(Transport):
         content_type: str,
         org_unit_code: str,
         org_unit_name: str,
-        extra_init_kwargs: Optional[Mapping[str, Any]] = None,
+        extra_init_kwargs: Mapping[str, Any] | None = None,
         **options: TransportOptions,
     ) -> UploadMetadata:
         self._ensure_not_closed()

@@ -1,5 +1,5 @@
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Optional, TypedDict, Union
+from typing import Any, TypedDict, Union
 
 _FileSpec = tuple[
     str, bytes, str  # File name  # File content  # File content type
@@ -10,10 +10,10 @@ _Files = Union[Mapping[str, _FileSpec], Iterable[tuple[str, _FileSpec]]]
 
 
 class _OptionalAdapterRequestParams(TypedDict, total=False):
-    data: Optional[Union[bytes, str, Mapping[str, Any]]]
-    files: Optional[_Files]
-    headers: Optional[Mapping[str, Optional[str]]]
-    params: Optional[Mapping[str, Union[str, Sequence[str]]]]
+    data: bytes | str | Mapping[str, Any] | None
+    files: _Files | None
+    headers: Mapping[str, str | None] | None
+    params: Mapping[str, str | Sequence[str]] | None
 
 
 class HTTPRequestParams(_OptionalAdapterRequestParams):

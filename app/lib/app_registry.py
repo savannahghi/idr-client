@@ -1,5 +1,4 @@
-from collections.abc import Mapping
-from typing import Callable, Optional
+from collections.abc import Callable, Mapping
 
 from app.core import DataSourceType, Transport
 
@@ -26,9 +25,9 @@ class AppRegistry:
 
     def __init__(self):
         self._data_source_types: dict[str, DataSourceType] = dict()
-        self._default_transport_factory: Optional[
+        self._default_transport_factory: None | (
             DefaultTransportFactory
-        ] = None
+        ) = None
 
     @property
     def data_source_types(self) -> Mapping[str, DataSourceType]:
@@ -55,7 +54,7 @@ class AppRegistry:
         self._data_source_types = dict(**data_source_types)
 
     @property
-    def default_transport_factory(self) -> Optional[DefaultTransportFactory]:
+    def default_transport_factory(self) -> DefaultTransportFactory | None:
         """Return the default transport factory for the app if set.
 
         :return: The default transport factory for the app if set or ``None``
@@ -77,7 +76,7 @@ class AppRegistry:
         self._default_transport_factory = transport_factory
 
     def get_default_transport_factory_or_raise(
-        self, error_message: Optional[str] = None
+        self, error_message: str | None = None
     ) -> DefaultTransportFactory:
         """
         Returns the default transport factory if set or raise an

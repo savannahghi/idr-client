@@ -1,5 +1,5 @@
-from collections.abc import Mapping
-from typing import Any, Callable, Final, Optional, cast
+from collections.abc import Callable, Mapping
+from typing import Any, Final, cast
 
 from .api_v1_dialect import IDRServerAPIv1, idr_server_api_v1_dialect_factory
 from .http_api_dialect import HTTPAPIDialect
@@ -36,7 +36,7 @@ def http_transport_factory() -> HTTPTransport:
     import app
     from app.lib import ImproperlyConfiguredError, import_string
 
-    http_transport_conf: Optional[Mapping[str, Any]] = app.settings.get(
+    http_transport_conf: Mapping[str, Any] | None = app.settings.get(
         _HTTP_TRANSPORT_CONFIG_KEY
     )
     if not (http_transport_conf and isinstance(http_transport_conf, dict)):
@@ -45,7 +45,7 @@ def http_transport_factory() -> HTTPTransport:
             % _HTTP_TRANSPORT_CONFIG_KEY
         )
 
-    api_dialect_factory_path: Optional[str] = http_transport_conf.get(
+    api_dialect_factory_path: str | None = http_transport_conf.get(
         _DEFAULT_API_DIALECT_FACTORY_CONF_KEY
     )
     if not api_dialect_factory_path:

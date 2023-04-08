@@ -1,10 +1,10 @@
 import random
 import time
-from collections.abc import Generator, Mapping
+from collections.abc import Callable, Generator, Mapping
 from datetime import datetime, timedelta
 from functools import partial
 from logging import Logger, getLogger
-from typing import Any, Callable, Final, Optional
+from typing import Any, Final
 
 import wrapt
 
@@ -49,7 +49,7 @@ def if_exception_type_factory(*exp_types: type[BaseException]) -> Predicate:
     :return: A callable that takes an exception and returns ``True`` if the
         provided exception is of the given types.
     """
-    _exp: BaseException
+    _exp: BaseException  # noqa: F842
     return lambda _exp: isinstance(_exp, exp_types)
 
 
@@ -84,10 +84,10 @@ class Retry:
     def __init__(
         self,
         predicate: Predicate = if_idr_exception,
-        initial_delay: Optional[float] = None,
-        maximum_delay: Optional[float] = None,
-        multiplicative_factor: Optional[float] = None,
-        **kwargs: Optional[float],
+        initial_delay: float | None = None,
+        maximum_delay: float | None = None,
+        multiplicative_factor: float | None = None,
+        **kwargs: float | None,
     ):
         """Create a new ``Retry`` decorator instance with the given arguments.
 
@@ -111,8 +111,8 @@ class Retry:
         self._initial_delay: float = initial_delay  # type: ignore
         self._maximum_delay: float = maximum_delay  # type: ignore
         self._multiplicative_factor: float = multiplicative_factor  # type: ignore  # noqa
-        self._deadline: Optional[float] = None
-        self._kwargs: Mapping[str, Optional[float]] = kwargs
+        self._deadline: float | None = None
+        self._kwargs: Mapping[str, float | None] = kwargs
 
     @wrapt.decorator(enabled=_enable_retries)
     def __call__(
@@ -122,13 +122,13 @@ class Retry:
         # quiet pyright.
         instance: Any = None,
         args: tuple[Any, ...] = tuple(),
-        kwargs: Optional[Mapping[str, Any]] = None,
+        kwargs: Mapping[str, Any] | None = None,
     ) -> Any:
         self.load_config()
         kwargs = kwargs or dict()
         return self.do_retry(partial(wrapped, *args, **kwargs))
 
-    def calculate_deadline_time(self) -> Optional[datetime]:
+    def calculate_deadline_time(self) -> datetime | None:
         """Determine and return the time when the last retry should be made.
 
         This method is only be called once per :class:`Retry <retry>` instance.
@@ -138,14 +138,14 @@ class Retry:
 
         :return: The calculated deadline time or ``None``.
         """
-        deadline: Optional[float] = self._deadline
+        deadline: float | None = self._deadline
         now: datetime = datetime.now()
         return now + timedelta(seconds=deadline) if deadline else None
 
     def deliberate_next_retry(
         self,
         next_delay_duration: float,
-        deadline_time: Optional[datetime],
+        deadline_time: datetime | None,
         last_exp: BaseException,
     ) -> float:
         """
@@ -197,7 +197,7 @@ class Retry:
 
         :raise RetryError: If the set deadline is exceeded.
         """
-        deadline_time: Optional[datetime] = self.calculate_deadline_time()
+        deadline_time: datetime | None = self.calculate_deadline_time()
         last_exp: Exception
 
         for sleep in self.exponential_delay_generator():  # pragma: no branch
@@ -278,7 +278,7 @@ class Retry:
                 "default_multiplicative_factor", DEFAULT_MULTIPLICATIVE_FACTOR
             )
         )
-        self._deadline: Optional[float] = self._kwargs.get(  # type: ignore
+        self._deadline: float | None = self._kwargs.get(  # type: ignore
             "deadline", retry_config.get("default_deadline", DEFAULT_DEADLINE)
         )
 

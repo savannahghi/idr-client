@@ -1,6 +1,6 @@
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from functools import reduce
-from typing import Any, Callable, Generic, TypeVar, cast
+from typing import Any, Generic, TypeVar, cast
 
 from app.core import Task
 
@@ -59,8 +59,8 @@ class Pipeline(Generic[_IN, _RT], Task[_IN, _RT]):
         return self._tasks
 
     def execute(self, an_input: _IN) -> _RT:
-        _acc: Any
-        _tsk: Task[Any, Any]
+        _acc: Any  # noqa: F842
+        _tsk: Task[Any, Any]  # noqa: F842
         return cast(
             _RT,
             reduce(

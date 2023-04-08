@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional
+from typing import Any
 
 from app.core import (
     DataSource,
@@ -182,7 +182,7 @@ class HTTPAPIDialect(metaclass=ABCMeta):
         upload_metadata: UploadMetadata,
         chunk_index: int,
         chunk_content: Any,
-        extra_init_kwargs: Optional[Mapping[str, Any]] = None,
+        extra_init_kwargs: Mapping[str, Any] | None = None,
         **options: TransportOptions,
     ) -> HTTPRequestParams:
         """
@@ -232,7 +232,7 @@ class HTTPAPIDialect(metaclass=ABCMeta):
         content_type: str,
         org_unit_code: str,
         org_unit_name: str,
-        extra_init_kwargs: Optional[Mapping[str, Any]] = None,
+        extra_init_kwargs: Mapping[str, Any] | None = None,
         **options: TransportOptions,
     ) -> HTTPRequestParams:
         """

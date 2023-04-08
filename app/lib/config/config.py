@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional
+from typing import Any
 
 from .exceptions import MissingSettingError
 from .setting_initializer import SettingInitializer
@@ -33,7 +33,7 @@ class Config:
     def __init__(
         self,
         settings: Mapping[str, Any],
-        settings_initializers: Optional[Sequence[SettingInitializer]] = None,
+        settings_initializers: Sequence[SettingInitializer] | None = None,
     ):
         """
         Initialize a new :class:`Config` instance. The settings to use are

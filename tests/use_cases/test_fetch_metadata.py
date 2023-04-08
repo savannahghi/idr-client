@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 from unittest import TestCase
 
+import app
 from app.core import DataSource, DataSourceType, Transport
 from app.use_cases.fetch_metadata import (
     DoFetchDataSources,
@@ -13,6 +14,7 @@ from tests.core.factories import (
     FakeDataSourceTypeFactory,
     FakeTransportFactory,
 )
+from tests.factories import config_factory
 
 
 class TestDoFetchDataSources(TestCase):
@@ -20,6 +22,7 @@ class TestDoFetchDataSources(TestCase):
 
     def setUp(self) -> None:
         super().setUp()
+        app.setup(initial_settings=config_factory())
         self._data_source_type: DataSourceType = FakeDataSourceTypeFactory()
         self._instance: DoFetchDataSources = DoFetchDataSources(
             data_source_type=self._data_source_type
@@ -49,6 +52,7 @@ class TestDoFetchExtractMetadata(TestCase):
 
     def setUp(self) -> None:
         super().setUp()
+        app.setup(initial_settings=config_factory())
         self._data_source: DataSource = FakeDataSourceFactory()
         self._instance: DoFetchExtractMetadata = DoFetchExtractMetadata(
             data_source=self._data_source
@@ -78,6 +82,7 @@ class TestFetchDataSources(TestCase):
 
     def setUp(self) -> None:
         super().setUp()
+        app.setup(initial_settings=config_factory())
         self._max_data_source_types: int = 5
         self._max_data_sources: int = 3
         self._data_source_types: Sequence[DataSourceType]
@@ -117,6 +122,7 @@ class TestFetchExtractMetadata(TestCase):
 
     def setUp(self) -> None:
         super().setUp()
+        app.setup(initial_settings=config_factory())
         self._max_data_sources: int = 4
         self._max_extracts: int = 7
         self._data_sources: Sequence[DataSource]

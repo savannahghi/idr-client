@@ -1,8 +1,8 @@
-from collections.abc import MutableSequence, Sequence
+from collections.abc import Callable, MutableSequence, Sequence
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from functools import reduce
 from logging import getLogger
-from typing import Any, Callable, Generic, Optional, TypeVar
+from typing import Any, Generic, TypeVar
 
 from app.core import Disposable, IDRClientException, Task
 
@@ -56,9 +56,7 @@ class ConcurrentExecutorDisposedError(IDRClientException):
     :class:`concurrent executor <ConcurrentExecutor>` was made.
     """
 
-    def __init__(
-        self, message: Optional[str] = "ConcurrentExecutor disposed."
-    ):
+    def __init__(self, message: str | None = "ConcurrentExecutor disposed."):
         super().__init__(message=message)
 
 
@@ -93,9 +91,9 @@ class ConcurrentExecutor(
     def __init__(
         self,
         *tasks: Task[_IN, _RT],
-        accumulator: Optional[Accumulator] = None,
-        initial_value: Optional[MutableSequence[Future[_RT]]] = None,
-        executor: Optional[Executor] = None,
+        accumulator: Accumulator | None = None,
+        initial_value: MutableSequence[Future[_RT]] | None = None,
+        executor: Executor | None = None,
     ):
         """
         Initialize a new `ConcurrentExecutor` instance with the given

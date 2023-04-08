@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping, Sequence
 from functools import lru_cache
-from typing import Any, Generic, Optional, TypeVar
+from typing import Any, Generic, TypeVar
 
 from typing_inspect import is_optional_type
 
@@ -136,8 +136,8 @@ class ExtractMetadata(
     """
 
     name: str
-    description: Optional[str]
-    preferred_uploads_name: Optional[str]
+    description: str | None
+    preferred_uploads_name: str | None
 
     @property
     @abstractmethod
@@ -152,7 +152,7 @@ class ExtractMetadata(
 
     def get_upload_meta_extra_init_kwargs(  # noqa
         self,
-    ) -> Optional[Mapping[str, Any]]:
+    ) -> Mapping[str, Any] | None:
         """
         Return an optional mapping of extra keyword arguments to be used when
         initializing the :class:`upload metadata <UploadMetadata>` instance
@@ -206,7 +206,7 @@ class DataSource(
 
     id: str
     name: str
-    description: Optional[str]
+    description: str | None
 
     @property
     @abstractmethod
@@ -336,7 +336,7 @@ class UploadMetadata(
 
     def get_upload_chunk_extra_init_kwargs(  # noqa
         self,
-    ) -> Optional[Mapping[str, Any]]:
+    ) -> Mapping[str, Any] | None:
         """
         Return an optional mapping of extra keyword arguments to be used when
         initializing the :class:`upload chunk <UploadChunk>` instance
@@ -399,7 +399,7 @@ class DataSourceType(AbstractDomainObject, metaclass=ABCMeta):
     """
 
     name: str
-    description: Optional[str]
+    description: str | None
 
     @property
     @abstractmethod
