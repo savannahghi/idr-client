@@ -1,7 +1,7 @@
 import json
 from base64 import b64encode
 from collections.abc import Mapping, Sequence
-from typing import Any, Final, Optional
+from typing import Any, Final
 
 from app.core import (
     DataSource,
@@ -42,7 +42,7 @@ def idr_server_api_v1_dialect_factory() -> "IDRServerAPIv1":
     import app
     from app.lib import ImproperlyConfiguredError
 
-    remote_server_conf: Optional[Mapping[str, str]] = app.settings.get(
+    remote_server_conf: Mapping[str, str] | None = app.settings.get(
         _REMOTE_SERVER_CONFIG_KEY
     )
     if not remote_server_conf or type(remote_server_conf) is not dict:
@@ -232,7 +232,7 @@ class IDRServerAPIv1(HTTPAPIDialect):
         upload_metadata: UploadMetadata,
         chunk_index: int,
         chunk_content: bytes,
-        extra_init_kwargs: Optional[Mapping[str, Any]] = None,
+        extra_init_kwargs: Mapping[str, Any] | None = None,
         **options: TransportOptions,
     ) -> HTTPRequestParams:
         parent_ds: DataSource = upload_metadata.extract_metadata.data_source
@@ -276,7 +276,7 @@ class IDRServerAPIv1(HTTPAPIDialect):
         content_type: str,
         org_unit_code: str,
         org_unit_name: str,
-        extra_init_kwargs: Optional[Mapping[str, Any]] = None,
+        extra_init_kwargs: Mapping[str, Any] | None = None,
         **options: TransportOptions,
     ) -> HTTPRequestParams:
         parent_ds: DataSource = extract_metadata.data_source

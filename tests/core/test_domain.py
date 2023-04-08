@@ -1,4 +1,3 @@
-from typing import Optional
 from unittest import TestCase
 
 import pytest
@@ -25,7 +24,7 @@ class _SimpleDomainObject(AbstractDomainObject):
 
     first_name: str
     last_name: str
-    middle_name: Optional[str]
+    middle_name: str | None
 
 
 class _SomeDomainObject(IdentifiableDomainObject):
@@ -35,7 +34,7 @@ class _SomeDomainObject(IdentifiableDomainObject):
     """
 
     name: str
-    description: Optional[str]
+    description: str | None
 
 
 class TestAbstractDomainObject(TestCase):

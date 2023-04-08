@@ -1,5 +1,5 @@
 from collections.abc import Generator
-from typing import Any, Optional
+from typing import Any
 
 import factory
 
@@ -33,7 +33,7 @@ class SQLDataSourceFactory(DataSourceFactory):
     def extract_metadata(
         obj: SQLDataSource,  # noqa
         created: bool,
-        extracted: Optional[SQLDataSource],
+        extracted: SQLDataSource | None,
         **kwargs,
     ) -> None:
         extract_metadata_count: int = kwargs.setdefault(
@@ -62,7 +62,7 @@ class SQLDataSourceTypeFactory(DataSourceTypeFactory):
     def data_sources(
         obj: SQLDataSourceType,  # noqa
         created: bool,
-        extracted: Optional[SQLDataSourceType],
+        extracted: SQLDataSourceType | None,
         **kwargs,
     ) -> None:
         data_sources_count: int = kwargs.setdefault("data_sources_count", 5)

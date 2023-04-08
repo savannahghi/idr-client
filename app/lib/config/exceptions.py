@@ -1,12 +1,10 @@
-from typing import Optional
-
 from app.core import IDRClientException
 
 
 class ConfigurationError(IDRClientException):
     """Indicates a generic configuration error occurred."""
 
-    def __init__(self, message: Optional[str] = None):
+    def __init__(self, message: str | None = None):
         self._message: str = message or (
             "An unknown error occurred while configuring the app."
         )
@@ -20,7 +18,7 @@ class ImproperlyConfiguredError(ConfigurationError):
 class MissingSettingError(ConfigurationError, LookupError):
     """Non existing setting access error."""
 
-    def __init__(self, setting: str, message: Optional[str] = None):
+    def __init__(self, setting: str, message: str | None = None):
         """Initialize a ``MissingSettingError`` with the given properties.
 
         :param setting: The missing setting.

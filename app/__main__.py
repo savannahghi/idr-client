@@ -1,6 +1,5 @@
 from argparse import ArgumentParser
 from collections.abc import Sequence
-from typing import Optional
 
 import app
 from app.__version__ import __title__, __version__
@@ -76,7 +75,7 @@ def argparse_factory(prog_name: str = __title__) -> ArgumentParser:
 
 
 def main_pipeline_factory(
-    transport: Optional[Transport] = None,
+    transport: Transport | None = None,
 ) -> Pipeline[Sequence[DataSourceType], Sequence[UploadExtractResult]]:
     """A factory for the main application pipeline.
 

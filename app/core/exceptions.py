@@ -1,20 +1,17 @@
-from typing import Optional
-
-
 class IDRClientException(Exception):
     """Base exception for most explicit exceptions raised by this app."""
 
-    def __init__(self, message: Optional[str] = None, *args):
+    def __init__(self, message: str | None = None, *args):
         """Initialize an ``IDRClientException`` with the given parameters.
 
         :param message: An optional error message.
         :param args: args to pass to forward to the base exception.
         """
-        self._message: Optional[str] = message
+        self._message: str | None = message
         super().__init__(self._message, *args)
 
     @property
-    def message(self) -> Optional[str]:
+    def message(self) -> str | None:
         """
         Return the error message passed to this exception at initialization
         or ``None`` if one was not given.
@@ -40,7 +37,7 @@ class DataSourceDisposedError(ExtractionOperationError):
     """
 
     def __init__(
-        self, message: Optional[str] = "Data source is disposed.", *args
+        self, message: str | None = "Data source is disposed.", *args
     ):
         """Initialize an ``DataSourceDisposedError`` with the given parameters.
 
@@ -63,7 +60,7 @@ class TransportClosedError(TransportError):
     made.
     """
 
-    def __init__(self, message: Optional[str] = "Transport closed.", *args):
+    def __init__(self, message: str | None = "Transport closed.", *args):
         """Initialize an ``TransportClosedError`` with the given parameters.
 
         :param message: An optional error message.

@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from ..config import ImproperlyConfiguredError, SettingInitializer
 from .constants import DEFAULT_RETRY_CONFIG, RETRY_CONFIG_KEY
@@ -16,7 +16,7 @@ class RetryInitializer(SettingInitializer):
     def setting(self) -> str:
         return RETRY_CONFIG_KEY
 
-    def execute(self, an_input: Optional[RetryConfig]) -> RetryConfig:
+    def execute(self, an_input: RetryConfig | None) -> RetryConfig:
         if an_input is None:
             return DEFAULT_RETRY_CONFIG
         self._sanitize_and_load_config(an_input)

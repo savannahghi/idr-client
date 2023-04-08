@@ -1,6 +1,6 @@
 from collections.abc import Mapping, Sequence
 from logging.config import dictConfig
-from typing import Any, Final, Optional, cast
+from typing import Any, Final, cast
 
 import yaml
 from yaml import Loader
@@ -127,7 +127,7 @@ class _DefaultTransportFactoryInitializer(SettingInitializer):
     def setting(self) -> str:
         return _DEFAULT_TRANSPORT_FACTORY_CONFIG_KEY
 
-    def execute(self, an_input: Optional[str]) -> Any:
+    def execute(self, an_input: str | None) -> Any:
         # If the default transport setting has not been provided or is empty,
         # do nothing.
         if not an_input:
@@ -162,7 +162,7 @@ class _LoggingInitializer(SettingInitializer):
     def setting(self) -> str:
         return _LOGGING_CONFIG_KEY
 
-    def execute(self, an_input: Optional[Mapping[str, Any]]) -> Any:
+    def execute(self, an_input: Mapping[str, Any] | None) -> Any:
         logging_config: dict[str, Any] = dict(
             an_input or _DEFAULT_CONFIG[self.setting]
         )
@@ -180,12 +180,12 @@ class _SupportedDataSourceTypesInitializer(SettingInitializer):
     def setting(self) -> str:
         return _SUPPORTED_DATA_SOURCE_TYPES_CONFIG_KEY
 
-    def execute(self, an_input: Optional[Sequence[str]]) -> Any:
+    def execute(self, an_input: Sequence[str] | None) -> Any:
         supported_dst: Sequence[str] = (
             an_input or _DEFAULT_CONFIG[self.setting]
         )
         global registry
-        _dst: DataSourceType
+        _dst: DataSourceType  # noqa: F842
         registry.data_source_types = {
             _dst.code: _dst
             for _dst in map(
@@ -224,9 +224,9 @@ class _SupportedDataSourceTypesInitializer(SettingInitializer):
 
 
 def setup(
-    initial_settings: Optional[Mapping[str, Any]] = None,
-    settings_initializers: Optional[Sequence[SettingInitializer]] = None,
-    config_file_path: Optional[str] = None,
+    initial_settings: Mapping[str, Any] | None = None,
+    settings_initializers: Sequence[SettingInitializer] | None = None,
+    config_file_path: str | None = None,
 ) -> None:
     """
     Set up the application and ready it for use.

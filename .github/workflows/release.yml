@@ -23,15 +23,15 @@ jobs:
       run: |
         sudo add-apt-repository ppa:deadsnakes/ppa
         sudo apt-get update
-        sudo apt-get install python3.10 python3.10-dev python3.10-distutils nodejs
+        sudo apt-get install python3.11 python3.11-dev python3.11-distutils nodejs
         sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.8 1
-        sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.10 2
-        sudo update-alternatives --set python /usr/bin/python3.10
+        sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.11 2
+        sudo update-alternatives --set python /usr/bin/python3.11
         sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 1
-        sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 2
-        sudo update-alternatives --set python3 /usr/bin/python3.10
-        curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10
-        python3.10 -m pip install -r requirements/dev.txt
+        sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 2
+        sudo update-alternatives --set python3 /usr/bin/python3.11
+        curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11
+        python3.11 -m pip install -r requirements/build.txt
         npm install @semantic-release/changelog @semantic-release/git conventional-changelog-conventionalcommits
 
     - name: Package the app

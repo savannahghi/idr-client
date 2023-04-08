@@ -2,7 +2,7 @@ import io
 from collections.abc import Mapping, Sequence
 from enum import Enum
 from logging import getLogger
-from typing import Any, Final, Optional
+from typing import Any, Final
 
 import pandas as pd
 import pyarrow as pa
@@ -91,7 +91,7 @@ class SQLDataSource(DataSource[Connection]):
         super().__init__(**kwargs)
         self._data_source_type: SQLDataSourceType = data_source_type
         self._extract_metadata: dict[str, "SQLExtractMetadata"] = dict()
-        self._engine: Optional[Engine] = None
+        self._engine: Engine | None = None
 
     def __enter__(self) -> "SQLDataSource":
         if self._engine is not None:

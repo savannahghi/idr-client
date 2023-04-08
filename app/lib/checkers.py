@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from collections.abc import Sized
-from typing import Optional, Protocol, SupportsFloat, TypeVar
+from typing import Protocol, SupportsFloat, TypeVar
 
 # =============================================================================
 # TYPES
@@ -50,7 +50,7 @@ def ensure_greater_than(
 
 
 def ensure_not_none(
-    value: Optional[_T], message: str = '"value" cannot be None.'
+    value: _T | None, message: str = '"value" cannot be None.'
 ) -> _T:
     """Check that a given value is not ``None``.
 
