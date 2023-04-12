@@ -1,5 +1,4 @@
-from collections.abc import Generator
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import factory
 
@@ -19,6 +18,9 @@ from tests.core.factories import (
     UploadMetadataFactory,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 
 class SQLDataSourceFactory(DataSourceFactory):
     """A factory for ``SQLDataSource`` instances."""
@@ -26,7 +28,7 @@ class SQLDataSourceFactory(DataSourceFactory):
     database_name = factory.Sequence(lambda _n: "Database %d" % _n)
     database_vendor = SupportedDBVendors.SQLITE_MEM
     data_source_type = factory.SubFactory(
-        "tests.imp.sql_data.factories.SQLDataSourceTypeFactory"
+        "tests.imp.sql_data.factories.SQLDataSourceTypeFactory",
     )
 
     @factory.post_generation
@@ -37,13 +39,14 @@ class SQLDataSourceFactory(DataSourceFactory):
         **kwargs,
     ) -> None:
         extract_metadata_count: int = kwargs.setdefault(
-            "extract_metadata_count", 5
+            "extract_metadata_count",
+            5,
         )
         extract_metadata: Generator[SQLExtractMetadata, Any, Any] = (
             SQLExtractMetadataFactory(data_source=obj)
             for _ in range(extract_metadata_count)
         )
-        obj.extract_metadata = {  # noqa
+        obj.extract_metadata = {
             _extract_meta.id: _extract_meta
             for _extract_meta in extract_metadata
         }
@@ -70,7 +73,7 @@ class SQLDataSourceTypeFactory(DataSourceTypeFactory):
             SQLDataSourceFactory(data_source_type=obj)
             for _ in range(data_sources_count)
         )
-        obj.data_sources = {  # noqa
+        obj.data_sources = {
             _data_source.id: _data_source for _data_source in data_sources
         }
 
@@ -85,7 +88,7 @@ class SQLExtractMetadataFactory(ExtractMetadataFactory):
     """A factory for ``SQLExtractMetadata`` instances."""
 
     sql_query = "select 'hello world'"
-    applicable_source_versions = tuple()
+    applicable_source_versions = ()
     data_source = factory.SubFactory(SQLDataSourceFactory)
 
     class Meta:

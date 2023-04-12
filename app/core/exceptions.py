@@ -1,4 +1,4 @@
-class IDRClientException(Exception):
+class IDRClientException(Exception):  # noqa: N818
     """Base exception for most explicit exceptions raised by this app."""
 
     def __init__(self, message: str | None = None, *args):
@@ -37,7 +37,9 @@ class DataSourceDisposedError(ExtractionOperationError):
     """
 
     def __init__(
-        self, message: str | None = "Data source is disposed.", *args
+        self,
+        message: str | None = "Data source is disposed.",
+        *args,
     ):
         """Initialize an ``DataSourceDisposedError`` with the given parameters.
 
@@ -61,7 +63,7 @@ class TransportClosedError(TransportError):
     """
 
     def __init__(self, message: str | None = "Transport closed.", *args):
-        """Initialize an ``TransportClosedError`` with the given parameters.
+        """Initialize a ``TransportClosedError`` with the given parameters.
 
         :param message: An optional error message.
         :param args: args to pass to forward to the base exception.

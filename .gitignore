@@ -291,6 +291,9 @@ GitHub.sublime-settings
 # Session
 Session.vim
 
+# Ruff cache
+.ruff_cache
+
 # Temporary
 .netrwhist
 .~lock.*

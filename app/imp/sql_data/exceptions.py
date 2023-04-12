@@ -19,7 +19,8 @@ class SQLDataExtractionOperationError(SQLDataError, ExtractionOperationError):
 
 
 class SQLDataSourceDisposedError(
-    SQLDataExtractionOperationError, DataSourceDisposedError
+    SQLDataExtractionOperationError,
+    DataSourceDisposedError,
 ):
     """
     An exception indicating that a forbidden operation was attempted on a

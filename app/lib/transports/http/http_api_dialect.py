@@ -51,7 +51,9 @@ class HTTPAPIDialect(metaclass=ABCMeta):
 
     @abstractmethod
     def response_to_auth(
-        self, response_content: bytes, **options: TransportOptions
+        self,
+        response_content: bytes,
+        **options: TransportOptions,
     ) -> Mapping[str, str]:
         """
         Process the contents of an authentication response and return a mapping
@@ -117,7 +119,9 @@ class HTTPAPIDialect(metaclass=ABCMeta):
     # -------------------------------------------------------------------------
     @abstractmethod
     def fetch_data_sources(
-        self, data_source_type: DataSourceType, **options: TransportOptions
+        self,
+        data_source_type: DataSourceType,
+        **options: TransportOptions,
     ) -> HTTPRequestParams:
         """
         Construct and return a request object to fetch all
@@ -157,7 +161,9 @@ class HTTPAPIDialect(metaclass=ABCMeta):
     # -------------------------------------------------------------------------
     @abstractmethod
     def mark_upload_as_complete(
-        self, upload_metadata: UploadMetadata, **options: TransportOptions
+        self,
+        upload_metadata: UploadMetadata,
+        **options: TransportOptions,
     ) -> HTTPRequestParams:
         """
         Construct and return a request object used to mark an
@@ -181,7 +187,7 @@ class HTTPAPIDialect(metaclass=ABCMeta):
         self,
         upload_metadata: UploadMetadata,
         chunk_index: int,
-        chunk_content: Any,
+        chunk_content: Any,  # noqa: ANN401
         extra_init_kwargs: Mapping[str, Any] | None = None,
         **options: TransportOptions,
     ) -> HTTPRequestParams:

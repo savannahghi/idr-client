@@ -58,18 +58,19 @@ class Config:
         """
         self._settings: dict[str, Any] = dict(settings or {})
         self._initializers: Mapping[
-            str, Sequence[SettingInitializer]
-        ] = self._group_related_initializers(settings_initializers or tuple())
+            str,
+            Sequence[SettingInitializer],
+        ] = self._group_related_initializers(settings_initializers or ())
         self._run_initializers()
 
-    def __getattr__(self, setting: str) -> Any:
+    def __getattr__(self, setting: str) -> Any:  # noqa: ANN401
         """Make settings available using the dot operator."""
         try:
             return self._settings[setting]
         except KeyError:
-            raise MissingSettingError(setting=setting)
+            raise MissingSettingError(setting=setting) from None
 
-    def get(self, setting: str, default: Any = None) -> Any:
+    def get(self, setting: str, default: Any = None) -> Any:  # noqa: ANN401
         """
         Retrieve the value of the given setting or return the given default if
         no such setting exists in this ``Config`` instance. This method can
@@ -100,7 +101,7 @@ class Config:
         for _setting, _initializers in self._initializers.items():
             raw_setting_val: Any = self._settings.get(_setting)
             initializer_pipeline: Pipeline = Pipeline(*_initializers)
-            setting_val: Any = initializer_pipeline(raw_setting_val)  # noqa
+            setting_val: Any = initializer_pipeline(raw_setting_val)
             _LOGGER.debug(
                 'Ran initializer for the setting "%s" with raw value "%s".',
                 str(_setting),
@@ -112,9 +113,9 @@ class Config:
     def _group_related_initializers(
         initializers: Sequence[SettingInitializer],
     ) -> Mapping[str, Sequence[SettingInitializer]]:
-        grouped_initializers: dict[str, list[SettingInitializer]] = dict()
+        grouped_initializers: dict[str, list[SettingInitializer]] = {}
         for _initializer in initializers:
             grouped_initializers.setdefault(_initializer.setting, []).append(
-                _initializer
+                _initializer,
             )
         return grouped_initializers

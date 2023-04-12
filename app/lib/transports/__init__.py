@@ -1,4 +1,4 @@
-from .http import *  # noqa: F401,F403
+from .http import *  # noqa: F403
 from .http import __all__ as _all_http
 
 __all__ = []

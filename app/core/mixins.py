@@ -1,7 +1,8 @@
 from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping
+from contextlib import AbstractContextManager
 from types import TracebackType
-from typing import Any, ContextManager, Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 from .task import Task
 
@@ -18,7 +19,7 @@ _RT = TypeVar("_RT")
 # =============================================================================
 
 
-class Disposable(ContextManager, metaclass=ABCMeta):
+class Disposable(AbstractContextManager, metaclass=ABCMeta):
     """Represents an entity that uses resources that need to be cleaned up."""
 
     def __exit__(

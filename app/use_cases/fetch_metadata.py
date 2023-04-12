@@ -44,7 +44,7 @@ class DoFetchDataSources(Task[Transport, Sequence[DataSource]]):
             str(self._data_source_type),
         )
         data_sources: Sequence[DataSource] = an_input.fetch_data_sources(
-            self._data_source_type
+            self._data_source_type,
         )
         data_source_type_sources: Mapping[str, DataSource] = {
             _data_source.id: _data_source for _data_source in data_sources
@@ -92,28 +92,29 @@ class FetchDataSources(Task[Sequence[DataSourceType], Sequence[DataSource]]):
         self._transport: Transport = transport
 
     def execute(
-        self, an_input: Sequence[DataSourceType]
+        self,
+        an_input: Sequence[DataSourceType],
     ) -> Sequence[DataSource]:
         _LOGGER.info("Fetching data sources.")
         executor: ConcurrentExecutor[Transport, Sequence[DataSource]]
         executor = ConcurrentExecutor(
-            *self._data_source_types_to_tasks(an_input)
+            *self._data_source_types_to_tasks(an_input),
         )
         with executor:
             futures: Sequence[Future[Sequence[DataSource]]]
-            futures = executor(self._transport)  # noqa
+            futures = executor.execute(self._transport)
             # Focus on completed tasks and ignore the ones that failed.
             completed_futures = as_completed(futures)
         return tuple(
             chain.from_iterable(
-                map(
+                map(  # noqa: C417
                     lambda _f: _f.result(),
                     filter(
                         lambda _f: completed_successfully(_f),
                         completed_futures,
                     ),
-                )
-            )
+                ),
+            ),
         )
 
     @staticmethod
@@ -127,7 +128,7 @@ class FetchDataSources(Task[Sequence[DataSourceType], Sequence[DataSource]]):
 
 
 class FetchExtractMetadata(
-    Task[Sequence[DataSource], Sequence[ExtractMetadata]]
+    Task[Sequence[DataSource], Sequence[ExtractMetadata]],
 ):
     """
     Fetch all :class:`extract metadata <ExtractMetadata>` for the given
@@ -139,26 +140,27 @@ class FetchExtractMetadata(
         super().__init__()
 
     def execute(
-        self, an_input: Sequence[DataSource]
+        self,
+        an_input: Sequence[DataSource],
     ) -> Sequence[ExtractMetadata]:
         _LOGGER.info("Fetching extract metadata.")
         executor: ConcurrentExecutor[Transport, Sequence[ExtractMetadata]]
         executor = ConcurrentExecutor(*self._data_sources_to_tasks(an_input))
         with executor:
             futures: Sequence[Future[Sequence[ExtractMetadata]]]
-            futures = executor(self._transport)  # noqa
+            futures = executor.execute(self._transport)
             # Focus on completed tasks and ignore the ones that failed.
             completed_futures = as_completed(futures)
         return tuple(
             chain.from_iterable(
-                map(
+                map(  # noqa: C417
                     lambda _f: _f.result(),
                     filter(
                         lambda _f: completed_successfully(_f),
                         completed_futures,
                     ),
-                )
-            )
+                ),
+            ),
         )
 
     @staticmethod

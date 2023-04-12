@@ -24,7 +24,7 @@ class AppRegistry:
     """
 
     def __init__(self):
-        self._data_source_types: dict[str, DataSourceType] = dict()
+        self._data_source_types: dict[str, DataSourceType] = {}
         self._default_transport_factory: None | (
             DefaultTransportFactory
         ) = None
@@ -42,7 +42,8 @@ class AppRegistry:
 
     @data_source_types.setter
     def data_source_types(
-        self, data_source_types: Mapping[str, DataSourceType]
+        self,
+        data_source_types: Mapping[str, DataSourceType],
     ) -> None:
         """Set the data sources supported by the app.
 
@@ -64,7 +65,8 @@ class AppRegistry:
 
     @default_transport_factory.setter
     def default_transport_factory(
-        self, transport_factory: DefaultTransportFactory
+        self,
+        transport_factory: DefaultTransportFactory,
     ) -> None:
         """Set the default transport factory for the app.
 
@@ -76,7 +78,8 @@ class AppRegistry:
         self._default_transport_factory = transport_factory
 
     def get_default_transport_factory_or_raise(
-        self, error_message: str | None = None
+        self,
+        error_message: str | None = None,
     ) -> DefaultTransportFactory:
         """
         Returns the default transport factory if set or raise an
@@ -94,6 +97,6 @@ class AppRegistry:
         if not self.default_transport_factory:
             raise ImproperlyConfiguredError(
                 message=error_message
-                or ("The default transport factor has not been set.")
+                or ("The default transport factor has not been set."),
             )
         return self.default_transport_factory

@@ -36,7 +36,7 @@ _LOGGER = getLogger(__name__)
 
 def completed_successfully(future: Future[Any]) -> bool:
     """
-    Checks if a :class:`future <Future>` completed successfully and returns
+    Check if a :class:`future <Future>` completed successfully and return
     ``True`` if so and ``False`` otherwise. In this context a *future* is
     considered to have completed successfully if it wasn't cancelled and no
     exception was raised on it's callee.
@@ -46,7 +46,9 @@ def completed_successfully(future: Future[Any]) -> bool:
     :return: ``True` if the future completed successfully, ``False`` otherwise.
     """
     return bool(
-        future.done() and not future.cancelled() and future.exception() is None
+        future.done()
+        and not future.cancelled()
+        and future.exception() is None,
     )
 
 
@@ -66,7 +68,9 @@ class ConcurrentExecutorDisposedError(IDRClientException):
 
 
 class ConcurrentExecutor(
-    Generic[_IN, _RT], Task[_IN, MutableSequence["Future[_RT]"]], Disposable
+    Generic[_IN, _RT],
+    Task[_IN, MutableSequence["Future[_RT]"]],
+    Disposable,
 ):
     """
     A :class:`task <Task>` that takes multiple tasks with a common input and
@@ -116,7 +120,7 @@ class ConcurrentExecutor(
             accumulator or self._default_accumulator
         )
         self._initial_value: MutableSequence[Future[_RT]]
-        self._initial_value = initial_value or list()
+        self._initial_value = initial_value or []
         self._executor: Executor = executor or ThreadPoolExecutor()
         self._is_disposed: bool = False
 

@@ -16,7 +16,7 @@ def config_factory() -> dict[str, Any]:
             "default_maximum_delay": 10.0,  # 10 seconds
         },
         "SETTINGS_INITIALIZERS": [
-            "tests.test_app.FakeDataSourceTypesConfigInitializer"
+            "tests.test_app.FakeDataSourceTypesConfigInitializer",
         ],
         "SUPPORTED_DATA_SOURCE_TYPES": ["app.imp.sql_data.SQLDataSourceType"],
     }

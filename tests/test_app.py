@@ -19,7 +19,7 @@ class FakeDataSourceTypesConfigInitializer(SettingInitializer):
     def setting(self) -> str:
         return "SUPPORTED_DATA_SOURCE_TYPES"
 
-    def execute(self, an_input: Any) -> Any:
+    def execute(self, an_input: Any) -> Any:  # noqa: ANN401
         # Do nothing
         return an_input
 
@@ -45,7 +45,7 @@ class TestAppModule(TestCase):
 
     def setUp(self) -> None:
         super().setUp()
-        self._default_config: dict[str, Any] = dict()
+        self._default_config: dict[str, Any] = {}
         self._some_state: int = 0
 
     def test_valid_config_is_successful(self) -> None:
@@ -94,7 +94,7 @@ class TestAppModule(TestCase):
         Assert that a missing setting for the default transport factory is
         allowed.
         """
-        config: dict[str, Any] = dict()
+        config: dict[str, Any] = {}
         app.setup(initial_settings=config)
 
         assert app.settings.get("DEFAULT_TRANSPORT_FACTORY") is None

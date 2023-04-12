@@ -24,43 +24,49 @@ class RetryInitializer(SettingInitializer):
 
     def _sanitize_and_load_config(self, config: RetryConfig) -> None:
         if not isinstance(config, dict):
-            raise ImproperlyConfiguredError(
-                f'The setting "{self.setting}" is invalid.'
-            )
+            err_msg: str = f'The setting "{self.setting}" is invalid.'
+            raise ImproperlyConfiguredError(message=err_msg)
         if "default_deadline" in config and config["default_deadline"]:
             self._ensure_value_is_float_and_greater_than_zero(
-                config=config, setting="default_deadline"
+                config=config,
+                setting="default_deadline",
             )
         if "default_initial_delay" in config:
             self._ensure_value_is_float_and_greater_than_zero(
-                config=config, setting="default_initial_delay"
+                config=config,
+                setting="default_initial_delay",
             )
         if "default_maximum_delay" in config:
             self._ensure_value_is_float_and_greater_than_zero(
-                config=config, setting="default_maximum_delay"
+                config=config,
+                setting="default_maximum_delay",
             )
         if "default_multiplicative_factor" in config:
             self._ensure_value_is_float_and_greater_than_zero(
-                config=config, setting="default_multiplicative_factor"
+                config=config,
+                setting="default_multiplicative_factor",
             )
         enable_retries = config.get("enable_retries", True)
         config["enable_retries"] = bool(
-            enable_retries is True or enable_retries == "true"
+            enable_retries is True or enable_retries == "true",
         )
 
     def _ensure_value_is_float_and_greater_than_zero(
-        self, config: RetryConfig, setting: str
+        self,
+        config: RetryConfig,
+        setting: str,
     ) -> None:
-        value = config[setting]  # noqa
+        value = config[setting]
         if not (self._is_float(value) and float(value) > 0.0):
-            raise ImproperlyConfiguredError(
-                'The setting "{}" must be a subtype of float and greater '
-                "than zero".format(setting)
+            err_msg: str = (
+                'The setting "{}" must be a subtype of float and greater than '
+                "zero".format(setting)
             )
-        config[setting] = float(value)  # noqa
+            raise ImproperlyConfiguredError(message=err_msg)
+        config[setting] = float(value)
 
     @staticmethod
-    def _is_float(value: Any) -> bool:
+    def _is_float(value: Any) -> bool:  # noqa: ANN401
         try:
             float(value)
             return True

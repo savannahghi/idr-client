@@ -1,7 +1,6 @@
-from collections.abc import Sequence
+from typing import TYPE_CHECKING
 from unittest import TestCase
 
-from app.core import DataSource, ExtractMetadata
 from app.use_cases.run_extraction import (
     DoExtract,
     GroupSiblingExtracts,
@@ -11,6 +10,11 @@ from tests.core.factories import (
     FakeDataSourceFactory,
     FakeExtractMetadataFactory,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from app.core import DataSource, ExtractMetadata
 
 
 class TestDoExtract(TestCase):
@@ -39,14 +43,16 @@ class TestGroupSiblingExtracts(TestCase):
         self._ds1_extracts: Sequence[ExtractMetadata]
         self._ds1_extracts = tuple(
             FakeExtractMetadataFactory.create_batch(
-                size=5, data_source=self._data_source1
-            )
+                size=5,
+                data_source=self._data_source1,
+            ),
         )
         self._ds2_extracts: Sequence[ExtractMetadata]
         self._ds2_extracts = tuple(
             FakeExtractMetadataFactory.create_batch(
-                size=7, data_source=self._data_source2
-            )
+                size=7,
+                data_source=self._data_source2,
+            ),
         )
         self._all_extracts: Sequence[ExtractMetadata]
         self._all_extracts = self._ds1_extracts + self._ds2_extracts
@@ -60,8 +66,8 @@ class TestGroupSiblingExtracts(TestCase):
         assert len(results) == 2
         assert results[0][0] == self._data_source1
         assert results[1][0] == self._data_source2
-        self.assertTupleEqual(tuple(results[0][1]), tuple(self._ds1_extracts))
-        self.assertTupleEqual(tuple(results[1][1]), tuple(self._ds2_extracts))
+        assert tuple(results[0][1]) == tuple(self._ds1_extracts)
+        assert tuple(results[1][1]) == tuple(self._ds2_extracts)
 
 
 class TestRunDataSourceExtracts(TestGroupSiblingExtracts):

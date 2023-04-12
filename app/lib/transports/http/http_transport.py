@@ -37,7 +37,9 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def _log_response(
-    response: Response, *args, **kwargs
+    response: Response,
+    *args,
+    **kwargs,
 ) -> None:  # pragma: no cover
     request_message: str = "HTTP Request ({} | {})".format(
         response.request.method,
@@ -78,7 +80,8 @@ class HTTPTransport(Transport):
         from app.lib import ensure_not_none
 
         self._api_dialect: HTTPAPIDialect = ensure_not_none(
-            api_dialect, '"api_dialect" MUST be provided and not none.'
+            api_dialect,
+            '"api_dialect" MUST be provided and not none.',
         )
         self._timeout = (
             (connect_timeout, read_timeout)
@@ -90,7 +93,7 @@ class HTTPTransport(Transport):
             {
                 "Accept": "*/*",
                 "User-Agent": f"{__title__}/{__version__}",
-            }
+            },
         )
         self._session.hooks["response"].append(_log_response)
         self._lock: RLock = RLock()
@@ -121,8 +124,10 @@ class HTTPTransport(Transport):
         self._ensure_not_closed()
         response: Response = self._make_request(
             self._api_dialect.fetch_data_source_extracts(
-                data_source_type, data_source, **options
-            )
+                data_source_type,
+                data_source,
+                **options,
+            ),
         )
         return self._api_dialect.response_to_data_source_extracts(
             response_content=response.content,
@@ -134,11 +139,13 @@ class HTTPTransport(Transport):
     #  FETCH DATA SOURCES
     # -------------------------------------------------------------------------
     def fetch_data_sources(
-        self, data_source_type: DataSourceType, **options: TransportOptions
+        self,
+        data_source_type: DataSourceType,
+        **options: TransportOptions,
     ) -> Sequence[DataSource]:
         self._ensure_not_closed()
         response: Response = self._make_request(
-            self._api_dialect.fetch_data_sources(data_source_type, **options)
+            self._api_dialect.fetch_data_sources(data_source_type, **options),
         )
         return self._api_dialect.response_to_data_sources(
             response_content=response.content,
@@ -149,15 +156,18 @@ class HTTPTransport(Transport):
     # MARK UPLOAD COMPLETION
     # -------------------------------------------------------------------------
     def mark_upload_as_complete(
-        self, upload_metadata: UploadMetadata, **options: TransportOptions
+        self,
+        upload_metadata: UploadMetadata,
+        **options: TransportOptions,
     ) -> None:
         self._ensure_not_closed()
         self._make_request(
             self._api_dialect.mark_upload_as_complete(
-                upload_metadata, **options
-            )
+                upload_metadata,
+                **options,
+            ),
         )
-        return None
+        return
 
     # UPLOAD CHUNK POSTAGE
     # -------------------------------------------------------------------------
@@ -177,7 +187,7 @@ class HTTPTransport(Transport):
                 chunk_content=chunk_content,
                 extra_init_kwargs=extra_init_kwargs,
                 **options,
-            )
+            ),
         )
         return self._api_dialect.response_to_upload_chunk(
             response_content=response.content,
@@ -205,7 +215,7 @@ class HTTPTransport(Transport):
                 org_unit_name=org_unit_name,
                 extra_init_kwargs=extra_init_kwargs,
                 **options,
-            )
+            ),
         )
         return self._api_dialect.response_to_upload_metadata(
             response_content=response.content,
@@ -230,7 +240,7 @@ class HTTPTransport(Transport):
             )
         except RequestException as exp:
             error_message: str = "Error authenticating the client: %s." % str(
-                exp
+                exp,
             )
             _LOGGER.exception(error_message)
             raise TransportError(message=error_message) from exp
@@ -246,8 +256,8 @@ class HTTPTransport(Transport):
             raise TransportError(error_message)
         return _HTTPTransportAuth(
             auth_headers=self._api_dialect.response_to_auth(
-                response_content=response.content
-            )
+                response_content=response.content,
+            ),
         )
 
     def _ensure_not_closed(self) -> None:
@@ -297,7 +307,7 @@ class HTTPTransport(Transport):
                     )
                     self._auth = self._authenticate()
                     _LOGGER.debug(
-                        "Re-authentication successful, retrying the request."
+                        "Re-authentication successful, retrying the request.",
                     )
                 # FIXME: This could lead into a stack overflow, revisit this.
                 return self._make_request(request)
@@ -332,7 +342,10 @@ class _HTTPTransportAuth(AuthBase):
         self._auth_headers = auth_headers
 
     def __call__(
-        self, r: PreparedRequest, *args, **kwargs
+        self,
+        r: PreparedRequest,
+        *args,
+        **kwargs,
     ) -> PreparedRequest:  # pragma: no cover
         r.headers.update(self._auth_headers)
         return r
@@ -344,6 +357,9 @@ class _NoAuth(AuthBase):
     """
 
     def __call__(
-        self, r: PreparedRequest, *args, **kwargs
+        self,
+        r: PreparedRequest,
+        *args,
+        **kwargs,
     ) -> PreparedRequest:  # pragma: no cover
         return r

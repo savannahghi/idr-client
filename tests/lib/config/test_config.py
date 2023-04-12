@@ -1,10 +1,13 @@
-from collections.abc import Mapping, Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest import TestCase
 
 import pytest
 
 from app.lib import Config, MissingSettingError, SettingInitializer
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
+
 
 # =============================================================================
 # HELPERS
@@ -21,7 +24,7 @@ class _Setting1Initializer(SettingInitializer):
     def setting(self) -> str:
         return "SETTING_1"
 
-    def execute(self, an_input: Any) -> str:
+    def execute(self, an_input: Any) -> str:  # noqa: ANN401
         return str(an_input)
 
 
@@ -70,7 +73,8 @@ class TestConfig(TestCase):
         Assert that initializers are run and the settings value are updated.
         """
         config = Config(
-            settings=self._settings, settings_initializers=self._initializers
+            settings=self._settings,
+            settings_initializers=self._initializers,
         )
 
         assert config.SETTING_1 == "0"
@@ -84,7 +88,8 @@ class TestConfig(TestCase):
         """
         self._settings = {"SETTING_1": self._setting_1_value}
         config = Config(
-            settings=self._settings, settings_initializers=self._initializers
+            settings=self._settings,
+            settings_initializers=self._initializers,
         )
 
         assert config.SETTING_1 == "0"
@@ -111,7 +116,8 @@ class TestConfig(TestCase):
             "weird::setting::name": "some value",
         }
         config = Config(
-            settings=self._settings, settings_initializers=self._initializers
+            settings=self._settings,
+            settings_initializers=self._initializers,
         )
 
         assert config.get("SETTING_1") == "0"
@@ -127,7 +133,8 @@ class TestConfig(TestCase):
         setting_3_value: str = "Do not modify!"
         self._settings = {**self._settings, "SETTING_3": setting_3_value}
         config = Config(
-            settings=self._settings, settings_initializers=self._initializers
+            settings=self._settings,
+            settings_initializers=self._initializers,
         )
 
-        assert config.SETTING_3 == setting_3_value
+        assert setting_3_value == config.SETTING_3

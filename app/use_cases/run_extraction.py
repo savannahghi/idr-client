@@ -67,7 +67,7 @@ class DoExtract(Task[DataSource, RunExtractionResult]):
 
 
 class GroupSiblingExtracts(
-    Task[Sequence[ExtractMetadata], Sequence[_GroupedSiblingExtracts]]
+    Task[Sequence[ExtractMetadata], Sequence[_GroupedSiblingExtracts]],
 ):
     """
     Group extracts owned by the same :class:`data source <DataSource>` together
@@ -75,12 +75,14 @@ class GroupSiblingExtracts(
     """
 
     def execute(
-        self, an_input: Sequence[ExtractMetadata]
+        self,
+        an_input: Sequence[ExtractMetadata],
     ) -> Sequence[_GroupedSiblingExtracts]:
         _LOGGER.debug("Grouping extracts.")
         # Sort the given extracts by their parent data source's id.
         extracts: Sequence[ExtractMetadata] = sorted(
-            an_input, key=lambda _e: _e.data_source.id
+            an_input,
+            key=lambda _e: _e.data_source.id,
         )
         # Group extracts by their parent data source. Note unlike the previous
         # statement, the key function in this statement compares data source
@@ -94,29 +96,33 @@ class GroupSiblingExtracts(
 
 
 class RunDataSourceExtracts(
-    Task[Sequence[_GroupedSiblingExtracts], Sequence[RunExtractionResult]]
+    Task[Sequence[_GroupedSiblingExtracts], Sequence[RunExtractionResult]],
 ):
     """Run extracts for each data source and return the results."""
 
     def execute(
-        self, an_input: Sequence[_GroupedSiblingExtracts]
+        self,
+        an_input: Sequence[_GroupedSiblingExtracts],
     ) -> Sequence[RunExtractionResult]:
         _LOGGER.debug("Running extraction for all data sources.")
         return tuple(
             chain.from_iterable(
                 self.run_data_source_extracts(
-                    _grouped_extract[0], _grouped_extract[1]
+                    _grouped_extract[0],
+                    _grouped_extract[1],
                 )
                 for _grouped_extract in an_input
-            )
+            ),
         )
 
     @staticmethod
     def run_data_source_extracts(
-        data_source: DataSource, extracts: Sequence[ExtractMetadata]
+        data_source: DataSource,
+        extracts: Sequence[ExtractMetadata],
     ) -> Sequence[RunExtractionResult]:
         _LOGGER.info(
-            'Running extraction for data source="%s"', str(data_source)
+            'Running extraction for data source="%s"',
+            str(data_source),
         )
         with data_source:
             executor: ConcurrentExecutor[DataSource, RunExtractionResult]
@@ -125,15 +131,15 @@ class RunDataSourceExtracts(
             )
             with executor:
                 futures: Sequence[Future[RunExtractionResult]]
-                futures = executor(data_source)  # noqa
+                futures = executor(data_source)
                 # Focus on completed tasks and ignore the ones that failed.
                 completed_futures = as_completed(futures)
             return tuple(
-                map(
+                map(  # noqa: C417
                     lambda _f: _f.result(),
                     filter(
                         lambda _f: completed_successfully(_f),
                         completed_futures,
                     ),
-                )
+                ),
             )

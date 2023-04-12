@@ -12,7 +12,7 @@ def test_correct_return_value_on_valid_dotted_path1() -> None:
     assert import_string("app.lib.Config") is Config
     assert (
         import_string("app.lib.module_loading.import_string") is import_string
-    )  # noqa
+    )
 
 
 def test_correct_expected_behavior_on_invalid_dotted_path1() -> None:

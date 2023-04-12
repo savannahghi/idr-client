@@ -2,7 +2,9 @@ from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, TypedDict, Union
 
 _FileSpec = tuple[
-    str, bytes, str  # File name  # File content  # File content type
+    str,
+    bytes,
+    str,  # File name  # File content  # File content type
 ]
 
 

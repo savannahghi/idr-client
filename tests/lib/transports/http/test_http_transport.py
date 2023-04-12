@@ -39,7 +39,9 @@ class TestHTTPTransport(TestCase):
         super().setUp()
         self._api_dialect: HTTPAPIDialect = FakeHTTPAPIDialectFactory()
         self._transport: HTTPTransport = HTTPTransport(
-            api_dialect=self._api_dialect, connect_timeout=10, read_timeout=10
+            api_dialect=self._api_dialect,
+            connect_timeout=10,
+            read_timeout=10,
         )
 
     def tearDown(self) -> None:
@@ -50,7 +52,7 @@ class TestHTTPTransport(TestCase):
         Assert that the `api_dialect` parameter is a required parameter
         during the ``HTTPTransport`` class instantiation.
         """
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match='"api_dialect" MUST be'):
             HTTPTransport(api_dialect=None)  # type: ignore
 
     def test_dispose_returns_cleanly(self) -> None:
@@ -73,15 +75,16 @@ class TestHTTPTransport(TestCase):
             s.return_value = self._mock_response_factory()
             with pytest.raises(TransportClosedError):
                 self._transport.fetch_data_sources(
-                    data_source_type=data_source_type
+                    data_source_type=data_source_type,
                 )
             with pytest.raises(TransportClosedError):
                 self._transport.fetch_data_source_extracts(
-                    data_source_type=data_source_type, data_source=data_source
+                    data_source_type=data_source_type,
+                    data_source=data_source,
                 )
             with pytest.raises(TransportClosedError):
                 self._transport.mark_upload_as_complete(
-                    upload_metadata=upload_meta
+                    upload_metadata=upload_meta,
                 )
 
             s.return_value = self._mock_response_factory(status_code=201)
@@ -109,9 +112,10 @@ class TestHTTPTransport(TestCase):
         with patch("requests.sessions.Session.request", autospec=True) as s:
             s.return_value = self._mock_response_factory()
             results = self._transport.fetch_data_source_extracts(
-                data_source_type=data_source_type, data_source=data_source
+                data_source_type=data_source_type,
+                data_source=data_source,
             )
-            self.assertListEqual(list(results), [])
+            assert list(results) == []
 
     def test_fetch_data_sources_returns_expected_value(self) -> None:
         """
@@ -122,7 +126,7 @@ class TestHTTPTransport(TestCase):
         with patch("requests.sessions.Session.request", autospec=True) as s:
             s.return_value = self._mock_response_factory()
             results = self._transport.fetch_data_sources(data_source_type)
-            self.assertListEqual(list(results), [])
+            assert list(results) == []
 
     def test_mark_upload_as_complete_exits_cleanly_on_valid_data(self) -> None:
         """
@@ -133,7 +137,7 @@ class TestHTTPTransport(TestCase):
         with patch("requests.sessions.Session.request", autospec=True) as s:
             s.return_value = self._mock_response_factory()
             self._transport.mark_upload_as_complete(
-                upload_metadata=upload_meta
+                upload_metadata=upload_meta,
             )
 
     def test_post_upload_chunk_returns_expected_value(self) -> None:
@@ -184,10 +188,12 @@ class TestHTTPTransport(TestCase):
                 ConnectionError,
             ]
             with pytest.raises(
-                TransportError, match="Error authenticating the client"
+                TransportError,
+                match="Error authenticating the client",
             ) as exc_info:
                 self._transport.fetch_data_source_extracts(
-                    data_source_type=data_source_type, data_source=data_source
+                    data_source_type=data_source_type,
+                    data_source=data_source,
                 )
 
             assert isinstance(exc_info.value.__cause__, ConnectionError)
@@ -210,7 +216,8 @@ class TestHTTPTransport(TestCase):
                 match="Unable to authenticate the client on IDR Server",
             ):
                 self._transport.fetch_data_source_extracts(
-                    data_source_type=data_source_type, data_source=data_source
+                    data_source_type=data_source_type,
+                    data_source=data_source,
                 )
 
     def test_transport_re_authentication_works(self) -> None:
@@ -232,9 +239,10 @@ class TestHTTPTransport(TestCase):
                 self._mock_response_factory(),
             ]
             results = self._transport.fetch_data_source_extracts(
-                data_source_type=data_source_type, data_source=data_source
+                data_source_type=data_source_type,
+                data_source=data_source,
             )
-            self.assertListEqual(list(results), [])
+            assert list(results) == []
 
     def test_request_errors(self) -> None:
         """
@@ -250,7 +258,8 @@ class TestHTTPTransport(TestCase):
                 match="Unable to make a request to the remote server",
             ) as exc_info:
                 self._transport.fetch_data_source_extracts(
-                    data_source_type=data_source_type, data_source=data_source
+                    data_source_type=data_source_type,
+                    data_source=data_source,
                 )
 
             assert isinstance(exc_info.value.__cause__, ChunkedEncodingError)
@@ -266,7 +275,8 @@ class TestHTTPTransport(TestCase):
                 match="Expected response status 200, but got 500",
             ):
                 self._transport.fetch_data_source_extracts(
-                    data_source_type=data_source_type, data_source=data_source
+                    data_source_type=data_source_type,
+                    data_source=data_source,
                 )
 
     @staticmethod

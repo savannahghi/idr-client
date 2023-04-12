@@ -27,7 +27,7 @@ class FakeDataSource(DataSource):
         data_source_type: DataSourceType = kwargs.pop("data_source_type")
         super().__init__(**kwargs)
         self._data_source_type: DataSourceType = data_source_type
-        self._extract_metadata: Mapping[str, ExtractMetadata] = dict()
+        self._extract_metadata: Mapping[str, ExtractMetadata] = {}
         self._is_disposed: bool = False
 
     @property
@@ -40,7 +40,8 @@ class FakeDataSource(DataSource):
 
     @extract_metadata.setter
     def extract_metadata(
-        self, extract_metadata: Mapping[str, ExtractMetadata]
+        self,
+        extract_metadata: Mapping[str, ExtractMetadata],
     ) -> None:
         self._extract_metadata = extract_metadata
 
@@ -51,7 +52,7 @@ class FakeDataSource(DataSource):
     def dispose(self) -> None:
         self._is_disposed = True
 
-    def get_extract_task_args(self) -> Any:
+    def get_extract_task_args(self) -> Any:  # noqa: ANN401
         return 0
 
 
@@ -60,7 +61,7 @@ class FakeDataSourceType(DataSourceType):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._data_sources: Mapping[str, FakeDataSource] = dict()
+        self._data_sources: Mapping[str, FakeDataSource] = {}
 
     @property
     def code(self) -> str:
@@ -71,7 +72,7 @@ class FakeDataSourceType(DataSourceType):
         return self._data_sources
 
     @data_sources.setter
-    def data_sources(self, data_sources: Mapping[str, FakeDataSource]):
+    def data_sources(self, data_sources: Mapping[str, FakeDataSource]) -> None:
         self._data_sources = data_sources
 
     @classmethod
@@ -103,13 +104,16 @@ class FakeExtractMetadata(ExtractMetadata[Any, Any]):
     def data_source(self) -> DataSource:
         return self._data_source
 
+    def get_upload_meta_extra_init_kwargs(self) -> Any:  # noqa: ANN401
+        return None
+
     def to_task(self) -> Task[Any, Any]:
         return self._FakeExtractTask()
 
     class _FakeExtractTask(Task[Any, Any]):
         """A fake task that doesn't do anything."""
 
-        def execute(self, an_input: Any) -> Any:
+        def execute(self, an_input: Any) -> Any:  # noqa: ANN401
             return 0
 
 
@@ -141,22 +145,27 @@ class FakeTransport(Transport):
     ) -> Sequence[ExtractMetadata]:
         return tuple(
             FakeExtractMetadataFactory.create_batch(
-                size=self._extracts_count, data_source=data_source
-            )
+                size=self._extracts_count,
+                data_source=data_source,
+            ),
         )
 
     def fetch_data_sources(
-        self, data_source_type: DataSourceType, **options: TransportOptions
+        self,
+        data_source_type: DataSourceType,
+        **options: TransportOptions,
     ) -> Sequence[DataSource]:
         return tuple(
             FakeDataSourceFactory.create_batch(
                 size=self._data_sources_count,
                 data_source_type=data_source_type,
-            )
+            ),
         )
 
     def mark_upload_as_complete(
-        self, upload_metadata: UploadMetadata, **options: TransportOptions
+        self,
+        upload_metadata: UploadMetadata,
+        **options: TransportOptions,
     ) -> None:
         return
 
@@ -169,7 +178,8 @@ class FakeTransport(Transport):
         **options: TransportOptions,
     ) -> UploadChunk:
         return FakeUploadChunkFactory(
-            chunk_index=chunk_index, chunk_content=chunk_content
+            chunk_index=chunk_index,
+            chunk_content=chunk_content,
         )
 
     def post_upload_metadata(
@@ -221,7 +231,7 @@ class FakeUploadMetadata(UploadMetadata[Any]):
         def __init__(self, chunk_count: int):
             self._chunk_count: int = chunk_count
 
-        def execute(self, an_input: Any) -> Sequence[bytes]:
+        def execute(self, an_input: Any) -> Sequence[bytes]:  # noqa: ANN401
             return tuple(
                 f"Bla bla bla {_index} ...".encode()
                 for _index in range(self._chunk_count)
@@ -243,7 +253,7 @@ class AbstractDomainObjectFactory(factory.Factory):
 class IdentifiableDomainObjectFactory(AbstractDomainObjectFactory):
     """A base factory for ``IdentifiableDomainObject`` implementations."""
 
-    id = factory.LazyFunction(lambda: str(uuid.uuid4()))
+    id = factory.LazyFunction(lambda: str(uuid.uuid4()))  # noqa: A003
 
     class Meta:
         abstract = True
@@ -274,7 +284,7 @@ class ExtractMetadataFactory(IdentifiableDomainObjectFactory):
     name = factory.Sequence(lambda _n: "Extract Metadata %d" % _n)
     description = factory.Faker("sentence")
     preferred_uploads_name = factory.LazyAttribute(
-        lambda _o: "%s" % _o.name.lower().replace(" ", "_")
+        lambda _o: "%s" % _o.name.lower().replace(" ", "_"),
     )
 
     class Meta:
@@ -312,7 +322,7 @@ class FakeDataSourceFactory(DataSourceFactory):
 
     name = factory.Sequence(lambda _n: "Fake Data Source %d" % _n)
     data_source_type = factory.SubFactory(
-        "tests.core.factories.FakeDataSourceTypeFactory"
+        "tests.core.factories.FakeDataSourceTypeFactory",
     )
 
     class Meta:
@@ -335,7 +345,7 @@ class FakeExtractMetadataFactory(ExtractMetadataFactory):
     name = factory.Sequence(lambda _n: "Fake Extract Metadata %d" % _n)
     description = factory.Faker("sentence")
     preferred_uploads_name = factory.LazyAttribute(
-        lambda _o: "%s" % _o.name.lower().replace(" ", "_")
+        lambda _o: "%s" % _o.name.lower().replace(" ", "_"),
     )
     data_source = factory.SubFactory(FakeDataSourceFactory)
 

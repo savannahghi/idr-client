@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping, Sequence
-from functools import lru_cache
+from functools import cache
 from typing import Any, Generic, TypeVar
 
 from typing_inspect import is_optional_type
@@ -23,7 +23,7 @@ _RT = TypeVar("_RT")
 # =============================================================================
 
 
-@lru_cache(maxsize=None)
+@cache
 def _get_available_annotations(do_klass: type[_ADO]) -> Mapping[str, Any]:
     """Extract all annotations available on a domain object class.
 
@@ -39,19 +39,20 @@ def _get_available_annotations(do_klass: type[_ADO]) -> Mapping[str, Any]:
     return {
         field_name: field_type
         for klass in filter(
-            lambda _klass: hasattr(_klass, "__annotations__"), do_klass.mro()
+            lambda _klass: hasattr(_klass, "__annotations__"),
+            do_klass.mro(),
         )
         for field_name, field_type in klass.__annotations__.items()
     }
 
 
-@lru_cache(maxsize=None)
+@cache
 def _get_required_fields_names(do_klass: type[_ADO]) -> Sequence[str]:
     """Determine and return the required fields of a domain object class.
 
     A required field in the context of this method is defined as one whose
     type is not ``NoneType`` or direct union with it such as
-    ``typing.Optional``. These includes all the fields defined on the class's
+    ``typing.Optional``. These include all the fields defined on the class's
     ancestors.
 
     .. note::
@@ -62,7 +63,7 @@ def _get_required_fields_names(do_klass: type[_ADO]) -> Sequence[str]:
     :return: A sequence of the required field names of a domain object class.
     """
     available_annotations: Mapping[str, Any] = _get_available_annotations(
-        do_klass=do_klass
+        do_klass=do_klass,
     )
     return tuple(
         field_name
@@ -76,10 +77,10 @@ def _get_required_fields_names(do_klass: type[_ADO]) -> Sequence[str]:
 # =============================================================================
 
 
-class AbstractDomainObject(metaclass=ABCMeta):
+class AbstractDomainObject(metaclass=ABCMeta):  # noqa: B024
     """The base class for all domain objects in the app."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):  # noqa: ANN401
         """
         Initialize a domain object and set the object's fields using the
         provided kwargs. Note that fields without annotations are going to be
@@ -95,10 +96,10 @@ class AbstractDomainObject(metaclass=ABCMeta):
         """
         required_fields: Sequence[str] = self.__class__.get_required_fields()
         if any(set(required_fields).difference(set(kwargs.keys()))):
-            raise ValueError(
-                "The following values are required: %s"
-                % ", ".join(required_fields)
+            err_msg: str = "The following values are required: %s" % ", ".join(
+                required_fields,
             )
+            raise ValueError(err_msg)
 
         for valid_field in _get_available_annotations(self.__class__):
             setattr(self, valid_field, kwargs.get(valid_field))
@@ -120,7 +121,7 @@ class AbstractDomainObject(metaclass=ABCMeta):
 class IdentifiableDomainObject(AbstractDomainObject, metaclass=ABCMeta):
     """Describes a domain object that has an id property."""
 
-    id: str
+    id: str  # noqa: A003
 
 
 class ExtractMetadata(
@@ -150,7 +151,8 @@ class ExtractMetadata(
         """
         ...
 
-    def get_upload_meta_extra_init_kwargs(  # noqa
+    @abstractmethod
+    def get_upload_meta_extra_init_kwargs(
         self,
     ) -> Mapping[str, Any] | None:
         """
@@ -204,7 +206,7 @@ class DataSource(
 ):
     """An interface representing an entity that contains data of interest."""
 
-    id: str
+    id: str  # noqa: A003
     name: str
     description: str | None
 
@@ -234,7 +236,8 @@ class DataSource(
     @extract_metadata.setter
     @abstractmethod
     def extract_metadata(
-        self, extract_metadata: Mapping[str, ExtractMetadata[_RT, Any]]
+        self,
+        extract_metadata: Mapping[str, ExtractMetadata[_RT, Any]],
     ) -> None:
         """Set the extract metadata instances that belong to this data source.
 
@@ -284,7 +287,9 @@ class DataSource(
 
 
 class UploadChunk(
-    IdentifiableDomainObject, InitFromMapping, metaclass=ABCMeta
+    IdentifiableDomainObject,
+    InitFromMapping,
+    metaclass=ABCMeta,
 ):
     """An interface that represents part of an upload's content."""
 
@@ -320,7 +325,6 @@ class UploadMetadata(
     org_unit_code: str
     org_unit_name: str
     content_type: str
-    # chunks: Sequence[UploadChunk]
 
     @property
     @abstractmethod
@@ -334,7 +338,7 @@ class UploadMetadata(
         """
         ...
 
-    def get_upload_chunk_extra_init_kwargs(  # noqa
+    def get_upload_chunk_extra_init_kwargs(
         self,
     ) -> Mapping[str, Any] | None:
         """

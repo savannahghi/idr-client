@@ -1,12 +1,16 @@
-from collections.abc import Mapping
+from typing import TYPE_CHECKING
 from unittest import TestCase
 
 import pytest
 
-from app.core import DataSourceType
 from app.imp.sql_data import SQLDataSourceType
 from app.lib import AppRegistry, ImproperlyConfiguredError
 from app.lib.transports.http import http_transport_factory
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from app.core import DataSourceType
 
 
 class TestAppRegistry(TestCase):
@@ -16,7 +20,7 @@ class TestAppRegistry(TestCase):
         super().setUp()
         self._app_registry: AppRegistry = AppRegistry()
         self._data_source_types: Mapping[str, DataSourceType] = {
-            "sql_data": SQLDataSourceType()
+            "sql_data": SQLDataSourceType(),
         }
 
     def test_immutability_of_data_source_types_property_content(self) -> None:
@@ -25,7 +29,7 @@ class TestAppRegistry(TestCase):
         property cannot be modified by modifying the original mapping.
         """
         data_source_types: dict[str, DataSourceType] = {
-            **self._data_source_types
+            **self._data_source_types,
         }
         self._app_registry.data_source_types = data_source_types
 
@@ -40,12 +44,10 @@ class TestAppRegistry(TestCase):
         value.
         """
         self._app_registry.data_source_types = self._data_source_types
-        self.assertDictEqual(
-            self._app_registry.data_source_types, self._data_source_types
-        )
+        assert self._app_registry.data_source_types == self._data_source_types
 
         self._app_registry.data_source_types = {}
-        self.assertDictEqual(self._app_registry.data_source_types, {})
+        assert self._app_registry.data_source_types == {}
 
     def test_retrieval_of_default_transport_factory(self) -> None:
         """

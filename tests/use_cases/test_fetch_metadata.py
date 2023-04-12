@@ -1,8 +1,7 @@
-from collections.abc import Sequence
+from typing import TYPE_CHECKING
 from unittest import TestCase
 
 import app
-from app.core import DataSource, DataSourceType, Transport
 from app.use_cases.fetch_metadata import (
     DoFetchDataSources,
     DoFetchExtractMetadata,
@@ -16,6 +15,11 @@ from tests.core.factories import (
 )
 from tests.factories import config_factory
 
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from app.core import DataSource, DataSourceType, Transport
+
 
 class TestDoFetchDataSources(TestCase):
     """Tests for the :class:`DoFetchDataSources` class."""
@@ -25,10 +29,10 @@ class TestDoFetchDataSources(TestCase):
         app.setup(initial_settings=config_factory())
         self._data_source_type: DataSourceType = FakeDataSourceTypeFactory()
         self._instance: DoFetchDataSources = DoFetchDataSources(
-            data_source_type=self._data_source_type
+            data_source_type=self._data_source_type,
         )
         self._transport: Transport = FakeTransportFactory(
-            fetch_data_sources_count=5
+            fetch_data_sources_count=5,
         )
 
     def test_execute_return_value(self) -> None:
@@ -55,10 +59,10 @@ class TestDoFetchExtractMetadata(TestCase):
         app.setup(initial_settings=config_factory())
         self._data_source: DataSource = FakeDataSourceFactory()
         self._instance: DoFetchExtractMetadata = DoFetchExtractMetadata(
-            data_source=self._data_source
+            data_source=self._data_source,
         )
         self._transport: Transport = FakeTransportFactory(
-            fetch_data_source_extracts_count=5
+            fetch_data_source_extracts_count=5,
         )
 
     def test_execute_return_value(self) -> None:
@@ -88,14 +92,14 @@ class TestFetchDataSources(TestCase):
         self._data_source_types: Sequence[DataSourceType]
         self._data_source_types = tuple(
             FakeDataSourceTypeFactory.create_batch(
-                size=self._max_data_source_types
-            )
+                size=self._max_data_source_types,
+            ),
         )
         self._transport: Transport = FakeTransportFactory(
-            fetch_data_sources_count=self._max_data_sources
+            fetch_data_sources_count=self._max_data_sources,
         )
         self._instance: FetchDataSources = FetchDataSources(
-            transport=self._transport
+            transport=self._transport,
         )
 
     def test_execute_return_value(self) -> None:
@@ -127,13 +131,13 @@ class TestFetchExtractMetadata(TestCase):
         self._max_extracts: int = 7
         self._data_sources: Sequence[DataSource]
         self._data_sources = tuple(
-            FakeDataSourceFactory.create_batch(size=self._max_data_sources)
+            FakeDataSourceFactory.create_batch(size=self._max_data_sources),
         )
         self._transport: Transport = FakeTransportFactory(
-            fetch_data_source_extracts_count=self._max_extracts
+            fetch_data_source_extracts_count=self._max_extracts,
         )
         self._instance: FetchExtractMetadata = FetchExtractMetadata(
-            transport=self._transport
+            transport=self._transport,
         )
 
     def test_execute_return_value(self) -> None:

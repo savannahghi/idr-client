@@ -58,7 +58,9 @@ class Transport(Disposable, metaclass=ABCMeta):
 
     @abstractmethod
     def fetch_data_sources(
-        self, data_source_type: DataSourceType, **options: TransportOptions
+        self,
+        data_source_type: DataSourceType,
+        **options: TransportOptions,
     ) -> Sequence[DataSource]:
         """
         Fetch and return :class:`data sources <DataSource>` of the given
@@ -77,7 +79,9 @@ class Transport(Disposable, metaclass=ABCMeta):
 
     @abstractmethod
     def mark_upload_as_complete(
-        self, upload_metadata: UploadMetadata, **options: TransportOptions
+        self,
+        upload_metadata: UploadMetadata,
+        **options: TransportOptions,
     ) -> None:
         """
         Mark the given :class:`upload metadata instance <UploadMetadata>` as
