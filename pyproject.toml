@@ -3,11 +3,45 @@ requires = ["setuptools>=62.4.0", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
+authors = [
+    {name = "Savannah Informatics Global Health Institute"}
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: System Administrators",
+    "License :: Freeware",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: POSIX",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Utilities",
+    "Typing :: Typed"
+]
+description = "A tool to extract data from data sources, transform it and load it to data sink(s)."
+keywords = ["etl", "etl-framework", "idr"]
+license = {file = "LICENSE"}
+maintainers = [
+    {name = "Kennedy Kori", email = "kennedykori47@gmail.com"},
+    {name = "Salad Guyo", email = "saladguyo60@gmail.com"}
+]
+name = "idr-client"
+readme = "README.md"
 requires-python = ">=3.10" # Support Python 3.10+.
+version = "0.3.0"
+
+[project.urls]
+changelog = "https://github.com/savannahghi/idr-client/blob/develop/docs/CHANGELOG.md"
+documentation = "https://github.com/savannahghi/idr-client/blob/develop/README.md"
+homepage = "https://github.com/savannahghi/idr-client"
+repository = "https://github.com/savannahghi/idr-client.git"
 
 [tool.black]
 line-length = 79
-target-version = ["py37"]
+target-version = ["py310"]
 
 [tool.coverage.html]
 directory = "coverage"
