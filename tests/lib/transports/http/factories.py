@@ -42,7 +42,9 @@ class _FakeHTTPAPIDialect(HTTPAPIDialect):
         }
 
     def response_to_auth(
-        self, response_content: bytes, **options: TransportOptions
+        self,
+        response_content: bytes,
+        **options: TransportOptions,
     ) -> Mapping[str, str]:
         return {"Authorization": "Bearer some_secure_token"}
 
@@ -65,10 +67,12 @@ class _FakeHTTPAPIDialect(HTTPAPIDialect):
         data_source: DataSource,
         **options: TransportOptions,
     ) -> Sequence[ExtractMetadata]:
-        return tuple()
+        return ()
 
     def fetch_data_sources(
-        self, data_source_type: DataSourceType, **options: TransportOptions
+        self,
+        data_source_type: DataSourceType,
+        **options: TransportOptions,
     ) -> HTTPRequestParams:
         return {
             "headers": {"Accept": "application/json"},
@@ -83,10 +87,12 @@ class _FakeHTTPAPIDialect(HTTPAPIDialect):
         data_source_type: DataSourceType,
         **options: TransportOptions,
     ) -> Sequence[DataSource]:
-        return tuple()
+        return ()
 
     def mark_upload_as_complete(
-        self, upload_metadata: UploadMetadata, **options: TransportOptions
+        self,
+        upload_metadata: UploadMetadata,
+        **options: TransportOptions,
     ) -> HTTPRequestParams:
         return {
             "headers": {"Accept": "application/json"},
@@ -99,7 +105,7 @@ class _FakeHTTPAPIDialect(HTTPAPIDialect):
         self,
         upload_metadata: UploadMetadata,
         chunk_index: int,
-        chunk_content: Any,
+        chunk_content: Any,  # noqa: ANN401
         extra_init_kwargs: Mapping[str, Any] | None = None,
         **options: TransportOptions,
     ) -> HTTPRequestParams:

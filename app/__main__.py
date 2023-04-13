@@ -68,7 +68,9 @@ def argparse_factory(prog_name: str = __title__) -> ArgumentParser:
         ),
     )
     parser.add_argument(
-        "--version", action="version", version="%(prog)s " + __version__
+        "--version",
+        action="version",
+        version="%(prog)s " + __version__,
     )
 
     return parser
@@ -94,9 +96,9 @@ def main_pipeline_factory(
     _transport: Transport
     _transport = (
         transport
-        or app.registry.get_default_transport_factory_or_raise(  # noqa
+        or app.registry.get_default_transport_factory_or_raise(
             error_message="The default transport factory is required by the "
-            "main application pipeline."
+            "main application pipeline.",
         )()
     )
     return Pipeline(
@@ -125,10 +127,11 @@ def main() -> None:  # pragma: no cover
     transport_factory = app.registry.get_default_transport_factory_or_raise()
     with transport_factory() as transport:
         main_pipeline: Pipeline[
-            Sequence[DataSourceType], Sequence[UploadExtractResult]
+            Sequence[DataSourceType],
+            Sequence[UploadExtractResult],
         ] = main_pipeline_factory(transport=transport)
         main_pipeline.execute(tuple(app.registry.data_source_types.values()))
-    print("Done ...")
+    print("Done ...")  # noqa: T201
 
 
 if __name__ == "__main__":  # pragma: no cover

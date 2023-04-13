@@ -1,9 +1,7 @@
-from collections.abc import Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest import TestCase
 from unittest.mock import patch
 
-from app.core import ExtractMetadata, Transport, UploadMetadata
 from app.lib import Config
 from app.use_cases.upload_extracts import (
     DoMarkUploadAsComplete,
@@ -22,6 +20,11 @@ from tests.core.factories import (
     FakeUploadMetadataFactory,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from app.core import ExtractMetadata, Transport, UploadMetadata
+
 
 class TestDoMarkUploadAsComplete(TestCase):
     """Tests for the :class:`DoMarkUploadAsComplete` class."""
@@ -30,7 +33,7 @@ class TestDoMarkUploadAsComplete(TestCase):
         super().setUp()
         self._upload_meta: UploadMetadata = FakeUploadMetadataFactory()
         self._instance: DoMarkUploadAsComplete = DoMarkUploadAsComplete(
-            upload=self._upload_meta
+            upload=self._upload_meta,
         )
         self._transport: Transport = FakeTransportFactory()
 
@@ -77,7 +80,7 @@ class TestDoPostUpload(TestCase):
         self._org_unit_name: str = "Test Facility"
         self._transport: Transport = FakeTransportFactory()
         self._instance: DoPostUpload = DoPostUpload(
-            extract=(self._extract_meta, self._data)
+            extract=(self._extract_meta, self._data),
         )
 
     def test_execute_return_value(self) -> None:
@@ -107,11 +110,15 @@ class TestPostUploads(TestCase):
         )
         self._extract_metas: Sequence[ExtractMetadata]
         self._extract_metas = FakeExtractMetadataFactory.create_batch(
-            size=self._max_items
+            size=self._max_items,
         )
         self._extraction_result: Sequence[RunExtractionResult] = tuple(
             (_extract, _data)
-            for _extract, _data in zip(self._extract_metas, self._extract_data)
+            for _extract, _data in zip(
+                self._extract_metas,
+                self._extract_data,
+                strict=True,
+            )
         )
         self._org_unit_code: str = "12345"
         self._org_unit_name: str = "Test Facility"
@@ -153,7 +160,11 @@ class TestPrepareUploadChunks(TestCase):
         )
         self._posted_uploads: Sequence[tuple[UploadMetadata, Any]] = tuple(
             (_upload, _data)
-            for _upload, _data in zip(self._upload_metas, self._extract_data)
+            for _upload, _data in zip(
+                self._upload_metas,
+                self._extract_data,
+                strict=True,
+            )
         )
 
     def test_execute_return_value(self) -> None:
@@ -172,7 +183,7 @@ class TestPostUploadChunks(TestPrepareUploadChunks):
         super().setUp()
         self._prepared_chunks: Sequence[tuple[UploadMetadata, Sequence[bytes]]]
         self._prepared_chunks = PrepareUploadChunks().execute(
-            self._posted_uploads
+            self._posted_uploads,
         )
         self._instance: PostUploadChunks = PostUploadChunks(self._transport)
 
@@ -191,11 +202,11 @@ class TestMarkUploadAsComplete(TestPostUploadChunks):
     def setUp(self) -> None:
         super().setUp()
         self._instance: MarkUploadsAsComplete = MarkUploadsAsComplete(
-            transport=self._transport
+            transport=self._transport,
         )
         self._upload_results: Sequence[UploadExtractResult]
         self._upload_results = PostUploadChunks(self._transport).execute(
-            self._prepared_chunks
+            self._prepared_chunks,
         )
 
     def test_execute_return_value(self) -> None:

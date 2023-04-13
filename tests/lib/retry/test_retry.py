@@ -46,7 +46,7 @@ class TestRetry(TestCase):
                 "RETRY": {
                     "default_deadline": self._deadline,
                     "enable_retries": False,
-                }
+                },
             },
             settings_initializers=(RetryInitializer(),),
         )
@@ -99,7 +99,7 @@ class TestRetry(TestCase):
                     "default_maximum_delay": 1.0,
                     "default_multiplicative_factor": 5,
                     "enable_retries": True,
-                }
+                },
             },
             settings_initializers=(RetryInitializer(),),
         )
@@ -187,7 +187,7 @@ class TestRetry(TestCase):
         a_callable1 = MagicMock(side_effect=AttributeError)
         # Callable that fails initially but eventually succeeds.
         a_callable2 = MagicMock(
-            side_effect=[ValueError, ValueError, AttributeError, 10]
+            side_effect=[ValueError, ValueError, AttributeError, 10],
         )
 
         instance: Retry = Retry(
@@ -203,8 +203,8 @@ class TestRetry(TestCase):
             # This should continue until the deadline is exceeded and the
             # error is re-raised.
             instance.do_retry(a_callable1)
-            assert isinstance(exec_info.value.__cause__, AttributeError)
 
+        assert isinstance(exec_info.value.__cause__, AttributeError)
         # This should continue until a successful call.
         assert instance.do_retry(a_callable2) == 10
         assert a_callable2.call_count == 4
@@ -219,7 +219,7 @@ class TestRetry(TestCase):
         ``Retry`` instance.
         """
         instance: Retry = Retry(
-            predicate=if_exception_type_factory(ValueError)
+            predicate=if_exception_type_factory(ValueError),
         )
         instance.load_config()
 

@@ -49,7 +49,7 @@ _MYSQL_CONFIG_KEY: Final[str] = "MYSQL_DB_INSTANCE"
 
 
 class _DataFrameChunksToUploadChunks(
-    Task[Sequence[pd.DataFrame], Sequence[bytes]]
+    Task[Sequence[pd.DataFrame], Sequence[bytes]],
 ):
     def execute(self, an_input: Sequence[pd.DataFrame]) -> Sequence[bytes]:
         return tuple(
@@ -60,7 +60,7 @@ class _DataFrameChunksToUploadChunks(
     def data_frame_as_bytes(data_frame: pd.DataFrame) -> bytes:
         with io.BytesIO() as stream:
             pq.write_table(
-                pa.Table.from_pandas(df=data_frame),  # noqa
+                pa.Table.from_pandas(df=data_frame),
                 where=stream,
                 compression="gzip",
             )
@@ -77,7 +77,6 @@ class SupportedDBVendors(Enum):
 
     MYSQL = "MySQL"
     SQLITE_MEM = "SqLite in-memory"
-    # POSTGRES_SQL = "Postgres SQL"
 
 
 class SQLDataSource(DataSource[Connection]):
@@ -90,17 +89,18 @@ class SQLDataSource(DataSource[Connection]):
         data_source_type: SQLDataSourceType = kwargs.pop("data_source_type")
         super().__init__(**kwargs)
         self._data_source_type: SQLDataSourceType = data_source_type
-        self._extract_metadata: dict[str, "SQLExtractMetadata"] = dict()
+        self._extract_metadata: dict[str, "SQLExtractMetadata"] = {}
         self._engine: Engine | None = None
 
     def __enter__(self) -> "SQLDataSource":
         if self._engine is not None:
             # TODO: Consider moving this check on the "connect_to_db" method
             #  instead.
-            raise SQLDataError(
+            err_msg: str = (
                 'Incorrect usage of "SQLDataSource". Nesting of context '
                 "managers not allowed."
             )
+            raise SQLDataError(err_msg)
         self.connect_to_db()
         return self
 
@@ -114,7 +114,8 @@ class SQLDataSource(DataSource[Connection]):
 
     @extract_metadata.setter
     def extract_metadata(
-        self, extract_metadata: Mapping[str, "SQLExtractMetadata"]
+        self,
+        extract_metadata: Mapping[str, "SQLExtractMetadata"],
     ) -> None:
         self._extract_metadata = dict(**extract_metadata)
 
@@ -142,7 +143,7 @@ class SQLDataSource(DataSource[Connection]):
         else:  # pragma: no cover
             raise SQLDataError(
                 message='Unsupported db vendor "%s"'
-                % self.database_vendor.value
+                % self.database_vendor.value,
             )
 
     def dispose(self) -> None:
@@ -181,24 +182,24 @@ class SQLDataSource(DataSource[Connection]):
         )
         mysql_conf: Mapping[str, Any] = app.settings.get(_MYSQL_CONFIG_KEY)
         if mysql_conf is None or not isinstance(mysql_conf, dict):
-            raise ImproperlyConfiguredError(
-                'The setting "%s" is missing or is not valid.'
-            )
+            err_msg: str = 'The setting "%s" is missing or is not valid.'
+            raise ImproperlyConfiguredError(message=err_msg)
         for setting in ("host", "port", "username", "password"):
             # TODO: Revisit this, confirm if username and password are a must.
             if setting not in mysql_conf:
-                raise ImproperlyConfiguredError(
-                    'The setting "%s" is missing in "%s".'
-                    % (setting, _MYSQL_CONFIG_KEY)
+                err_msg: str = 'The setting "{}" is missing in "{}".'.format(
+                    setting,
+                    _MYSQL_CONFIG_KEY,
                 )
+                raise ImproperlyConfiguredError(message=err_msg)
         try:
             port = int(mysql_conf["port"])
             if port < 0 or port > 65535:
-                raise ValueError("Invalid port")
+                err_msg: str = "Invalid port"
+                raise ValueError(err_msg)
         except ValueError:
-            raise ImproperlyConfiguredError(
-                '"%s" is not a valid port.' % mysql_conf["port"]
-            )
+            err_msg: str = '"%s" is not a valid port.' % mysql_conf["port"]
+            raise ImproperlyConfiguredError(message=err_msg) from None
 
         return create_engine(
             "mysql+pymysql://%s:%s@%s:%s/%s"
@@ -208,10 +209,10 @@ class SQLDataSource(DataSource[Connection]):
                 mysql_conf["host"],
                 mysql_conf["port"],
                 self.database_name,
-            )
+            ),
         )
 
-    def _load_sqlite_in_memory_config(self) -> Engine:  # noqa
+    def _load_sqlite_in_memory_config(self) -> Engine:
         _LOGGER.debug("Loading SqLite in memory database.")
         return create_engine("sqlite+pysqlite:///:memory:")
 
@@ -226,10 +227,11 @@ class SQLDataSourceType(DataSourceType):
     def __init__(self, **kwargs):
         kwargs["name"] = "SQL Data Source Type"
         kwargs.setdefault(
-            "description", "Represents SQL databases as a source type."
+            "description",
+            "Represents SQL databases as a source type.",
         )
         super().__init__(**kwargs)
-        self._data_sources: dict[str, SQLDataSource] = dict()
+        self._data_sources: dict[str, SQLDataSource] = {}
 
     @property
     def code(self) -> str:
@@ -267,11 +269,26 @@ class SQLExtractMetadata(ExtractMetadata[Connection, Any]):
     def __init__(self, **kwargs):
         data_source: SQLDataSource = kwargs.pop("data_source")
         super().__init__(**kwargs)
-        self._data_source = data_source
+        self._data_source: SQLDataSource = data_source
+        self._upload_meta_init_kwargs: Mapping[str, Any] | None = None
 
     @property
     def data_source(self) -> SQLDataSource:
         return self._data_source
+
+    def get_upload_meta_extra_init_kwargs(
+        self,
+    ) -> Mapping[str, Any] | None:
+        """
+        Return an optional mapping of extra keyword arguments to be used when
+        initializing the :class:`upload metadata <UploadMetadata>` instance
+        associated with this extract.
+
+        :return: An optional mapping of extra keyword arguments to use when
+            initializing the upload metadata instance associated with this
+            extract.
+        """
+        return self._upload_meta_init_kwargs
 
     def to_task(self) -> SimpleSQLSelect:
         return SimpleSQLSelect(self.sql_query)
@@ -291,7 +308,7 @@ class SQLUploadMetadata(UploadMetadata[pd.DataFrame]):
     def extract_metadata(self) -> SQLExtractMetadata:
         return self._extract_metadata
 
-    def to_task(self) -> Pipeline[pd.DataFrame, Sequence[bytes]]:  # noqa
+    def to_task(self) -> Pipeline[pd.DataFrame, Sequence[bytes]]:
         return Pipeline(ChunkDataFrame(), _DataFrameChunksToUploadChunks())
 
     @classmethod

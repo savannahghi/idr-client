@@ -47,10 +47,13 @@ class TestAbstractDomainObject(TestCase):
         """
 
         domain_object1 = _SimpleDomainObject(
-            first_name="Juha", last_name="Kalulu"
+            first_name="Juha",
+            last_name="Kalulu",
         )
         domain_object2 = _SimpleDomainObject(
-            first_name="Juha", last_name="Kalulu", middle_name="Kijiko"
+            first_name="Juha",
+            last_name="Kalulu",
+            middle_name="Kijiko",
         )
 
         assert domain_object1 is not None
@@ -82,13 +85,11 @@ class TestAbstractDomainObject(TestCase):
         returns the expected value.
         """
 
-        self.assertListEqual(
-            list(_SimpleDomainObject.get_required_fields()),
-            ["first_name", "last_name"],
-        )
-        self.assertListEqual(
-            list(_SomeDomainObject.get_required_fields()), ["name", "id"]
-        )
+        assert list(_SimpleDomainObject.get_required_fields()) == [
+            "first_name",
+            "last_name",
+        ]
+        assert list(_SomeDomainObject.get_required_fields()) == ["name", "id"]
 
 
 class TestDataSourceInterface(TestCase):
@@ -106,7 +107,7 @@ class TestDataSourceInterface(TestCase):
                 "name": "Some data source",
                 "description": "A very good description.",
                 "data_source_type": FakeDataSourceTypeFactory(),
-            }
+            },
         )
         data_source2 = FakeDataSource.of_mapping(
             {
@@ -114,7 +115,7 @@ class TestDataSourceInterface(TestCase):
                 "name": "Some other data source",
                 "preferred_uploads_name": "some_data",
                 "data_source_type": FakeDataSourceTypeFactory(),
-            }
+            },
         )
 
         assert data_source1 is not None
@@ -157,7 +158,9 @@ class TestExtractMetadataInterface(TestCase):
     def setUp(self) -> None:
         super().setUp()
         self._extract = FakeExtractMetadata(
-            id="1", name="Some data", data_source=FakeDataSourceFactory()
+            id="1",
+            name="Some data",
+            data_source=FakeDataSourceFactory(),
         )
 
     def test_get_upload_meta_extra_init_kwargs(self) -> None:
@@ -181,7 +184,7 @@ class TestExtractMetadataInterface(TestCase):
                 "name": "Some data",
                 "description": "A very good description.",
                 "data_source": FakeDataSourceFactory(),
-            }
+            },
         )
         extract2 = FakeExtractMetadata.of_mapping(
             {
@@ -189,7 +192,7 @@ class TestExtractMetadataInterface(TestCase):
                 "name": "Some other data",
                 "preferred_uploads_name": "some_data",
                 "data_source": FakeDataSourceFactory(),
-            }
+            },
         )
 
         assert extract1 is not None
@@ -217,7 +220,9 @@ class TestUploadChunkInterface(TestCase):
     def setUp(self) -> None:
         super().setUp()
         self._upload_chunk = FakeUploadChunk(
-            id="1", chunk_index=0, chunk_content=b"Bla bla bla ..."
+            id="1",
+            chunk_index=0,
+            chunk_content=b"Bla bla bla ...",
         )
 
     def test_of_mapping_class_method(self) -> None:
@@ -227,14 +232,14 @@ class TestUploadChunkInterface(TestCase):
         """
 
         upload_chunk1 = FakeUploadChunk.of_mapping(
-            {"id": "1", "chunk_index": 0, "chunk_content": b"Bla bla bla ..."}
+            {"id": "1", "chunk_index": 0, "chunk_content": b"Bla bla bla ..."},
         )
         upload_chunk2 = FakeUploadChunk.of_mapping(
             {
                 "id": "2",
                 "chunk_index": 1,
                 "chunk_content": b"Bla bla bla bla ...",
-            }
+            },
         )
 
         assert upload_chunk1 is not None
@@ -294,7 +299,7 @@ class TestUploadMetadataInterface(TestCase):
                 "org_unit_name": org_unit_name,
                 "content_type": content_type,
                 "extract_metadata": self._extract_metadata,
-            }
+            },
         )
 
         assert upload_metadata is not None
@@ -310,5 +315,6 @@ class TestUploadMetadataInterface(TestCase):
         returns the expected value.
         """
         assert str(self._upload_metadata) == "Upload {} for extract {}".format(
-            self._upload_metadata.id, str(self._extract_metadata)
+            self._upload_metadata.id,
+            str(self._extract_metadata),
         )

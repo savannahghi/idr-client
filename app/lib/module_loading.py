@@ -48,21 +48,24 @@ def import_string(dotted_path: str) -> ModuleType:
     try:
         module_path, class_name = dotted_path.rsplit(".", 1)
     except ValueError as err:
-        raise ImportError(
-            "%s doesn't look like a module path" % dotted_path
-        ) from err
+        err_msg: str = "%s doesn't look like a module path" % dotted_path
+        raise ImportError(err_msg, path=dotted_path) from err
 
     try:
         return _cached_import(module_path, class_name)
     except AttributeError as err:
-        raise ImportError(
-            'Module "%s" does not define a "%s" attribute/class'
-            % (module_path, class_name)
-        ) from err
+        err_msg: str = (
+            'Module "{}" does not define a "{}" attribute/class'.format(
+                module_path,
+                class_name,
+            )
+        )
+        raise ImportError(err_msg, name=class_name, path=module_path) from err
 
 
 def import_string_as_klass(
-    dotted_path: str, target_klass: type[_T]
+    dotted_path: str,
+    target_klass: type[_T],
 ) -> type[_T]:
     """
     Import a dotted module as the given class type. Raise ``ImportError`` if
@@ -80,12 +83,11 @@ def import_string_as_klass(
         derived from the given class.
     """
     _module = import_string(dotted_path)
-    if not inspect.isclass(_module) or not issubclass(  # noqa
-        _module, target_klass
-    ):
-        raise TypeError(
+    if not inspect.isclass(_module) or not issubclass(_module, target_klass):
+        err_msg: str = (
             'Invalid value, "%s" is either not a class or a subclass of "%s".'
             % (dotted_path, target_klass.__qualname__)
         )
+        raise TypeError(err_msg)
 
     return cast(type[target_klass], _module)

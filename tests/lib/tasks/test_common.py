@@ -1,10 +1,14 @@
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 from unittest import TestCase
 
 import pytest
 
 from app.core import Task
 from app.lib import Chainable, Consumer, Pipeline
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
 
 # =============================================================================
 # HELPERS
@@ -63,7 +67,7 @@ class TestChainable(TestCase):
         Assert that the input to :meth:`~Chainable.execute()` must not be
         ``None``.
         """
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="cannot be None"):
             self._chainable.execute(None)  # type: ignore
 
 
@@ -76,7 +80,7 @@ class TestConsumer(TestCase):
         self._consumer: Consumer[int] = Consumer(consume=self._consume)
 
     def test_execution(self) -> None:
-        out: int = self._consumer(5)  # noqa
+        out: int = self._consumer(5)
 
         assert self._global_state == 10
         assert out == 5
@@ -86,7 +90,7 @@ class TestConsumer(TestCase):
         Assert that the ``consume`` argument to the constructor must not be
         ``None``.
         """
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="cannot be None"):
             Consumer(consume=None)  # type: ignore
 
     def _consume(self, an_input: int) -> None:
@@ -114,7 +118,7 @@ class TestPipeline(TestCase):
         )
 
     def test_execution(self) -> None:
-        val: str = self._pipeline(self._an_input)  # noqa
+        val: str = self._pipeline(self._an_input)
 
         assert val == "5"
         assert self._global_state == 12
@@ -123,7 +127,7 @@ class TestPipeline(TestCase):
         """
         Assert that a pipeline must contain one or more tasks to be valid.
         """
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="cannot be None or empty"):
             Pipeline()
 
     def _consume(self, an_input: int) -> None:

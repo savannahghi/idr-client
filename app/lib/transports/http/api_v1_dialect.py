@@ -43,19 +43,21 @@ def idr_server_api_v1_dialect_factory() -> "IDRServerAPIv1":
     from app.lib import ImproperlyConfiguredError
 
     remote_server_conf: Mapping[str, str] | None = app.settings.get(
-        _REMOTE_SERVER_CONFIG_KEY
+        _REMOTE_SERVER_CONFIG_KEY,
     )
     if not remote_server_conf or type(remote_server_conf) is not dict:
-        raise ImproperlyConfiguredError(
-            message='The "%s" setting is missing, empty or not valid.'
+        err_msg: str = (
+            'The "%s" setting is missing, empty or not valid.'
             % _REMOTE_SERVER_CONFIG_KEY
         )
+        raise ImproperlyConfiguredError(message=err_msg)
     for _conf_key in ("host", "password", "username"):
         if _conf_key not in remote_server_conf:
-            raise ImproperlyConfiguredError(
-                message='The setting "%s" MUST be provided as part of the '
-                "remote server config." % _conf_key
+            err_msg: str = (
+                'The setting "%s" MUST be provided as part of the remote '
+                "server config." % _conf_key
             )
+            raise ImproperlyConfiguredError(message=err_msg)
 
     return IDRServerAPIv1(
         server_url=remote_server_conf["host"],
@@ -79,13 +81,16 @@ class IDRServerAPIv1(HTTPAPIDialect):
         from app.lib import ensure_not_none, ensure_not_none_nor_empty
 
         self._server_url: str = ensure_not_none_nor_empty(
-            value=server_url, message='A valid "server_url" MUST be provided.'
+            value=server_url,
+            message='A valid "server_url" MUST be provided.',
         )
         self._username: str = ensure_not_none_nor_empty(
-            value=username, message='"username" MUST not be none or empty.'
+            value=username,
+            message='"username" MUST not be none or empty.',
         )
         self._password: str = ensure_not_none(
-            value=password, message='"password" MUST not be none.'
+            value=password,
+            message='"password" MUST not be none.',
         )
         self._base_url: str = "%s/api" % self._server_url
 
@@ -107,7 +112,9 @@ class IDRServerAPIv1(HTTPAPIDialect):
         }
 
     def response_to_auth(
-        self, response_content: bytes, **options: TransportOptions
+        self,
+        response_content: bytes,
+        **options: TransportOptions,
     ) -> Mapping[str, str]:
         token: str = json.loads(response_content).get("token", "")
         return {"Authorization": "Token %s" % token}
@@ -141,8 +148,8 @@ class IDRServerAPIv1(HTTPAPIDialect):
 
         dst: DataSourceType = data_source_type
         results: Sequence[Mapping[str, Any]] = json.loads(
-            response_content
-        ).get("results", tuple())
+            response_content,
+        ).get("results", ())
         return tuple(
             Chainable(_result).
             # Process/clean the response content in preparation for data
@@ -150,13 +157,13 @@ class IDRServerAPIv1(HTTPAPIDialect):
             execute(
                 lambda _r: {
                     **_r,
-                    "applicable_source_version": tuple(),
+                    "applicable_source_version": (),
                     "data_source": data_source,
-                }
+                },
             ).
             # Initialize the data source.
             execute(
-                lambda _r: (dst.imp_extract_metadata_klass().of_mapping(_r))
+                lambda _r: (dst.imp_extract_metadata_klass().of_mapping(_r)),
             ).value
             for _result in results
         )
@@ -164,7 +171,9 @@ class IDRServerAPIv1(HTTPAPIDialect):
     # DATA SOURCES RETRIEVAL
     # -------------------------------------------------------------------------
     def fetch_data_sources(
-        self, data_source_type: DataSourceType, **options: TransportOptions
+        self,
+        data_source_type: DataSourceType,
+        **options: TransportOptions,
     ) -> HTTPRequestParams:
         return {
             "headers": {"Accept": "application/json"},
@@ -184,8 +193,8 @@ class IDRServerAPIv1(HTTPAPIDialect):
         from app.lib import Chainable
 
         results: Sequence[Mapping[str, Any]] = json.loads(
-            response_content
-        ).get("results", tuple())
+            response_content,
+        ).get("results", ())
         return tuple(
             Chainable(_result).
             # Process/clean the response content in preparation for data
@@ -195,13 +204,13 @@ class IDRServerAPIv1(HTTPAPIDialect):
                     **_r,
                     "database_vendor": SupportedDBVendors.MYSQL,
                     "data_source_type": data_source_type,
-                }
+                },
             ).
             # Initialize the data source.
             execute(
                 lambda _r: (
                     data_source_type.imp_data_source_klass().of_mapping(_r)
-                )
+                ),
             ).value
             for _result in results
         )
@@ -209,7 +218,9 @@ class IDRServerAPIv1(HTTPAPIDialect):
     # MARK UPLOAD COMPLETION
     # -------------------------------------------------------------------------
     def mark_upload_as_complete(
-        self, upload_metadata: UploadMetadata, **options: TransportOptions
+        self,
+        upload_metadata: UploadMetadata,
+        **options: TransportOptions,
     ) -> HTTPRequestParams:
         parent_ds: DataSource = upload_metadata.extract_metadata.data_source
         parent_dst: DataSourceType = parent_ds.data_source_type
@@ -252,7 +263,7 @@ class IDRServerAPIv1(HTTPAPIDialect):
                     "%d_%s" % (chunk_index, upload_metadata.id),
                     chunk_content,
                     upload_metadata.content_type,
-                )
+                ),
             },
         }
 
@@ -297,7 +308,7 @@ class IDRServerAPIv1(HTTPAPIDialect):
                     "org_unit_name": org_unit_name,
                     "content_type": content_type,
                     "extract_metadata": extract_metadata.id,
-                }
+                },
             ),
         }
 
@@ -320,8 +331,8 @@ class IDRServerAPIv1(HTTPAPIDialect):
             .execute(lambda _r: {**_r, "extract_metadata": extract_metadata})
             .execute(
                 lambda _r: parent_dst.imp_upload_metadata_klass().of_mapping(
-                    _r
-                )
+                    _r,
+                ),
             )
             .value
         )
@@ -335,6 +346,6 @@ class IDRServerAPIv1(HTTPAPIDialect):
                 (
                     self._username.encode("latin1"),
                     self._password.encode("latin1"),
-                )
-            )
+                ),
+            ),
         ).decode("ascii")

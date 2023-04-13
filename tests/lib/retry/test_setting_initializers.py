@@ -18,10 +18,7 @@ class TestRetryInitializer(TestCase):
         Assert that the ``execute`` method returns a default configuration
         when one isn't provided.
         """
-        self.assertDictEqual(
-            self._instance.execute(an_input=None),  # noqa
-            DEFAULT_RETRY_CONFIG,  # noqa
-        )
+        assert self._instance.execute(an_input=None) == DEFAULT_RETRY_CONFIG
 
     def test_execute_when_invalid_config_is_provided(self) -> None:
         """

@@ -18,7 +18,7 @@ _HTTPAPIDialectFactory = Callable[[], HTTPAPIDialect]
 
 _DEFAULT_API_DIALECT_FACTORY_CONF_KEY: Final[
     str
-] = "default_http_api_dialect_factory"  # noqa
+] = "default_http_api_dialect_factory"
 
 _HTTP_TRANSPORT_CONFIG_KEY: Final[str] = "HTTP_TRANSPORT"
 
@@ -37,33 +37,37 @@ def http_transport_factory() -> HTTPTransport:
     from app.lib import ImproperlyConfiguredError, import_string
 
     http_transport_conf: Mapping[str, Any] | None = app.settings.get(
-        _HTTP_TRANSPORT_CONFIG_KEY
+        _HTTP_TRANSPORT_CONFIG_KEY,
     )
     if not (http_transport_conf and isinstance(http_transport_conf, dict)):
-        raise ImproperlyConfiguredError(
-            message='The "%s" setting is missing, empty or not valid.'
+        err_msg: str = (
+            'The "%s" setting is missing, empty or not valid.'
             % _HTTP_TRANSPORT_CONFIG_KEY
         )
+        raise ImproperlyConfiguredError(message=err_msg)
 
     api_dialect_factory_path: str | None = http_transport_conf.get(
-        _DEFAULT_API_DIALECT_FACTORY_CONF_KEY
+        _DEFAULT_API_DIALECT_FACTORY_CONF_KEY,
     )
     if not api_dialect_factory_path:
-        raise ImproperlyConfiguredError(
-            message='The setting "%s" MUST be provided as part of the http '
-            "transport config." % _DEFAULT_API_DIALECT_FACTORY_CONF_KEY
+        err_msg: str = (
+            'The setting "%s" MUST be provided as part of the http transport '
+            "config." % _DEFAULT_API_DIALECT_FACTORY_CONF_KEY
         )
+        raise ImproperlyConfiguredError(message=err_msg)
 
     api_dialect_factory: _HTTPAPIDialectFactory
     try:
         api_dialect_factory = cast(
-            _HTTPAPIDialectFactory, import_string(api_dialect_factory_path)
+            _HTTPAPIDialectFactory,
+            import_string(api_dialect_factory_path),
         )
     except (ImportError, TypeError) as exp:
-        raise ImproperlyConfiguredError(
-            message='Unable to import the http api dialect factory at "%s". '
-            "Ensure a valid path was given." % api_dialect_factory_path
-        ) from exp
+        err_msg: str = (
+            'Unable to import the http api dialect factory at "%s". Ensure a '
+            "valid path was given." % api_dialect_factory_path
+        )
+        raise ImproperlyConfiguredError(message=err_msg) from exp
 
     return HTTPTransport(
         api_dialect=api_dialect_factory(),

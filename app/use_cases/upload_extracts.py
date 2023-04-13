@@ -75,7 +75,10 @@ class DoPostUpload(Task[Transport, _PostedUpload]):
 
 class DoPostChunk(Task[Transport, UploadChunk]):
     def __init__(
-        self, upload: UploadMetadata, chunk_index: int, chunk_content: bytes
+        self,
+        upload: UploadMetadata,
+        chunk_index: int,
+        chunk_content: bytes,
     ):
         self._upload: UploadMetadata = upload
         self._chunk_index: int = chunk_index
@@ -114,31 +117,33 @@ class DoMarkUploadAsComplete(Task[Transport, UploadMetadata]):
 
 
 class PostUploads(
-    Task[Sequence[RunExtractionResult], Sequence[_PostedUpload]]
+    Task[Sequence[RunExtractionResult], Sequence[_PostedUpload]],
 ):
     def __init__(self, transport: Transport):
         self._transport: Transport = transport
 
     def execute(
-        self, an_input: Sequence[RunExtractionResult]
+        self,
+        an_input: Sequence[RunExtractionResult],
     ) -> Sequence[_PostedUpload]:
         _LOGGER.info("Posting uploads.")
         executor: ConcurrentExecutor[Transport, _PostedUpload]
         executor = ConcurrentExecutor(
-            *self._extraction_results_to_tasks(an_input)
+            *self._extraction_results_to_tasks(an_input),
         )
         with executor:
             futures: Sequence[Future[_PostedUpload]]
-            futures = executor(self._transport)  # noqa
+            futures = executor(self._transport)
             # Focus on completed tasks and ignore the ones that failed.
             completed_futures = as_completed(futures)
         return tuple(
-            map(
+            map(  # noqa: C417
                 lambda _f: _f.result(),
                 filter(
-                    lambda _f: completed_successfully(_f), completed_futures
+                    lambda _f: completed_successfully(_f),
+                    completed_futures,
                 ),
-            )
+            ),
         )
 
     @staticmethod
@@ -149,10 +154,11 @@ class PostUploads(
 
 
 class PrepareUploadChunks(
-    Task[Sequence[_PostedUpload], Sequence[_PreparedChunks]]
+    Task[Sequence[_PostedUpload], Sequence[_PreparedChunks]],
 ):
     def execute(
-        self, an_input: Sequence[_PostedUpload]
+        self,
+        an_input: Sequence[_PostedUpload],
     ) -> Sequence[_PreparedChunks]:
         _LOGGER.info("Preparing chunks.")
         return tuple(
@@ -165,7 +171,8 @@ class PrepareUploadChunks(
         posted_upload: _PostedUpload,
     ) -> _PreparedChunks:
         _LOGGER.info(
-            'Preparing chunks for upload metadata="%s".', str(posted_upload[0])
+            'Preparing chunks for upload metadata="%s".',
+            str(posted_upload[0]),
         )
         upload: UploadMetadata = posted_upload[0]
         extract_data: Any = posted_upload[1]
@@ -174,13 +181,14 @@ class PrepareUploadChunks(
 
 
 class PostUploadChunks(
-    Task[Sequence[_PreparedChunks], Sequence[UploadExtractResult]]
+    Task[Sequence[_PreparedChunks], Sequence[UploadExtractResult]],
 ):
     def __init__(self, transport: Transport):
         self._transport: Transport = transport
 
     def execute(
-        self, an_input: Sequence[_PreparedChunks]
+        self,
+        an_input: Sequence[_PreparedChunks],
     ) -> Sequence[UploadExtractResult]:
         _LOGGER.info("Posting upload chunks.")
         return tuple(
@@ -194,29 +202,34 @@ class PostUploadChunks(
 
     @staticmethod
     def _post_upload_chunks(
-        upload: UploadMetadata, chunks: Sequence[bytes], transport: Transport
+        upload: UploadMetadata,
+        chunks: Sequence[bytes],
+        transport: Transport,
     ) -> UploadExtractResult:
         executor: ConcurrentExecutor[Transport, UploadChunk]
         executor = ConcurrentExecutor(
             *(
                 DoPostChunk(
-                    upload=upload, chunk_index=_index, chunk_content=_chunk
+                    upload=upload,
+                    chunk_index=_index,
+                    chunk_content=_chunk,
                 )
                 for _index, _chunk in enumerate(chunks)
-            )
+            ),
         )
         with executor:
             futures: Sequence[Future[UploadChunk]]
-            futures = executor(transport)  # noqa
+            futures = executor(transport)
             # Focus on completed tasks and ignore the ones that failed.
             completed_futures = as_completed(futures)
         uploaded_chunks: Sequence[UploadChunk] = tuple(
-            map(
+            map(  # noqa: C417
                 lambda _f: _f.result(),
                 filter(
-                    lambda _f: completed_successfully(_f), completed_futures
+                    lambda _f: completed_successfully(_f),
+                    completed_futures,
                 ),
-            )
+            ),
         )
         return upload, uploaded_chunks
 
@@ -227,7 +240,8 @@ class MarkUploadsAsComplete(Consumer[Sequence[UploadExtractResult]]):
         self._transport: Transport = transport
 
     def _mark_uploads_as_complete(
-        self, posted_uploads: Sequence[UploadExtractResult]
+        self,
+        posted_uploads: Sequence[UploadExtractResult],
     ) -> None:
         _LOGGER.info("Marking completed upload as so.")
         executor: ConcurrentExecutor[Transport, Any]
@@ -235,9 +249,9 @@ class MarkUploadsAsComplete(Consumer[Sequence[UploadExtractResult]]):
             *(
                 DoMarkUploadAsComplete(upload=_posted_upload[0])
                 for _posted_upload in posted_uploads
-            )
+            ),
         )
         with executor:
             futures: Sequence[Future[Any]]
-            futures = executor(an_input=self._transport)  # noqa
+            futures = executor(an_input=self._transport)
             as_completed(futures)

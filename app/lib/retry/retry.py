@@ -37,7 +37,8 @@ def _enable_retries() -> bool:
     from app import settings
 
     return settings.get("RETRY", DEFAULT_RETRY_CONFIG).get(
-        "enable_retries", True
+        "enable_retries",
+        True,
     )
 
 
@@ -49,7 +50,7 @@ def if_exception_type_factory(*exp_types: type[BaseException]) -> Predicate:
     :return: A callable that takes an exception and returns ``True`` if the
         provided exception is of the given types.
     """
-    _exp: BaseException  # noqa: F842
+    _exp: BaseException
     return lambda _exp: isinstance(_exp, exp_types)
 
 
@@ -120,12 +121,12 @@ class Retry:
         wrapped: Callable[..., Any],
         # Types and default values are included on the rest of the arguments to
         # quiet pyright.
-        instance: Any = None,
-        args: tuple[Any, ...] = tuple(),
+        instance: Any = None,  # noqa: ANN401
+        args: tuple[Any, ...] = (),
         kwargs: Mapping[str, Any] | None = None,
-    ) -> Any:
+    ) -> Any:  # noqa: ANN401
         self.load_config()
-        kwargs = kwargs or dict()
+        kwargs = kwargs or {}
         return self.do_retry(partial(wrapped, *args, **kwargs))
 
     def calculate_deadline_time(self) -> datetime | None:
@@ -182,7 +183,7 @@ class Retry:
         remaining_time = (deadline_time - now).total_seconds()
         return min(remaining_time, next_delay_duration)
 
-    def do_retry(self, wrapped: Callable[[], Any]) -> Any:  # noqa
+    def do_retry(self, wrapped: Callable[[], Any]) -> Any:  # noqa: ANN401
         """Implement the actual retry algorithm.
 
         Take a callable and retry it until a successful call or the set
@@ -203,7 +204,7 @@ class Retry:
         for sleep in self.exponential_delay_generator():  # pragma: no branch
             try:
                 return wrapped()
-            except Exception as exp:
+            except Exception as exp:  # noqa: BLE001
                 if not self._predicate(exp):
                     raise
                 last_exp = exp
@@ -216,10 +217,16 @@ class Retry:
             )
             _LOGGER.debug(
                 'Retrying due to "{}", sleeping for {:.1f}s ...'.format(
-                    last_exp, sleep
-                )
+                    last_exp,
+                    sleep,
+                ),
             )
             time.sleep(sleep)
+
+        # This should never be reached. This method should either exit by
+        # returning the wrapped callable's result or by raising an exception.
+        err_msg: str = "The program entered an invalid state. Exiting."  # pragma: no cover # noqa: E501
+        raise AssertionError(err_msg)
 
     def exponential_delay_generator(self) -> Generator[float, None, None]:
         """
@@ -231,7 +238,10 @@ class Retry:
         delay: float = self._initial_delay
         while True:
             # Introduce jitter by yielding a random delay.
-            yield min(random.uniform(0.0, delay * 2.0), self._maximum_delay)
+            yield min(
+                random.uniform(0.0, delay * 2.0),  # noqa: # S311
+                self._maximum_delay,
+            )
             delay *= self._multiplicative_factor
 
     def load_config(self) -> None:
@@ -275,11 +285,13 @@ class Retry:
         self._multiplicative_factor: float = (  # type: ignore
             self._multiplicative_factor
             or retry_config.get(
-                "default_multiplicative_factor", DEFAULT_MULTIPLICATIVE_FACTOR
+                "default_multiplicative_factor",
+                DEFAULT_MULTIPLICATIVE_FACTOR,
             )
         )
         self._deadline: float | None = self._kwargs.get(  # type: ignore
-            "deadline", retry_config.get("default_deadline", DEFAULT_DEADLINE)
+            "deadline",
+            retry_config.get("default_deadline", DEFAULT_DEADLINE),
         )
 
         self._check_invariants()
@@ -299,7 +311,8 @@ class Retry:
             message=(
                 'The maximum delay ("{:.2f}") must be greater than or '
                 'equal to the initial value ("{:.2f}").'.format(
-                    self._maximum_delay, self._initial_delay
+                    self._maximum_delay,
+                    self._initial_delay,
                 )
             ),
         )

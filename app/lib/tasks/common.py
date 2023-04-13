@@ -19,7 +19,8 @@ _RT = TypeVar("_RT")
 
 
 class Chainable(
-    Generic[_IN, _RT], Task[Callable[[_IN], _RT], "Chainable[_RT, Any]"]
+    Generic[_IN, _RT],
+    Task[Callable[[_IN], _RT], "Chainable[_RT, Any]"],
 ):
     def __init__(self, value: _IN):
         self._value: _IN = value
@@ -59,8 +60,8 @@ class Pipeline(Generic[_IN, _RT], Task[_IN, _RT]):
         return self._tasks
 
     def execute(self, an_input: _IN) -> _RT:
-        _acc: Any  # noqa: F842
-        _tsk: Task[Any, Any]  # noqa: F842
+        _acc: Any
+        _tsk: Task[Any, Any]
         return cast(
             _RT,
             reduce(

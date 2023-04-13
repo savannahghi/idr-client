@@ -3,7 +3,6 @@ from logging.config import dictConfig
 from typing import Any, Final, cast
 
 import yaml
-from yaml import Loader
 
 from app.core import DataSourceType
 from app.lib import (
@@ -28,7 +27,7 @@ _SETTINGS_INITIALIZERS_CONFIG_KEY: Final[str] = "SETTINGS_INITIALIZERS"
 
 _SUPPORTED_DATA_SOURCE_TYPES_CONFIG_KEY: Final[
     str
-] = "SUPPORTED_DATA_SOURCE_TYPES"  # noqa
+] = "SUPPORTED_DATA_SOURCE_TYPES"
 
 _DEFAULT_CONFIG: Final[dict[str, Any]] = {
     _LOGGING_CONFIG_KEY: {
@@ -39,15 +38,15 @@ _DEFAULT_CONFIG: Final[dict[str, Any]] = {
                 "format": (
                     "%(levelname)s: %(asctime)s %(module)s "
                     "%(process)d %(thread)d %(message)s"
-                )
-            }
+                ),
+            },
         },
         "handlers": {
             "console": {
                 "level": "DEBUG",
                 "class": "logging.StreamHandler",
                 "formatter": "verbose",
-            }
+            },
         },
         "root": {"level": "INFO", "handlers": ["console"]},
     },
@@ -86,24 +85,25 @@ def _load_config_file(
     # TODO: Ensure that a valid config file path was given and if not raise an
     #  appropriate Exception.
     with open(config_file_path, "rb") as config_file:
-        return yaml.load(config_file, Loader=Loader)
+        return yaml.safe_load(config_file)
 
 
 def _load_settings_initializers(
     initializers_dotted_paths: Sequence[str],
 ) -> Sequence[SettingInitializer]:
-    initializers: list[SettingInitializer] = list()
+    initializers: list[SettingInitializer] = []
     for _initializer_dotted_path in initializers_dotted_paths:
         try:
             initializer_klass: type[SettingInitializer]
             initializer_klass = import_string_as_klass(
-                _initializer_dotted_path, SettingInitializer
+                _initializer_dotted_path,
+                SettingInitializer,
             )
             initializers.append(initializer_klass())  # type: ignore
         except ImportError as exp:
             raise ImproperlyConfiguredError(
                 message='"%s" does not seem to be a valid path.'
-                % _initializer_dotted_path
+                % _initializer_dotted_path,
             ) from exp
         except TypeError as exp:
             raise ImproperlyConfiguredError(
@@ -111,7 +111,7 @@ def _load_settings_initializers(
                     'Invalid value, "%s" is either not class or is not a '
                     'subclass of "app.lib.SettingInitializer".'
                     % _initializer_dotted_path
-                )
+                ),
             ) from exp
 
     return initializers
@@ -127,7 +127,7 @@ class _DefaultTransportFactoryInitializer(SettingInitializer):
     def setting(self) -> str:
         return _DEFAULT_TRANSPORT_FACTORY_CONFIG_KEY
 
-    def execute(self, an_input: str | None) -> Any:
+    def execute(self, an_input: str | None) -> str | None:
         # If the default transport setting has not been provided or is empty,
         # do nothing.
         if not an_input:
@@ -136,20 +136,21 @@ class _DefaultTransportFactoryInitializer(SettingInitializer):
         if type(an_input) is not str:
             raise ImproperlyConfiguredError(
                 message='The value of the "%s" setting must be a string'
-                % _DEFAULT_TRANSPORT_FACTORY_CONFIG_KEY
+                % _DEFAULT_TRANSPORT_FACTORY_CONFIG_KEY,
             )
 
         default_transport_factory: DefaultTransportFactory
         try:
             default_transport_factory = cast(
-                DefaultTransportFactory, import_string(an_input)
+                DefaultTransportFactory,
+                import_string(an_input),
             )
             global registry
             registry.default_transport_factory = default_transport_factory
         except (ImportError, TypeError) as exp:
             raise ImproperlyConfiguredError(
                 message="Unable to import the default transport factory at "
-                '"%s". Ensure a valid path was given.' % an_input
+                '"%s". Ensure a valid path was given.' % an_input,
             ) from exp
 
         return an_input
@@ -162,9 +163,9 @@ class _LoggingInitializer(SettingInitializer):
     def setting(self) -> str:
         return _LOGGING_CONFIG_KEY
 
-    def execute(self, an_input: Mapping[str, Any] | None) -> Any:
+    def execute(self, an_input: Mapping[str, Any] | None) -> Mapping[str, Any]:
         logging_config: dict[str, Any] = dict(
-            an_input or _DEFAULT_CONFIG[self.setting]
+            an_input or _DEFAULT_CONFIG[self.setting],
         )
         dictConfig(logging_config)
         return logging_config
@@ -180,17 +181,17 @@ class _SupportedDataSourceTypesInitializer(SettingInitializer):
     def setting(self) -> str:
         return _SUPPORTED_DATA_SOURCE_TYPES_CONFIG_KEY
 
-    def execute(self, an_input: Sequence[str] | None) -> Any:
+    def execute(self, an_input: Sequence[str] | None) -> Sequence[str]:
         supported_dst: Sequence[str] = (
             an_input or _DEFAULT_CONFIG[self.setting]
         )
         global registry
-        _dst: DataSourceType  # noqa: F842
+        _dst: DataSourceType
         registry.data_source_types = {
             _dst.code: _dst
-            for _dst in map(
-                lambda _s: self._dotted_path_to_data_source_type_klass(_s)(),
-                supported_dst,
+            for _dst in (
+                self._dotted_path_to_data_source_type_klass(_s)()
+                for _s in supported_dst
             )
         }
         return supported_dst
@@ -202,20 +203,19 @@ class _SupportedDataSourceTypesInitializer(SettingInitializer):
         try:
             data_source_type_klass: type[DataSourceType]
             data_source_type_klass = import_string_as_klass(
-                dotted_path, DataSourceType
+                dotted_path,
+                DataSourceType,
             )
             return data_source_type_klass
         except ImportError as exp:
-            raise ImproperlyConfiguredError(
-                message='"%s" does not seem to be a valid path.' % dotted_path
-            ) from exp
+            _msg: str = '"%s" does not seem to be a valid path.' % dotted_path
+            raise ImproperlyConfiguredError(message=_msg) from exp
         except TypeError as exp:
-            raise ImproperlyConfiguredError(
-                message=(
-                    'Invalid value, "%s" is either not class or is not a '
-                    'subclass of "app.core.DataSourceType".' % dotted_path
-                )
-            ) from exp
+            _msg: str = (
+                'Invalid value, "%s" is either not class or is not a subclass '
+                'of "app.core.DataSourceType".' % dotted_path
+            )
+            raise ImproperlyConfiguredError(message=_msg) from exp
 
 
 # =============================================================================
@@ -252,8 +252,8 @@ def setup(
     _initializers: list[Any] = list(settings_initializers or [])
     _initializers.extend(
         _load_settings_initializers(
-            _settings_dict.get(_SETTINGS_INITIALIZERS_CONFIG_KEY, tuple())
-        )
+            _settings_dict.get(_SETTINGS_INITIALIZERS_CONFIG_KEY, ()),
+        ),
     )
     _initializers.insert(0, _LoggingInitializer())
     _initializers.insert(1, _SupportedDataSourceTypesInitializer())
@@ -261,5 +261,6 @@ def setup(
 
     global settings
     settings = Config(  # type: ignore
-        settings=_settings_dict, settings_initializers=_initializers
+        settings=_settings_dict,
+        settings_initializers=_initializers,
     )

@@ -50,7 +50,8 @@ def ensure_greater_than(
 
 
 def ensure_not_none(
-    value: _T | None, message: str = '"value" cannot be None.'
+    value: _T | None,
+    message: str = '"value" cannot be None.',
 ) -> _T:
     """Check that a given value is not ``None``.
 
@@ -70,7 +71,8 @@ def ensure_not_none(
 
 
 def ensure_not_none_nor_empty(
-    value: _S, message: str = '"value" cannot be None or empty.'
+    value: _S,
+    message: str = '"value" cannot be None or empty.',
 ) -> _S:
     """
     Check that a sized value is not ``None`` or empty(has a size of zero).

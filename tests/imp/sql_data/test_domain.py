@@ -1,12 +1,9 @@
 import os
-from collections.abc import Mapping, Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest import TestCase
 from unittest.mock import patch
 
 import pytest
-from pandas import DataFrame
-from sqlalchemy.engine import Connection
 from sqlalchemy.exc import DisconnectionError
 
 from app.imp.sql_data import (
@@ -29,6 +26,12 @@ from .factories import (
     SQLUploadMetadataFactory,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
+
+    from pandas import DataFrame
+    from sqlalchemy.engine import Connection
+
 
 class TestSQLDataSource(TestCase):
     """Tests for the :class:`SQLDataSource` class."""
@@ -38,7 +41,7 @@ class TestSQLDataSource(TestCase):
         self._data_source: SQLDataSource = SQLDataSourceFactory.build()
         self._extract_meta_1: SQLExtractMetadata = SQLExtractMetadataFactory()
         self._extract_meta_2: SQLExtractMetadata = SQLExtractMetadataFactory(
-            sql_query="select 'Bonjour le monde'"
+            sql_query="select 'Bonjour le monde'",
         )
         self._data_source.extract_metadata = {
             "1": self._extract_meta_1,
@@ -55,17 +58,18 @@ class TestSQLDataSource(TestCase):
         ``SQLDataSourceDisposedError`` on attempted usage.
         """
         with pytest.raises(
-            SQLDataSourceDisposedError, match="Data source is disposed."
+            SQLDataSourceDisposedError,
+            match="Data source is disposed.",
         ):
             self._data_source.get_extract_task_args()
 
     def test_accessors(self) -> None:
         """Assert that accessors return the expected values."""
 
-        self.assertDictEqual(
-            self._data_source.extract_metadata,
-            {"1": self._extract_meta_1, "2": self._extract_meta_2},
-        )
+        assert self._data_source.extract_metadata == {
+            "1": self._extract_meta_1,
+            "2": self._extract_meta_2,
+        }
         # This should remain true until after `self.connect_to_db()` is called.
         assert self._data_source.is_disposed
         assert self._data_source.data_source_type is not None
@@ -85,9 +89,11 @@ class TestSQLDataSource(TestCase):
         """
         with patch("sqlalchemy.engine.Engine.connect", autospec=True) as c:
             c.side_effect = DisconnectionError
-            with pytest.raises(SQLDataExtractionOperationError) as exc_info:
-                with self._data_source as ds:
-                    ds.get_extract_task_args()
+            with (
+                pytest.raises(SQLDataExtractionOperationError) as exc_info,
+                self._data_source as ds,
+            ):
+                ds.get_extract_task_args()
 
             assert isinstance(exc_info.value.__cause__, DisconnectionError)
 
@@ -165,29 +171,29 @@ class TestSQLDataSource(TestCase):
         }
 
         self._data_source.database_vendor = SupportedDBVendors.MYSQL
-        with patch("app.settings", config1):
-            with pytest.raises(
-                ImproperlyConfiguredError, match="is missing or is not valid."
-            ):
-                self._data_source.connect_to_db()
+        with patch("app.settings", config1), pytest.raises(
+            ImproperlyConfiguredError,
+            match="is missing or is not valid.",
+        ):
+            self._data_source.connect_to_db()
 
-        with patch("app.settings", config2):
-            with pytest.raises(
-                ImproperlyConfiguredError, match="is missing or is not valid."
-            ):
-                self._data_source.connect_to_db()
+        with patch("app.settings", config2), pytest.raises(
+            ImproperlyConfiguredError,
+            match="is missing or is not valid.",
+        ):
+            self._data_source.connect_to_db()
 
-        with patch("app.settings", config3):
-            with pytest.raises(
-                ImproperlyConfiguredError, match="is missing in"
-            ):
-                self._data_source.connect_to_db()
+        with patch("app.settings", config3), pytest.raises(
+            ImproperlyConfiguredError,
+            match="is missing in",
+        ):
+            self._data_source.connect_to_db()
         for _conf in (config4, config5, config6):
-            with patch("app.settings", _conf):
-                with pytest.raises(
-                    ImproperlyConfiguredError, match="is not a valid port."
-                ):
-                    self._data_source.connect_to_db()
+            with patch("app.settings", _conf), pytest.raises(
+                ImproperlyConfiguredError,
+                match="is not a valid port.",
+            ):
+                self._data_source.connect_to_db()
 
     def test_object_initialization_from_a_mapping(self) -> None:
         """
@@ -204,7 +210,7 @@ class TestSQLDataSource(TestCase):
         }
         data_source: SQLDataSource = SQLDataSource.of_mapping(mapping)
 
-        self.assertDictEqual(data_source.extract_metadata, {})
+        assert data_source.extract_metadata == {}
         assert data_source is not None
         assert data_source.id == mapping["id"]
         assert data_source.name == mapping["name"]
@@ -215,24 +221,23 @@ class TestSQLDataSource(TestCase):
         """Assert that ``SQLDataSource`` can be used as a context manager."""
 
         config: Config = Config(settings={"RETRY": {"enable_retries": False}})
-        with patch("app.settings", config):
-            with self._data_source:
-                # This should work without raising any errors as using an
-                # SQLDataSource as a context manager should automatically
-                # result connect_to_db() being called.
-                with self._data_source.get_extract_task_args() as connection:
-                    assert connection is not None
+        with patch("app.settings", config), self._data_source:  # noqa: SIM117
+            # This should work without raising any errors as using an
+            # SQLDataSource as a context manager should automatically
+            # result connect_to_db() being called.
+            with self._data_source.get_extract_task_args() as connection:
+                assert connection is not None
 
     def test_sql_data_source_context_manager_nesting_is_disallowed(
         self,
-    ) -> None:  # noqa
+    ) -> None:
         """
         Assert that nesting of ``SQLDataSource`` as a context manager is a
         programming error.
         """
 
-        with self._data_source:
-            with pytest.raises(SQLDataError, match="Incorrect usage"):
+        with self._data_source:  # noqa: SIM117
+            with pytest.raises(SQLDataError, match="Incorrect usage"):  # noqa
                 with self._data_source:
                     ...
 
@@ -253,7 +258,7 @@ class TestSQLDataSourceType(TestCase):
         assert (
             self._data_source_type.imp_extract_metadata_klass()
             == SQLExtractMetadata
-        )  # noqa
+        )
         assert (
             self._data_source_type.imp_upload_chunk_klass() == SQLUploadChunk
         )
@@ -276,6 +281,7 @@ class TestSQLExtractMetadata(TestCase):
         task = self._extract_meta.to_task()
         assert task is not None
         assert self._extract_meta.data_source is not None
+        assert self._extract_meta.get_upload_meta_extra_init_kwargs() is None
 
 
 class TestSQLUploadMetadata(TestCase):
@@ -291,7 +297,8 @@ class TestSQLUploadMetadata(TestCase):
         content_type = "application/vnd.apache-parquet"
         assert self._upload_meta.extract_metadata is not None
         assert isinstance(
-            self._upload_meta.extract_metadata, SQLExtractMetadata
+            self._upload_meta.extract_metadata,
+            SQLExtractMetadata,
         )
         assert self._upload_meta.get_content_type() == content_type
         assert self._upload_meta.to_task() is not None
@@ -306,12 +313,12 @@ class TestSQLUploadMetadata(TestCase):
         data_source: SQLDataSource = extract_meta.data_source
         with data_source:
             extracted_data: DataFrame = extract_meta.to_task().execute(
-                data_source.get_extract_task_args()
+                data_source.get_extract_task_args(),
             )
 
         upload_task = self._upload_meta.to_task()
         processed_extract: Sequence[bytes] = upload_task.execute(
-            extracted_data
+            extracted_data,
         )
 
         assert len(processed_extract) > 0

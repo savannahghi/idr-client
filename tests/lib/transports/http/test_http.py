@@ -44,30 +44,40 @@ class TestHTTPModule(TestCase):
         """
         config1: dict[str, Any] = dict(self._app_config)
         del config1[self._http_config_key]
-        with patch("app.settings", config1):
-            with pytest.raises(ImproperlyConfiguredError):
-                http_transport_factory()
+        with (
+            patch("app.settings", config1),
+            pytest.raises(ImproperlyConfiguredError),
+        ):
+            http_transport_factory()
 
         config2: dict[str, Any] = dict(self._app_config)
         config2[self._http_config_key] = 3
-        with patch("app.settings", config2):
-            with pytest.raises(ImproperlyConfiguredError):
-                http_transport_factory()
+        with (
+            patch("app.settings", config2),
+            pytest.raises(ImproperlyConfiguredError),
+        ):
+            http_transport_factory()
 
         config3: dict[str, Any] = dict(self._app_config)
         del config3[self._http_config_key][self._api_dialect_config_key]
-        with patch("app.settings", config3):
-            with pytest.raises(ImproperlyConfiguredError):
-                http_transport_factory()
+        with (
+            patch("app.settings", config3),
+            pytest.raises(ImproperlyConfiguredError),
+        ):
+            http_transport_factory()
 
         config4: dict[str, Any] = dict(self._app_config)
         config4[self._http_config_key][self._api_dialect_config_key] = None
-        with patch("app.settings", config4):
-            with pytest.raises(ImproperlyConfiguredError):
-                http_transport_factory()
+        with (
+            patch("app.settings", config4),
+            pytest.raises(ImproperlyConfiguredError),
+        ):
+            http_transport_factory()
 
         config5: dict[str, Any] = dict(self._app_config)
         config5[self._http_config_key][self._api_dialect_config_key] = "12345"
-        with patch("app.settings", config5):
-            with pytest.raises(ImproperlyConfiguredError):
-                http_transport_factory()
+        with (
+            patch("app.settings", config5),
+            pytest.raises(ImproperlyConfiguredError),
+        ):
+            http_transport_factory()

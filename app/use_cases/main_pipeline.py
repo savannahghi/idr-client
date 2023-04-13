@@ -16,7 +16,7 @@ from .upload_extracts import (
 
 
 class FetchMetadata(
-    Pipeline[Sequence[DataSourceType], Sequence[ExtractMetadata]]
+    Pipeline[Sequence[DataSourceType], Sequence[ExtractMetadata]],
 ):
     """Connect to the remote server and fetch metadata."""
 
@@ -28,7 +28,7 @@ class FetchMetadata(
 
 
 class RunExtraction(
-    Pipeline[Sequence[ExtractMetadata], Sequence[RunExtractionResult]]
+    Pipeline[Sequence[ExtractMetadata], Sequence[RunExtractionResult]],
 ):
     """
     Run each extracts against their parent data source and return the results.
