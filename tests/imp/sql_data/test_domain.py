@@ -1,6 +1,5 @@
 import os
 from typing import TYPE_CHECKING, Any
-from unittest import TestCase
 from unittest.mock import patch
 
 import pytest
@@ -18,6 +17,7 @@ from app.imp.sql_data import (
     SupportedDBVendors,
 )
 from app.lib import Config, ImproperlyConfiguredError
+from tests import TestCase
 
 from .factories import (
     SQLDataSourceFactory,

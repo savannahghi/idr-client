@@ -1,6 +1,5 @@
-from unittest import TestCase
-
 from app.core import IDRClientException
+from tests import TestCase
 
 
 class TestIDRClientException(TestCase):

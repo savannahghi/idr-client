@@ -1,9 +1,8 @@
-from unittest import TestCase
-
 import pytest
 
 from app.lib import ImproperlyConfiguredError, RetryInitializer
 from app.lib.retry.constants import DEFAULT_RETRY_CONFIG
+from tests import TestCase
 
 
 class TestRetryInitializer(TestCase):
@@ -41,6 +40,6 @@ class TestRetryInitializer(TestCase):
                 self._instance.execute({setting: "-0.1"})  # type: ignore
 
     def test_setting_property_return_value(self) -> None:
-        """Assert the the ``setting`` property returns the expected value."""
+        """Assert the ``setting`` property returns the expected value."""
 
         assert self._instance.setting == "RETRY"

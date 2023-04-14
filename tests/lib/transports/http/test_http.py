@@ -1,12 +1,11 @@
 from typing import Any
-from unittest import TestCase
 from unittest.mock import patch
 
 import pytest
 
-import app
 from app.lib import ImproperlyConfiguredError
 from app.lib.transports.http import HTTPTransport, http_transport_factory
+from tests import TestCase
 from tests.factories import config_factory
 
 
@@ -32,10 +31,10 @@ class TestHTTPModule(TestCase):
         Assert that a http transport factory returns the expected value with
         a valid config.
         """
-        app.setup(initial_settings=self._app_config)
-        transport: HTTPTransport = http_transport_factory()
+        with patch("app.settings", self._app_config):
+            transport: HTTPTransport = http_transport_factory()
 
-        assert transport is not None
+            assert transport is not None
 
     def test_http_transport_factory_with_invalid_settings_fails(self) -> None:
         """

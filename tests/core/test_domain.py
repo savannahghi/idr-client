@@ -1,8 +1,7 @@
-from unittest import TestCase
-
 import pytest
 
 from app.core import AbstractDomainObject, IdentifiableDomainObject
+from tests import TestCase
 
 from .factories import (
     FakeDataSource,

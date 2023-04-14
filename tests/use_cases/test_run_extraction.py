@@ -1,11 +1,11 @@
 from typing import TYPE_CHECKING
-from unittest import TestCase
 
 from app.use_cases.run_extraction import (
     DoExtract,
     GroupSiblingExtracts,
     RunDataSourceExtracts,
 )
+from tests import TestCase
 from tests.core.factories import (
     FakeDataSourceFactory,
     FakeExtractMetadataFactory,

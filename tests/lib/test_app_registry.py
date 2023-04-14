@@ -1,11 +1,11 @@
 from typing import TYPE_CHECKING
-from unittest import TestCase
 
 import pytest
 
 from app.imp.sql_data import SQLDataSourceType
 from app.lib import AppRegistry, ImproperlyConfiguredError
 from app.lib.transports.http import http_transport_factory
+from tests import TestCase
 
 if TYPE_CHECKING:
     from collections.abc import Mapping

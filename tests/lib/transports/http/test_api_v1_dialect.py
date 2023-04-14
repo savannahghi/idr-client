@@ -1,6 +1,5 @@
 import json
 from typing import TYPE_CHECKING, Any
-from unittest import TestCase
 from unittest.mock import patch
 
 import pytest
@@ -10,6 +9,7 @@ from app.lib.transports.http import (
     IDRServerAPIv1,
     idr_server_api_v1_dialect_factory,
 )
+from tests import TestCase
 from tests.core.factories import (
     FakeDataSourceFactory,
     FakeDataSourceTypeFactory,

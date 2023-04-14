@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING, Any
-from unittest import TestCase
 
 import pytest
 
 from app.lib import Config, MissingSettingError, SettingInitializer
+from tests import TestCase
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence

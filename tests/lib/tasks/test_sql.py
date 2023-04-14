@@ -1,5 +1,4 @@
 from typing import TYPE_CHECKING
-from unittest import TestCase
 from unittest.mock import patch
 
 import pytest
@@ -8,6 +7,7 @@ from sqlalchemy.exc import DisconnectionError
 
 from app.core import ExtractionOperationError
 from app.lib import SimpleSQLSelect
+from tests import TestCase
 
 if TYPE_CHECKING:
     from pandas import DataFrame
