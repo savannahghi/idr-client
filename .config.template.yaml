@@ -6,7 +6,7 @@
 # allows the app to communicate with the remote IDR Server and for data
 # exchange to happen.
 # This is a required setting.
-DEFAULT_TRANSPORT_FACTORY: "app.lib.transports.http.http_transport_factory"
+DEFAULT_TRANSPORT_FACTORY: app.lib.transports.http.http_transport_factory
 
 # The logging configuration for the app. This app use Python's built it logging.
 # https://docs.python.org/3/library/logging.html
@@ -25,12 +25,14 @@ LOGGING:
       format: "%(levelname)s: %(asctime)s %(module)s %(process)d %(thread)d %(message)s"
   handlers:
     console:
-      level: "DEBUG"
-      class: "logging.StreamHandler"
-      formatter: "verbose"
-  root:
-    level: "INFO"
-    handlers": [ "console" ]
+      level: DEBUG
+      class: logging.StreamHandler
+      formatter: verbose
+  loggers:
+    app:
+      level: INFO
+      handlers:
+        - console
 
 # The retry module global configuration. The values here will be used for each
 # retry instance when not specified.
@@ -47,7 +49,7 @@ RETRY:
 # on that data including what is uploaded to the server.
 # This setting is not required and defaults to an empty list.
 #SUPPORTED_DATA_SOURCE_TYPES:
-#  - "app.imp.sql_data.SQLDataSourceType"
+#  - app.imp.sql_data.SQLDataSourceType
 
 
 
@@ -58,13 +60,13 @@ RETRY:
 # Configuration specific to the HTTPTransport.
 # This is only required if HTTPTransport is set as the default Transport.
 HTTP_TRANSPORT:
-  default_http_api_dialect_factory: "app.lib.transports.http.idr_server_api_v1_dialect_factory"
+  default_http_api_dialect_factory: app.lib.transports.http.idr_server_api_v1_dialect_factory
   connect_timeout: 60  # 1 minutes
   read_timeout: 60 # 1 minute
 
 # A function that when called should return a HTTPAPIDialect.
 # This is only required if HTTPTransport is set as the default Transport.
-DEFAULT_HTTP_API_DIALECT_FACTORY: "app.lib.http.idr_server_api_v1_dialect_factory"
+DEFAULT_HTTP_API_DIALECT_FACTORY: app.lib.http.idr_server_api_v1_dialect_factory
 
 # The configuration of the backend to this app. This setting is used by HTTP
 # API dialects.
@@ -84,10 +86,10 @@ REMOTE_SERVER:
 # MySQL databases.
 # This is only required if the SQLDataSourceType is in use.
 MYSQL_DB_INSTANCE:
-  host: "localhost"
+  host: localhost
   port: 3306
-  username: "idr_client"
-  password: "securePa$$word"
+  username: idr_client
+  password: securePa$$word
 
 
 
@@ -100,6 +102,6 @@ MYSQL_DB_INSTANCE:
 # location data is composed of a unique code for ease of indexing and a
 # human-readable name.
 # Both of these settings are required.
-ORG_UNIT_CODE: "12345"
+ORG_UNIT_CODE: 12345
 
-ORG_UNIT_NAME: "Test Facility"
+ORG_UNIT_NAME: Test Facility

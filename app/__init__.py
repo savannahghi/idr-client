@@ -37,7 +37,7 @@ _DEFAULT_CONFIG: Final[dict[str, Any]] = {
             "verbose": {
                 "format": (
                     "%(levelname)s: %(asctime)s %(module)s "
-                    "%(process)d %(thread)d %(message)s"
+                    "%(process)d %(message)s"
                 ),
             },
         },
@@ -48,7 +48,9 @@ _DEFAULT_CONFIG: Final[dict[str, Any]] = {
                 "formatter": "verbose",
             },
         },
-        "root": {"level": "INFO", "handlers": ["console"]},
+        "loggers": {
+            "app": {"level": "INFO", "handlers": ["console"]},
+        },
     },
     _SETTINGS_INITIALIZERS_CONFIG_KEY: [],
     _SUPPORTED_DATA_SOURCE_TYPES_CONFIG_KEY: [],
@@ -231,6 +233,11 @@ def setup(
     """
     Set up the application and ready it for use.
 
+    This involves configuring the settings and app registry, configuring
+    logging, loading supported
+    :class:`data source types <app.core.DataSourceType>` and initializing the
+    default :class:`transport <app.core.Transport>`.
+
     :param initial_settings: Optional configuration parameters to override the
         defaults.
     :param settings_initializers:
@@ -255,6 +262,8 @@ def setup(
             _settings_dict.get(_SETTINGS_INITIALIZERS_CONFIG_KEY, ()),
         ),
     )
+    # FIXME: This is hardcoded default behaviour and it's problematic to test
+    #  or mock properly.
     _initializers.insert(0, _LoggingInitializer())
     _initializers.insert(1, _SupportedDataSourceTypesInitializer())
     _initializers.insert(2, _DefaultTransportFactoryInitializer())

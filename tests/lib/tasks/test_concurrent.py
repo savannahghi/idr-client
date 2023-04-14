@@ -1,12 +1,12 @@
 from concurrent.futures import Executor, ThreadPoolExecutor, wait
 from typing import TYPE_CHECKING
-from unittest import TestCase
 
 import pytest
 
 from app.core import Task
 from app.lib import ConcurrentExecutor, completed_successfully
 from app.lib.tasks.concurrent import ConcurrentExecutorDisposedError
+from tests import TestCase
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

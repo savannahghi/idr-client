@@ -1,4 +1,3 @@
-from unittest import TestCase
 from unittest.mock import patch
 
 import pytest
@@ -6,6 +5,7 @@ from requests.exceptions import ChunkedEncodingError, ConnectionError
 
 from app.core import TransportClosedError, TransportError
 from app.lib.transports.http import HTTPAPIDialect, HTTPTransport
+from tests import TestCase
 from tests.core.factories import (
     FakeDataSourceFactory,
     FakeDataSourceTypeFactory,
@@ -63,8 +63,8 @@ class TestHTTPTransport(TestCase):
 
     def test_a_disposed_transport_raises_expected_errors(self) -> None:
         """
-        Assert that a disposed transport raises ``TransportClosedError`` on
-        attempted usage.
+        Assert that a disposed Transport instance raises
+        ``TransportClosedError`` on attempted usage.
         """
         data_source = FakeDataSourceFactory()
         data_source_type = FakeDataSourceTypeFactory()

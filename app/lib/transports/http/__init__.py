@@ -80,5 +80,6 @@ __all__ = [
     "HTTPAPIDialect",
     "HTTPTransport",
     "IDRServerAPIv1",
+    "http_transport_factory",
     "idr_server_api_v1_dialect_factory",
 ]

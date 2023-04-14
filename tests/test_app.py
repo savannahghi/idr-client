@@ -1,10 +1,10 @@
 from typing import Any
-from unittest import TestCase
 
 import pytest
 
 import app
 from app.lib import ImproperlyConfiguredError, SettingInitializer
+from tests import TestCase
 from tests.factories import config_factory
 
 # =============================================================================

@@ -1,10 +1,10 @@
 from typing import TYPE_CHECKING
-from unittest import TestCase
 
 import pytest
 
 from app.core import Task
 from app.lib import Chainable, Consumer, Pipeline
+from tests import TestCase
 
 if TYPE_CHECKING:
     from collections.abc import Callable

@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -12,6 +11,7 @@ from app.lib import (
     if_exception_type_factory,
     if_idr_exception,
 )
+from tests import TestCase
 
 
 def test_if_idr_exception() -> None:
@@ -54,10 +54,7 @@ class TestRetry(TestCase):
         self._patch.start()
         self._instance: Retry = Retry()
         self._instance.load_config()
-
-    def tearDown(self) -> None:
-        super().tearDown()
-        self._patch.stop()
+        self.addCleanup(self._patch.stop)
 
     def test_calculate_deadline_time_return_value_with_no_deadline(
         self,

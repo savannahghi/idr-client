@@ -1,5 +1,4 @@
 from typing import TYPE_CHECKING, Any
-from unittest import TestCase
 from unittest.mock import patch
 
 from app.lib import Config
@@ -14,6 +13,7 @@ from app.use_cases.upload_extracts import (
     RunExtractionResult,
     UploadExtractResult,
 )
+from tests import TestCase
 from tests.core.factories import (
     FakeExtractMetadataFactory,
     FakeTransportFactory,
