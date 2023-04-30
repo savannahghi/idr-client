@@ -76,10 +76,20 @@ multi_line_output = 3
 profile = "black"
 
 [tool.pyright]
+analyzeUnannotatedFunctions = true
 enableTypeIgnoreComments = true
 reportConstantRedefinition = "error"
+reportDeprecated = "warning"
 reportDuplicateImport = "error"
+reportGeneralTypeIssues = "error"
+reportIncompatibleMethodOverride = "error"
+reportIncompatibleVariableOverride = "error"
+reportMissingSuperCall = "warning"
+reportMissingTypeStubs = "information"
+reportOverlappingOverload = "warning"
 reportPrivateUsage = "error"
+reportPropertyTypeMismatch = "error"
+reportUnnecessaryTypeIgnoreComment = "error"
 reportUnusedClass = "warning"
 reportUnusedFunction = "warning"
 reportUnusedImport = "error"

@@ -22,8 +22,8 @@ class TestCase(_TestCase):
     def config_factory(cls) -> Config:
         """Return a ``Config`` instance.
 
-        Return a :class:`Config <app.lib.Config>` instance used to configure
-        the execution environment of this ``TestCase`` instances.
+        Return a :class:`~app.lib.Config` instance used to configure the
+        execution environment of this ``TestCase`` instances.
 
         :return: a Config instance.
         """
@@ -36,7 +36,7 @@ class TestCase(_TestCase):
         Extend the default implementation by setting up a patch for the
         application settings and registry using the value returned by the
         :meth:`config_factory` class method. The patch is accessible through
-        the class attribute :attr:`config_patch` for interested subclasses.
+        the class attribute :attr:`config_patcher` for interested subclasses.
 
         .. warning::
             It is highly encouraged that subclasses extending this method call
