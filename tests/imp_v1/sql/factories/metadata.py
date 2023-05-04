@@ -59,7 +59,8 @@ class SimpleSQLDatabaseDescriptorFactory(DataSourceMetadataFactory):
 class SimpleSQLQueryFactory(ExtractMetadataFactory):
     """Factory for :class:`SimpleSQLQueryFactory`."""
 
-    name = "Test Query"
+    name = factory.Sequence(lambda _n: f"Test Query {_n}")
+    description = "Test SQL Query."
     data_source_metadata = factory.SubFactory(
         SimpleSQLDatabaseDescriptorFactory,
         queries_count=0,
@@ -72,7 +73,8 @@ class SimpleSQLQueryFactory(ExtractMetadataFactory):
     @factory.lazy_attribute
     def description(self) -> str:
         dsm: SimpleSQLDatabaseDescriptor = cast(
-            SimpleSQLDatabaseDescriptor, self.data_source_metadata,
+            SimpleSQLDatabaseDescriptor,
+            self.data_source_metadata,
         )
         return f"Retrieve data from the {dsm.name} database."
 

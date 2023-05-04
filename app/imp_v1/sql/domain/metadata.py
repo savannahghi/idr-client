@@ -51,13 +51,15 @@ class BaseSQLExtractMetadata(BaseExtractMetadata, metaclass=ABCMeta):
 # CONCRETE METADATA IMPLEMENTATIONS
 # =============================================================================
 
+
 @define
-class SimpleSQLDatabaseDescriptor(BaseDataSourceMetadata):
+class SimpleSQLDatabaseDescriptor(BaseSQLDataSourceMetadata):
     """Simple SQL database descriptor."""
 
     _database_url: str | URL = field()
     _isolation_level: ReadIsolationLevels = field(
-        default="REPEATABLE READ", kw_only=True,
+        default="REPEATABLE READ",
+        kw_only=True,
     )
     _logging_name: str | None = field(default=None, kw_only=True)
 
@@ -101,14 +103,18 @@ class SimpleSQLDatabaseDescriptor(BaseDataSourceMetadata):
 
 @define(slots=True)
 class SimpleSQLQuery(BaseSQLExtractMetadata):
-    """Simple :class:`ExtractMetadata` for extracting data from SQL databases."""
+    """Simple :class:`ExtractMetadata` implementation for extracting data from
+    SQL databases.
+
+    """
 
     _raw_sql_query: str = field()
     _yield_per: int | None = field(default=None, kw_only=True)
     # TODO: Ensure that the number is a positive integer when set.
     _logging_token: str | None = field(default=None, kw_only=True)
     _isolation_level: ReadIsolationLevels | None = field(
-        default=None, kw_only=True,
+        default=None,
+        kw_only=True,
     )
 
     @property
@@ -166,8 +172,8 @@ class SimpleSQLQuery(BaseSQLExtractMetadata):
 
             `SQLAlchemy docs <https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.Connection.execution_options.params.yield_per>`_
 
-        :return: The maximum number of rows to be extracted at any one time from
-            the database.
+        :return: The maximum number of rows to be extracted at any one time
+            from the database.
         """
         return self._yield_per
 

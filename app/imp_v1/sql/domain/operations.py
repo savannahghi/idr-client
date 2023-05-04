@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from collections.abc import Iterator, Sequence
-from typing import Any, Generic, Self, TypeVar, cast
+from typing import Any, Final, Generic, Self, TypeVar, cast
 
 from attrs import define, field
 from sqlalchemy import Connection, CursorResult, Engine, Row, create_engine
@@ -9,9 +9,11 @@ from app.core_v1.domain import (
     BaseData,
     BaseDataSource,
     BaseDataSourceStream,
+    DataSourceStream,
     RawData,
 )
 
+from ..typings import ReadIsolationLevels
 from .metadata import (
     BaseSQLDataSourceMetadata,
     BaseSQLExtractMetadata,
@@ -23,6 +25,7 @@ from .metadata import (
 # TYPES
 # =============================================================================
 
+_DM = TypeVar("_DM", bound=BaseSQLDataSourceMetadata)
 _EM = TypeVar("_EM", bound=BaseSQLExtractMetadata)
 _RD = TypeVar("_RD", bound=RawData)
 
@@ -30,12 +33,23 @@ _DBRows = Sequence[Row[Any]]
 
 
 # =============================================================================
+# CONSTANTS
+# =============================================================================
+
+DEFAULT_MAX_EXTRACTION_ROWS: Final[int] = 10_000
+"""The maximum number of rows to extract from a database at any one time."""
+
+
+# =============================================================================
 # BASE OPERATIONS CLASSES
 # =============================================================================
 
+
 @define(slots=False)
 class BaseSQLDataSource(
-    BaseDataSource[_EM, "SQLRawData"], Generic[_EM], metaclass=ABCMeta,
+    BaseDataSource[_DM, _EM, "SQLRawData"],
+    Generic[_DM, _EM],
+    metaclass=ABCMeta,
 ):
     """An SQL Database."""
 
@@ -52,22 +66,16 @@ class BaseSQLDataSource(
         self._is_disposed = True
         self.engine.dispose(close=True)
 
-    @classmethod
-    @abstractmethod
-    def from_data_source_meta(
-        cls, data_source_meta: BaseSQLDataSourceMetadata,
-    ) -> Self:
-        ...
-
 
 @define(slots=False)
 class BaseSQLDataSourceStream(
-    BaseDataSourceStream[_EM, "SQLRawData"], Generic[_EM],
+    BaseDataSourceStream[_EM, "SQLRawData"],
+    Generic[_EM],
     metaclass=ABCMeta,
 ):
     @property
-    def data_source(self) -> BaseSQLDataSource[_EM]:
-        return cast(BaseSQLDataSource[_EM], self._data_source)
+    def data_source(self) -> BaseSQLDataSource[Any, _EM]:
+        return cast(BaseSQLDataSource[Any, _EM], self._data_source)
 
 
 # =============================================================================
@@ -78,11 +86,18 @@ class BaseSQLDataSourceStream(
 @define(slots=True)
 class SQLRawData(BaseData[_DBRows], RawData[_DBRows]):
     """Raw data from an SQL database."""
+
     ...
 
 
 @define(order=False, slots=True)
-class SimpleSQLDatabase(BaseSQLDataSource[SimpleSQLQuery]):
+class SimpleSQLDatabase(
+    BaseSQLDataSource[SimpleSQLDatabaseDescriptor, SimpleSQLQuery],
+):
+    """
+    Simple implementation of an SQL database as a
+    :class:`~app.core_v1.domain.DataSource`.
+    """
 
     _engine: Engine = field()
 
@@ -91,7 +106,8 @@ class SimpleSQLDatabase(BaseSQLDataSource[SimpleSQLQuery]):
         return self._engine
 
     def start_extraction(
-            self, extract_metadata: SimpleSQLQuery,
+        self,
+        extract_metadata: SimpleSQLQuery,
     ) -> "SimpleSQLDataSourceStream":
         return SimpleSQLDataSourceStream(
             self,
@@ -101,7 +117,8 @@ class SimpleSQLDatabase(BaseSQLDataSource[SimpleSQLQuery]):
 
     @classmethod
     def from_data_source_meta(
-        cls, data_source_meta: SimpleSQLDatabaseDescriptor,
+        cls,
+        data_source_meta: SimpleSQLDatabaseDescriptor,
     ) -> Self:
         return cls(
             name=data_source_meta.name,  # pyright: ignore
@@ -118,6 +135,7 @@ class SimpleSQLDatabase(BaseSQLDataSource[SimpleSQLQuery]):
         cls,
         name: str = "SQLite in Memory",
         description: str = "An SQLite in memory database.",
+        isolation_level: ReadIsolationLevels = "SERIALIZABLE",
     ) -> Self:
         return cls(
             name=name,  # pyright: ignore
@@ -125,47 +143,43 @@ class SimpleSQLDatabase(BaseSQLDataSource[SimpleSQLQuery]):
             engine=create_engine(  # pyright: ignore
                 "sqlite+pysqlite:///:memory:",
                 logging_name=name,
+                isolation_level=isolation_level,
             ),
         )
 
 
 @define(order=False, slots=True)
 class SimpleSQLDataSourceStream(BaseSQLDataSourceStream[SimpleSQLQuery]):
-    """A simple :class:`DataSourceStream` implementation. """
+    """
+    Simple :class:`DataSourceStream` implementation that operates on SQL data.
+    """
 
     _connection: Connection = field()
-    _extraction_result: CursorResult[Any] | None = field(default=None, init=False)
-    _partitions: Iterator[_DBRows] | None = field(default=None, init=False)
 
-    def __attrs_post_init__(self):
-        self._prepare_connection()
+    def __attrs_post_init__(self) -> None:
+        self._connection: Connection = self._connection.execution_options(
+            logging_token=self._extract_metadata.logging_token,
+            max_row_buffer=DEFAULT_MAX_EXTRACTION_ROWS,
+            stream_results=True,
+            yield_per=(
+                self._extract_metadata.yield_per or DEFAULT_MAX_EXTRACTION_ROWS
+            ),
+        )
+        self._extraction_result: CursorResult[Any] = self._connection.execute(
+            self.extract_metadata.select_clause,
+        )
+        self._partitions: Iterator[_DBRows]
+        self._partitions = self._extraction_result.partitions(
+            self._extract_metadata.yield_per or DEFAULT_MAX_EXTRACTION_ROWS,
+        )
 
     def extract(self) -> tuple[SQLRawData, float]:
-        if self._extraction_result is None:
-            self._extraction_result = self._connection.execute(
-                self.extract_metadata.select_clause,
-            )
-            self._partitions = self._extraction_result.partitions()
-
-        assert self._partitions is not None
         try:
             return SQLRawData(next(self._partitions)), -1.0
         except StopIteration:
-            return SQLRawData([]), 0.0
+            raise DataSourceStream.StopExtraction from None
 
     def dispose(self) -> None:
         self._is_disposed = True
-        if self._extraction_result is not None:
-            self._extraction_result.close()
+        self._extraction_result.close()
         self._connection.close()
-
-    def _prepare_connection(self) -> None:
-        connection_options: dict[str, Any] = {
-            "logging_token": self.extract_metadata.logging_token,
-        }
-        if self.extract_metadata.yield_per is not None:
-            connection_options["yield_per"] = self.extract_metadata.yield_per
-
-        self._connection = self._connection.execution_options(
-            **connection_options,
-        )

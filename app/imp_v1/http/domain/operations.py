@@ -36,21 +36,24 @@ _UM = TypeVar("_UM", bound=UploadMetadata)
 # HTTP OPERATION CLASSES
 # =============================================================================
 
+
 @define(order=False)
 class HTTPDataSink(BaseDataSink[_UM, _UC, _CD], Generic[_UM, _UC, _CD]):
     """A :class:`DataSink` backed by an HTTP server."""
 
     _transport_factory: HTTPTransportFactory = field()
     _api_dialect_factory: Callable[
-        [], HTTPDataSinkAPIDialect[_UC, _CD],
+        [],
+        HTTPDataSinkAPIDialect[_UC, _CD],
     ] = field()
     _valid_response_predicate: ResponsePredicate = field(
-        default=if_request_accepted, kw_only=True,
+        default=if_request_accepted,
+        kw_only=True,
     )
 
     @property
     def api_dialect_factory(
-            self,
+        self,
     ) -> Callable[[], HTTPDataSinkAPIDialect[_UC, _CD]]:
         return self._api_dialect_factory
 
@@ -62,27 +65,30 @@ class HTTPDataSink(BaseDataSink[_UM, _UC, _CD], Generic[_UM, _UC, _CD]):
         self._is_disposed = True
 
     def start_consumption(
-            self, upload_metadata: _UM,
+        self,
+        upload_metadata: _UM,
     ) -> "HTTPDataSinkStream[_UM, _UC, _CD]":
         return HTTPDataSinkStream(
             self,
             upload_metadata,
             self._transport_factory(),
             self._api_dialect_factory(),
-            valid_response_predicate=self._valid_response_predicate,  # type: ignore
+            valid_response_predicate=self._valid_response_predicate,  # pyright: ignore  # noqa: E501
         )
 
 
 @define(order=False)
 class HTTPDataSinkStream(
-    BaseDataSinkStream[_UM, _UC, _CD], Generic[_UM, _UC, _CD],
+    BaseDataSinkStream[_UM, _UC, _CD],
+    Generic[_UM, _UC, _CD],
 ):
     """A :class:`DataSinkStream` backed by an HTTP server."""
 
     _transport: HTTPTransport = field()
     _api_dialect: HTTPDataSinkAPIDialect[_UC, _CD] = field()
     _valid_response_predicate: ResponsePredicate = field(
-        default=if_request_accepted, kw_only=True,
+        default=if_request_accepted,
+        kw_only=True,
     )
 
     @property
@@ -94,10 +100,10 @@ class HTTPDataSinkStream(
         return self._transport
 
     def consume(
-            self,
-            upload_content_meta: _UC,
-            clean_data: _CD,
-            progress: float,
+        self,
+        upload_content_meta: _UC,
+        clean_data: _CD,
+        progress: float,
     ) -> None:
         req: Request = self._api_dialect.consume_request_factory(
             upload_content_meta=upload_content_meta,

@@ -4,4 +4,5 @@ ReadIsolationLevels = Literal[
     "READ COMMITTED",
     "READ UNCOMMITTED",
     "REPEATABLE READ",
+    "SERIALIZABLE",
 ]

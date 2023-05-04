@@ -10,8 +10,11 @@ from .metadata import (
     UploadContentMetadataFactory,
     UploadMetadataFactory,
 )
+from .operations import DataSinkFactory, DataSourceFactory
 
 __all__ = [
+    "DataSinkFactory",
+    "DataSourceFactory",
     "DataSourceMetadataFactory",
     "DomainObjectFactory",
     "ExtractMetadataFactory",
