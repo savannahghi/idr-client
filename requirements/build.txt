@@ -1,4 +1,4 @@
 -r base.txt
 
-pyinstaller~=5.9.0
-staticx~=0.13.8
+pyinstaller~=5.10.1
+staticx~=0.13.9

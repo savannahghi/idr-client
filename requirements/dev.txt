@@ -1,4 +1,4 @@
 -r build.txt
 -r test.txt
 
-pre-commit~=3.2.2
+pre-commit~=3.3.1

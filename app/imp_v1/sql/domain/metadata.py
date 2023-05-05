@@ -1,4 +1,8 @@
 from abc import ABCMeta, abstractmethod
+from collections.abc import Callable
+
+# noinspection PyUnresolvedReferences
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from attrs import define, field
 from sqlalchemy import text
@@ -6,9 +10,32 @@ from sqlalchemy.engine import URL
 from sqlalchemy.sql.elements import TextClause
 from sqlalchemy.sql.selectable import SelectBase
 
-from app.core_v1.domain import BaseDataSourceMetadata, BaseExtractMetadata
+from app.core_v1.domain import (
+    BaseDataSourceMetadata,
+    BaseExtractMetadata,
+    DataSourceStream,
+    RawData,
+)
 
 from ..typings import ReadIsolationLevels
+
+if TYPE_CHECKING:
+    # noinspection PyUnresolvedReferences
+    from .operations import BaseSQLDataSource
+
+
+# =============================================================================
+# TYPES
+# =============================================================================
+
+
+_EM = TypeVar("_EM", bound="BaseSQLExtractMetadata")
+_RD = TypeVar("_RD", bound=RawData)
+
+DataSourceStreamFactory = Callable[
+    ["BaseSQLDataSource[Any, _EM, _RD]", _EM],
+    DataSourceStream[_EM, _RD],
+]
 
 # =============================================================================
 # BASE METADATA CLASSES
@@ -18,6 +45,11 @@ from ..typings import ReadIsolationLevels
 @define(slots=False)
 class BaseSQLDataSourceMetadata(BaseDataSourceMetadata, metaclass=ABCMeta):
     """Base descriptor for :class:`SQL data sources<DataSource>`."""
+
+    @property
+    @abstractmethod
+    def data_source_stream_factory(self) -> DataSourceStreamFactory:
+        ...
 
     @property
     @abstractmethod
@@ -62,6 +94,19 @@ class SimpleSQLDatabaseDescriptor(BaseSQLDataSourceMetadata):
         kw_only=True,
     )
     _logging_name: str | None = field(default=None, kw_only=True)
+    _data_source_stream_factory: DataSourceStreamFactory | None = field(
+        default=None,
+        kw_only=True,
+    )
+
+    @property
+    def data_source_stream_factory(self) -> DataSourceStreamFactory:
+        from .operations import pd_data_frame_data_source_stream_factory
+
+        return (
+            self._data_source_stream_factory
+            or pd_data_frame_data_source_stream_factory
+        )
 
     @property
     def database_url(self) -> str | URL:
