@@ -7,13 +7,13 @@ from ..interfaces import (
     CleanedData,
     Data,
     DataSink,
+    DataSinkMetadata,
     DataSinkStream,
     DataSource,
     DataSourceMetadata,
     DataSourceStream,
     ExtractMetadata,
     RawData,
-    UploadContentMetadata,
     UploadMetadata,
 )
 from .base import BaseNamedDomainObject
@@ -24,10 +24,10 @@ from .base import BaseNamedDomainObject
 
 _CD = TypeVar("_CD", bound=CleanedData)
 _DM = TypeVar("_DM", bound=DataSourceMetadata)
+_DS = TypeVar("_DS", bound=DataSinkMetadata)
 _EM = TypeVar("_EM", bound=ExtractMetadata)
 _RD = TypeVar("_RD", bound=RawData)
 _T = TypeVar("_T")
-_UC = TypeVar("_UC", bound=UploadContentMetadata)
 _UM = TypeVar("_UM", bound=UploadMetadata)
 
 
@@ -52,8 +52,8 @@ class BaseData(Generic[_T], Data[_T], metaclass=ABCMeta):
 @define(slots=False)
 class BaseDataSink(
     BaseNamedDomainObject,
-    DataSink[_UM, _UC, _CD],
-    Generic[_UM, _UC, _CD],
+    DataSink[_DS, _UM, _CD],
+    Generic[_DS, _UM, _CD],
     metaclass=ABCMeta,
 ):
     """
@@ -69,8 +69,8 @@ class BaseDataSink(
 
 @define(slots=False)
 class BaseDataSinkStream(
-    DataSinkStream[_UM, _UC, _CD],
-    Generic[_UM, _UC, _CD],
+    DataSinkStream[_UM, _CD],
+    Generic[_UM, _CD],
     metaclass=ABCMeta,
 ):
     """
@@ -78,12 +78,12 @@ class BaseDataSinkStream(
     implementations.
     """
 
-    _data_sink: DataSink[_UM, _UC, _CD] = field()
+    _data_sink: DataSink[Any, _UM, _CD] = field()
     _upload_metadata: _UM = field()
     _is_disposed: bool = field(default=False, init=False)
 
     @property
-    def data_sink(self) -> DataSink[_UM, _UC, _CD]:
+    def data_sink(self) -> DataSink[Any, _UM, _CD]:
         return self._data_sink
 
     @property

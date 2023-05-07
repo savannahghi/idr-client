@@ -7,9 +7,9 @@ from requests.models import Request, Response
 
 from app.core_v1 import (
     CleanedData,
+    DataSinkMetadata,
     DataSourceMetadata,
     ExtractMetadata,
-    UploadContentMetadata,
     UploadMetadata,
 )
 
@@ -20,12 +20,12 @@ from ..typings import ResponsePredicate
 # =============================================================================
 
 _CD = TypeVar("_CD", bound=CleanedData)
-_UC = TypeVar("_UC", bound=UploadContentMetadata)
 
 
 # =============================================================================
 # API DIALECTS
 # =============================================================================
+
 
 class HTTPAPIDialect(metaclass=ABCMeta):  # noqa: B024
     """Marker interface for HTTP API Dialects.
@@ -36,6 +36,7 @@ class HTTPAPIDialect(metaclass=ABCMeta):  # noqa: B024
     implementations map resource requests to correct API endpoints and
     translate responses from those requests to the correct domain objects.
     """
+
     ...
 
 
@@ -89,22 +90,17 @@ class HTTPAuthAPIDialect(HTTPAPIDialect, metaclass=ABCMeta):
         ...
 
 
-class HTTPDataSinkAPIDialect(
-    HTTPAPIDialect, Generic[_UC, _CD], metaclass=ABCMeta,
-):
-
+class HTTPDataSinkAPIDialect(HTTPAPIDialect, Generic[_CD], metaclass=ABCMeta):
     # REQUEST FACTORIES
     # -------------------------------------------------------------------------
     @abstractmethod
     def consume_request_factory(
-            self,
-            upload_content_meta: _UC,
-            clean_data: _CD,
-            progress: float,
+        self,
+        clean_data: _CD,
+        progress: float,
     ) -> Request:
         """
 
-        :param upload_content_meta:
         :param clean_data:
         :param progress:
 
@@ -116,16 +112,14 @@ class HTTPDataSinkAPIDialect(
     # -------------------------------------------------------------------------
     @abstractmethod
     def handle_consume_response(
-            self,
-            response: Response,
-            upload_content_meta: _UC,
-            clean_data: _CD,
-            progress: float,
+        self,
+        response: Response,
+        clean_data: _CD,
+        progress: float,
     ) -> None:
         """
 
         :param response:
-        :param upload_content_meta:
         :param clean_data:
         :param progress:
 
@@ -134,31 +128,16 @@ class HTTPDataSinkAPIDialect(
 
 
 class HTTPMetadataSinkAPIDialect(HTTPAPIDialect, metaclass=ABCMeta):
-
     # REQUEST FACTORIES
     # -------------------------------------------------------------------------
     @abstractmethod
     def consume_upload_meta_request_factory(
-            self, upload_meta: UploadMetadata,
+        self,
+        upload_meta: UploadMetadata,
     ) -> Request:
         """
 
         :param upload_meta:
-
-        :return:
-        """
-        ...
-
-    @abstractmethod
-    def consume_upload_content_meta_request_factory(
-            self,
-            upload_meta: UploadMetadata,
-            upload_content_meta: UploadContentMetadata,
-    ) -> Request:
-        """
-
-        :param upload_meta:
-        :param upload_content_meta:
 
         :return:
         """
@@ -166,10 +145,10 @@ class HTTPMetadataSinkAPIDialect(HTTPAPIDialect, metaclass=ABCMeta):
 
     @abstractmethod
     def init_upload_metadata_consumption_request_factory(
-            self,
-            extract_metadata: ExtractMetadata,
-            content_type: str,
-            **kwargs: Mapping[str, Any],
+        self,
+        extract_metadata: ExtractMetadata,
+        content_type: str,
+        **kwargs: Mapping[str, Any],
     ) -> Request:
         """
 
@@ -181,47 +160,18 @@ class HTTPMetadataSinkAPIDialect(HTTPAPIDialect, metaclass=ABCMeta):
         """
         ...
 
-    @abstractmethod
-    def init_upload_metadata_content_consumption_request_factory(
-            self, upload_metadata: UploadMetadata, **kwargs: Mapping[str, Any],
-    ) -> Request:
-        """
-
-        :param upload_metadata:
-        :param kwargs:
-        :return:
-        """
-        ...
-
     # RESPONSE HANDLERS
     # -------------------------------------------------------------------------
     @abstractmethod
     def handle_consume_upload_meta_response(
-            self,
-            response: Response,
-            upload_meta: UploadMetadata,
+        self,
+        response: Response,
+        upload_meta: UploadMetadata,
     ) -> None:
         """
 
         :param response:
         :param upload_meta:
-
-        :return:
-        """
-        ...
-
-    @abstractmethod
-    def handle_consume_upload_content_meta_response(
-            self,
-            response: Response,
-            upload_meta: UploadMetadata,
-            upload_content_meta: UploadContentMetadata,
-    ) -> None:
-        """
-
-        :param response:
-        :param upload_meta:
-        :param upload_content_meta:
 
         :return:
         """
@@ -229,11 +179,11 @@ class HTTPMetadataSinkAPIDialect(HTTPAPIDialect, metaclass=ABCMeta):
 
     @abstractmethod
     def handle_init_upload_metadata_consumption_response(
-            self,
-            response: Response,
-            extract_metadata: ExtractMetadata,
-            content_type: str,
-            **kwargs: Mapping[str, Any],
+        self,
+        response: Response,
+        extract_metadata: ExtractMetadata,
+        content_type: str,
+        **kwargs: Mapping[str, Any],
     ) -> UploadMetadata:
         """
 
@@ -246,30 +196,20 @@ class HTTPMetadataSinkAPIDialect(HTTPAPIDialect, metaclass=ABCMeta):
         """
         ...
 
-    @abstractmethod
-    def handle_init_upload_metadata_content_consumption_response(
-            self,
-            response: Response,
-            upload_metadata: UploadMetadata,
-            **kwargs: Mapping[str, Any],
-    ) -> UploadContentMetadata:
-        """
 
-        :param response:
-        :param upload_metadata:
-        :param kwargs:
+class HTTPMetadataSourceAPIDialect(HTTPAPIDialect, metaclass=ABCMeta):
+    # REQUEST FACTORIES
+    # -------------------------------------------------------------------------
+    @abstractmethod
+    def provide_data_sink_meta_request_factory(self) -> Request:
+        """
 
         :return:
         """
         ...
 
-
-class HTTPMetadataSourceAPIDialect(HTTPAPIDialect, metaclass=ABCMeta):
-
-    # REQUEST FACTORIES
-    # -------------------------------------------------------------------------
     @abstractmethod
-    def provide_metadata_source_request_factory(self) -> Request:
+    def provide_data_source_meta_request_factory(self) -> Request:
         """
 
         :return:
@@ -278,7 +218,8 @@ class HTTPMetadataSourceAPIDialect(HTTPAPIDialect, metaclass=ABCMeta):
 
     @abstractmethod
     def provide_extract_meta_request_factory(
-            self, data_source: DataSourceMetadata,
+        self,
+        data_source: DataSourceMetadata,
     ) -> Request:
         """
 
@@ -292,44 +233,20 @@ class HTTPMetadataSourceAPIDialect(HTTPAPIDialect, metaclass=ABCMeta):
     # -------------------------------------------------------------------------
 
     @abstractmethod
-    def handle_init_upload_metadata_consumption_response(
-            self,
-            response: Response,
-            extract_metadata: ExtractMetadata,
-            content_type: str,
-            **kwargs: Mapping[str, Any],
-    ) -> UploadMetadata:
+    def handle_provide_data_sink_meta_response(
+        self,
+        response: Response,
+    ) -> Iterable[DataSinkMetadata]:
         """
 
         :param response:
-        :param extract_metadata:
-        :param content_type:
-        :param kwargs:
-
         :return:
         """
-        ...
 
     @abstractmethod
-    def handle_init_upload_metadata_content_consumption_response(
-            self,
-            response: Response,
-            upload_metadata: UploadMetadata,
-            **kwargs: Mapping[str, Any],
-    ) -> UploadContentMetadata:
-        """
-
-        :param response:
-        :param upload_metadata:
-        :param kwargs:
-
-        :return:
-        """
-        ...
-
-    @abstractmethod
-    def handle_provide_data_source_response(
-            self, response: Response,
+    def handle_provide_data_source_meta_response(
+        self,
+        response: Response,
     ) -> Iterable[DataSourceMetadata]:
         """
 
@@ -340,7 +257,9 @@ class HTTPMetadataSourceAPIDialect(HTTPAPIDialect, metaclass=ABCMeta):
 
     @abstractmethod
     def handle_provide_extract_meta_response(
-            self, response: Response, data_source: DataSourceMetadata,
+        self,
+        response: Response,
+        data_source: DataSourceMetadata,
     ) -> Iterable[ExtractMetadata]:
         """
 

@@ -19,25 +19,46 @@ class MetadataObject(DomainObject, metaclass=ABCMeta):
     * Details of an operation that was performed by the client.
     * The data resulting from an operation performed by the client.
     """
+
     ...
 
 
 class IdentifiableMetadataObject(
-    MetadataObject, IdentifiableDomainObject, metaclass=ABCMeta,
+    MetadataObject,
+    IdentifiableDomainObject,
+    metaclass=ABCMeta,
 ):
     """A uniquely identifiable :class:`MetadataObject`."""
+
+    ...
+
+
+class DataSinkMetadata(
+    NamedDomainObject,
+    IdentifiableDomainObject,
+    metaclass=ABCMeta,
+):
+    """:class:`Metadata<MetadataObject>` describing a :class:`DataSink`.
+
+    This describes information used by the runtime to identify and/or
+    initialize a `DataSink` to drain/upload to.
+    """
+
     ...
 
 
 class DataSourceMetadata(
-    NamedDomainObject, IdentifiableDomainObject, metaclass=ABCMeta,
+    NamedDomainObject,
+    IdentifiableDomainObject,
+    metaclass=ABCMeta,
 ):
-    """:class:`Metadata <MetadataObject>` describing a :class:`DataSource`.
+    """:class:`Metadata<MetadataObject>` describing a :class:`DataSource`.
 
-    This describes information used by the client to identify and/or initialize
-    a `DataSource` to work with. It defines a writable property,
-    :attr:`extract_metadata` that holds a Mapping of :class:`ExtractMetadata`
-    instances associated with the aforementioned `DataSource`.
+    This describes information used by the runtime to identify and/or
+    initialize a `DataSource` to draw/extract from. It defines a writable
+    property, :attr:`extract_metadata` that holds a mapping of
+    :class:`ExtractMetadata` instances associated with the aforementioned
+    `DataSource`.
     """
 
     @property
@@ -58,7 +79,8 @@ class DataSourceMetadata(
     @extract_metadata.setter
     @abstractmethod
     def extract_metadata(
-        self, extract_metas: Mapping[str, "ExtractMetadata"],
+        self,
+        extract_metas: Mapping[str, "ExtractMetadata"],
     ) -> None:
         """Define a `Mapping` containing :class:`ExtractMetadata` instances.
 
@@ -76,7 +98,9 @@ class DataSourceMetadata(
 
 
 class ExtractMetadata(
-    NamedDomainObject, IdentifiableDomainObject, metaclass=ABCMeta,
+    NamedDomainObject,
+    IdentifiableDomainObject,
+    metaclass=ABCMeta,
 ):
     """:class:`Metadata<MetadataObject>` describing what to extract.
 
@@ -103,48 +127,14 @@ class ExtractMetadata(
         ...
 
 
-class UploadContentMetadata(IdentifiableMetadataObject, metaclass=ABCMeta):
-    """:class:`Metadata <MetadataObject>` describing an uploads content.
-
-    This interface describes the details of the contents of an upload
-    operation. That is, the details of a
-    :class:`drainage operation<DataSinkStream>` to a :class:`DataSink`. A
-    single upload, described by an :class:`UploadMetadata` instance, can have
-    multiple `UploadContentMetadata` instances associated with it. This
-    interface exist to allow :class:`data<CleanedData>` to be drained/uploaded
-    to a `DataSink` in smaller sizes which is especially useful when working
-    with :class:`data sources<DataSource>` that produce large amounts of data.
-
-    A read-only property, :attr:`upload_metadata` is provided to allow access
-    to the `UploadMetadata` instance that the `UploadContentMetadata` is part
-    of.
-    """
-
-    @property
-    @abstractmethod
-    def upload_metadata(self) -> "UploadMetadata":
-        """Return a reference to the owning :class:`UploadMetadata` instance.
-
-        Return a reference to the `UploadMetadata` instance that this content
-        metadata is part of.
-
-        :return: A reference to the upload metadata instance that this content
-            metadata instance is part of.
-        """
-        ...
-
-
 class UploadMetadata(IdentifiableMetadataObject, metaclass=ABCMeta):
     """:class:`Metadata <MetadataObject>` describing an upload operation.
 
-    This interface describes the details of an upload operation. That is,
+    This interface describes the details of a drain/upload operation. That is,
     overall information about the details of a drainage operation to a
     :class:`DataSink` such as the content type of the data and the
     :class:`ExtractMetadata` instance that resulted in this
-    :class:`data<CleanedData>`. The details of the actual data to be
-    drained/uploaded is not described within this class's instances but rather
-    it is described by the :class:`UploadContentMetadata` instance(s) attached
-    to instances of this class.
+    :class:`data<CleanedData>`.
 
     The `ExtractMetadata` instance that resulted in the data being
     drained/uploaded can be accessed using the read-only property,

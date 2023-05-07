@@ -4,9 +4,9 @@ from .base import (
     BaseNamedDomainObject,
 )
 from .metadata import (
+    BaseDataSinkMetadata,
     BaseDataSourceMetadata,
     BaseExtractMetadata,
-    BaseUploadContentMetadata,
     BaseUploadMetadata,
 )
 from .operations import (
@@ -21,6 +21,7 @@ from .terminals import BaseMetadataSink, BaseMetadataSource
 __all__ = [
     "BaseData",
     "BaseDataSink",
+    "BaseDataSinkMetadata",
     "BaseDataSinkStream",
     "BaseDataSource",
     "BaseDataSourceMetadata",
@@ -31,6 +32,5 @@ __all__ = [
     "BaseMetadataSink",
     "BaseMetadataSource",
     "BaseNamedDomainObject",
-    "BaseUploadContentMetadata",
     "BaseUploadMetadata",
 ]

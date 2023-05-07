@@ -1,10 +1,10 @@
 from .base import DomainObject, IdentifiableDomainObject, NamedDomainObject
 from .metadata import (
+    DataSinkMetadata,
     DataSourceMetadata,
     ExtractMetadata,
     IdentifiableMetadataObject,
     MetadataObject,
-    UploadContentMetadata,
     UploadMetadata,
 )
 from .operations import (
@@ -23,6 +23,7 @@ __all__ = [
     "CleanedData",
     "Data",
     "DataSink",
+    "DataSinkMetadata",
     "DataSinkStream",
     "DataSource",
     "DataSourceStream",
@@ -37,6 +38,5 @@ __all__ = [
     "MetadataSource",
     "NamedDomainObject",
     "RawData",
-    "UploadContentMetadata",
     "UploadMetadata",
 ]

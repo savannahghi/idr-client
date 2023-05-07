@@ -10,10 +10,11 @@ from .base import NamedDomainObject
 from .operations import (
     CleanedData,
     DataSink,
+    DataSinkMetadata,
     DataSource,
+    DataSourceMetadata,
     ExtractMetadata,
     RawData,
-    UploadContentMetadata,
     UploadMetadata,
 )
 from .terminals import MetadataSink, MetadataSource
@@ -23,10 +24,11 @@ from .terminals import MetadataSink, MetadataSource
 # =============================================================================
 
 _CD = TypeVar("_CD", bound=CleanedData)
+_DM = TypeVar("_DM", bound=DataSourceMetadata)
+_DS = TypeVar("_DS", bound=DataSinkMetadata)
 _EM = TypeVar("_EM", bound=ExtractMetadata)
 _RD = TypeVar("_RD", bound=RawData)
 _T = TypeVar("_T")
-_UC = TypeVar("_UC", bound=UploadContentMetadata)
 _UM = TypeVar("_UM", bound=UploadMetadata)
 
 
@@ -34,8 +36,9 @@ _UM = TypeVar("_UM", bound=UploadMetadata)
 # ETL PROTOCOL DEFINITION
 # =============================================================================
 
+
 class ETLProtocol(
-    Generic[_CD, _EM, _RD, _UM, _UC],
+    Generic[_DM, _EM, _RD, _CD, _UM, _DS],
     NamedDomainObject,
     Disposable,
     metaclass=ABCMeta,
@@ -59,7 +62,7 @@ class ETLProtocol(
         ...
 
     @abstractmethod
-    def pick_drain_target(self, upload_meta: _UM) -> DataSink[_UM, _UC, _CD]:
+    def pick_drain_target(self, upload_meta: _UM) -> DataSink[_DS, _UM, _CD]:
         """
 
         :param upload_meta:
@@ -69,7 +72,7 @@ class ETLProtocol(
         ...
 
     @abstractmethod
-    def pick_draw_target(self, extract_meta: _EM) -> DataSource[_EM, _RD]:
+    def pick_draw_target(self, extract_meta: _EM) -> DataSource[_DM, _EM, _RD]:
         """
 
         :param extract_meta:

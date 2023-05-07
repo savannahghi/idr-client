@@ -5,9 +5,9 @@ from typing import Any, Generic, Self, TypeVar
 from ...mixins import Disposable
 from .base import NamedDomainObject
 from .metadata import (
+    DataSinkMetadata,
     DataSourceMetadata,
     ExtractMetadata,
-    UploadContentMetadata,
     UploadMetadata,
 )
 
@@ -17,10 +17,10 @@ from .metadata import (
 
 _CD = TypeVar("_CD", bound="CleanedData")
 _DM = TypeVar("_DM", bound=DataSourceMetadata)
+_DS = TypeVar("_DS", bound=DataSinkMetadata)
 _EM = TypeVar("_EM", bound=ExtractMetadata)
 _RD = TypeVar("_RD", bound="RawData")
 _T = TypeVar("_T")
-_UC = TypeVar("_UC", bound=UploadContentMetadata)
 _UM = TypeVar("_UM", bound=UploadMetadata)
 
 
@@ -71,7 +71,7 @@ class RawData(Generic[_T], Data[_T], metaclass=ABCMeta):
 class DataSink(
     NamedDomainObject,
     Disposable,
-    Generic[_UM, _UC, _CD],
+    Generic[_DS, _UM, _CD],
     metaclass=ABCMeta,
 ):
     """The final destination of extracted :class:`Data` once it is processed.
@@ -85,7 +85,7 @@ class DataSink(
     def start_consumption(
         self,
         upload_metadata: _UM,
-    ) -> "DataSinkStream[_UM, _UC, _CD]":
+    ) -> "DataSinkStream[_UM, _CD]":
         """Start consumption of :class:`data<CleanedData>`.
 
         :param upload_metadata:
@@ -93,8 +93,18 @@ class DataSink(
         """
         ...
 
+    @classmethod
+    @abstractmethod
+    def from_data_sink_meta(cls, data_sink_meta: _DS) -> Self:
+        """
 
-class DataSinkStream(Disposable, Generic[_UM, _UC, _CD], metaclass=ABCMeta):
+        :param data_sink_meta:
+        :return:
+        """
+        ...
+
+
+class DataSinkStream(Disposable, Generic[_UM, _CD], metaclass=ABCMeta):
     """
     An interface representing a series of drain *(write)* operations to a
     :class:`DataSink`.
@@ -102,7 +112,7 @@ class DataSinkStream(Disposable, Generic[_UM, _UC, _CD], metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def data_sink(self) -> DataSink[_UM, _UC, _CD]:
+    def data_sink(self) -> DataSink[Any, _UM, _CD]:
         """
 
         :return:
@@ -119,17 +129,10 @@ class DataSinkStream(Disposable, Generic[_UM, _UC, _CD], metaclass=ABCMeta):
         ...
 
     @abstractmethod
-    def consume(
-        self,
-        upload_content_meta: _UC,
-        clean_data: _CD,
-        progress: float,
-    ) -> None:
+    def consume(self, clean_data: _CD, progress: float) -> None:
         """
         Consume processed data for storage or further processing upstream.
 
-        :param upload_content_meta: Data about this specific consumption
-            operation.
         :param clean_data: Data that is already processed and ready for
             consumption downstream.
         :param progress: Indicate the current drain progress.

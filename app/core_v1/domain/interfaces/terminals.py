@@ -5,9 +5,9 @@ from typing import Any
 from ...mixins import Disposable
 from .base import NamedDomainObject
 from .metadata import (
+    DataSinkMetadata,
     DataSourceMetadata,
     ExtractMetadata,
-    UploadContentMetadata,
     UploadMetadata,
 )
 
@@ -17,12 +17,13 @@ from .metadata import (
 
 
 class MetadataSink(NamedDomainObject, Disposable, metaclass=ABCMeta):
-    """Uploads related metadata consumer.
+    """Upload(s) related metadata consumer.
 
     An interface representing entities that consume metadata relating to
     uploaded data.
     """
-    # TODO: Think🤔 about where are ID's going to come from?
+
+    # TODO: Think🤔 about where are UploadMetadata ID's going to come from?
     @abstractmethod
     def consume_upload_meta(self, upload_meta: UploadMetadata) -> None:
         """
@@ -33,45 +34,16 @@ class MetadataSink(NamedDomainObject, Disposable, metaclass=ABCMeta):
         ...
 
     @abstractmethod
-    def consume_upload_content_meta(
-            self,
-            upload_meta: UploadMetadata,
-            upload_content_meta: UploadContentMetadata,
-            **kwargs: Mapping[str, Any],
-    ) -> None:
-        """
-
-        :param upload_meta:
-        :param upload_content_meta:
-        :return:
-        """
-        ...
-
-    @abstractmethod
     def init_upload_metadata_consumption(
-            self,
-            extract_metadata: ExtractMetadata,
-            content_type: str,
-            **kwargs: Mapping[str, Any],
+        self,
+        extract_metadata: ExtractMetadata,
+        content_type: str,
+        **kwargs: Mapping[str, Any],
     ) -> UploadMetadata:
         """
 
         :param extract_metadata:
         :param content_type:
-        :return:
-        """
-        ...
-
-    @abstractmethod
-    def init_upload_metadata_content_consumption(
-            self,
-            upload_metadata: UploadMetadata,
-            **kwargs: Mapping[str, Any],
-    ) -> UploadContentMetadata:
-        """
-
-        :param upload_metadata:
-
         :return:
         """
         ...
@@ -85,6 +57,14 @@ class MetadataSource(NamedDomainObject, Disposable, metaclass=ABCMeta):
     """
 
     @abstractmethod
+    def provide_data_sink_meta(self) -> Iterable[DataSinkMetadata]:
+        """
+
+        :return:
+        """
+        ...
+
+    @abstractmethod
     def provide_data_source_meta(self) -> Iterable[DataSourceMetadata]:
         """
 
@@ -94,7 +74,8 @@ class MetadataSource(NamedDomainObject, Disposable, metaclass=ABCMeta):
 
     @abstractmethod
     def provide_extract_meta(
-            self, data_source: DataSourceMetadata,
+        self,
+        data_source: DataSourceMetadata,
     ) -> Iterable[ExtractMetadata]:
         """
 

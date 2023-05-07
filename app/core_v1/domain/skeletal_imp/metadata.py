@@ -4,11 +4,11 @@ from collections.abc import Mapping
 from attrs import define, field
 
 from ..interfaces import (
+    DataSinkMetadata,
     DataSourceMetadata,
     ExtractMetadata,
     IdentifiableMetadataObject,
     MetadataObject,
-    UploadContentMetadata,
     UploadMetadata,
 )
 from .base import (
@@ -21,6 +21,7 @@ from .base import (
 @define(slots=False)
 class BaseMetadataObject(BaseDomainObject, MetadataObject, metaclass=ABCMeta):
     """Base skeletal implementation for most :class:`MetadataObject` s."""
+
     ...
 
 
@@ -35,6 +36,22 @@ class BaseIdentifiableMetadataObject(
     Base skeletal implementation for most
     :class:`IdentifiableMetadataObject` implementations.
     """
+
+    ...
+
+
+@define(slots=False)
+class BaseDataSinkMetadata(
+    BaseNamedDomainObject,
+    BaseIdentifiableMetadataObject,
+    DataSinkMetadata,
+    metaclass=ABCMeta,
+):
+    """
+    Base skeletal implementation for most :class:`DataSinkMetadata`
+    implementations.
+    """
+
     ...
 
 
@@ -51,7 +68,8 @@ class BaseDataSourceMetadata(
     """
 
     _extract_metadata: Mapping[str, ExtractMetadata] = field(
-        factory=dict, kw_only=True,
+        factory=dict,
+        kw_only=True,
     )
 
     @property
@@ -60,7 +78,8 @@ class BaseDataSourceMetadata(
 
     @extract_metadata.setter
     def extract_metadata(
-            self, extract_metas: Mapping[str, ExtractMetadata],
+        self,
+        extract_metas: Mapping[str, ExtractMetadata],
     ) -> None:
         self._extract_metadata = extract_metas
 
@@ -82,24 +101,6 @@ class BaseExtractMetadata(
     @property
     def data_source_metadata(self) -> DataSourceMetadata:
         return self._data_source_metadata
-
-
-@define(slots=False)
-class BaseUploadContentMetadata(
-    BaseIdentifiableMetadataObject,
-    UploadContentMetadata,
-    metaclass=ABCMeta,
-):
-    """
-    Base skeletal implementation for most :class:`UploadContentMetadata`
-    implementations.
-    """
-
-    _upload_metadata: UploadMetadata = field()
-
-    @property
-    def upload_metadata(self) -> UploadMetadata:
-        return self._upload_metadata
 
 
 @define(slots=False)

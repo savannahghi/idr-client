@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, Self, TypeVar
 
 from attrs import define, field
 
@@ -7,9 +7,9 @@ from app.core_v1 import (
     BaseDataSink,
     BaseDataSinkStream,
     CleanedData,
+    DataSinkMetadata,
     ExtractMetadata,
     RawData,
-    UploadContentMetadata,
     UploadMetadata,
 )
 
@@ -25,10 +25,10 @@ if TYPE_CHECKING:
 # =============================================================================
 
 _CD = TypeVar("_CD", bound=CleanedData)
+_DS = TypeVar("_DS", bound=DataSinkMetadata)
 _EM = TypeVar("_EM", bound=ExtractMetadata)
 _RD = TypeVar("_RD", bound=RawData)
 _T = TypeVar("_T")
-_UC = TypeVar("_UC", bound=UploadContentMetadata)
 _UM = TypeVar("_UM", bound=UploadMetadata)
 
 
@@ -38,14 +38,11 @@ _UM = TypeVar("_UM", bound=UploadMetadata)
 
 
 @define(order=False)
-class HTTPDataSink(BaseDataSink[_UM, _UC, _CD], Generic[_UM, _UC, _CD]):
+class HTTPDataSink(BaseDataSink[_DS, _UM, _CD], Generic[_DS, _UM, _CD]):
     """A :class:`DataSink` backed by an HTTP server."""
 
     _transport_factory: HTTPTransportFactory = field()
-    _api_dialect_factory: Callable[
-        [],
-        HTTPDataSinkAPIDialect[_UC, _CD],
-    ] = field()
+    _api_dialect_factory: Callable[[], HTTPDataSinkAPIDialect[_CD]] = field()
     _valid_response_predicate: ResponsePredicate = field(
         default=if_request_accepted,
         kw_only=True,
@@ -54,7 +51,7 @@ class HTTPDataSink(BaseDataSink[_UM, _UC, _CD], Generic[_UM, _UC, _CD]):
     @property
     def api_dialect_factory(
         self,
-    ) -> Callable[[], HTTPDataSinkAPIDialect[_UC, _CD]]:
+    ) -> Callable[[], HTTPDataSinkAPIDialect[_CD]]:
         return self._api_dialect_factory
 
     @property
@@ -67,7 +64,7 @@ class HTTPDataSink(BaseDataSink[_UM, _UC, _CD], Generic[_UM, _UC, _CD]):
     def start_consumption(
         self,
         upload_metadata: _UM,
-    ) -> "HTTPDataSinkStream[_UM, _UC, _CD]":
+    ) -> "HTTPDataSinkStream[_UM, _CD]":
         return HTTPDataSinkStream(
             self,
             upload_metadata,
@@ -76,23 +73,25 @@ class HTTPDataSink(BaseDataSink[_UM, _UC, _CD], Generic[_UM, _UC, _CD]):
             valid_response_predicate=self._valid_response_predicate,  # pyright: ignore  # noqa: E501
         )
 
+    @classmethod
+    def from_data_sink_meta(cls, data_sink_meta: _DS) -> Self:
+        # FIXME: Add a proper implementation for this method
+        raise NotImplementedError
+
 
 @define(order=False)
-class HTTPDataSinkStream(
-    BaseDataSinkStream[_UM, _UC, _CD],
-    Generic[_UM, _UC, _CD],
-):
+class HTTPDataSinkStream(BaseDataSinkStream[_UM, _CD], Generic[_UM, _CD]):
     """A :class:`DataSinkStream` backed by an HTTP server."""
 
     _transport: HTTPTransport = field()
-    _api_dialect: HTTPDataSinkAPIDialect[_UC, _CD] = field()
+    _api_dialect: HTTPDataSinkAPIDialect[_CD] = field()
     _valid_response_predicate: ResponsePredicate = field(
         default=if_request_accepted,
         kw_only=True,
     )
 
     @property
-    def api_dialect(self) -> HTTPDataSinkAPIDialect[_UC, _CD]:
+    def api_dialect(self) -> HTTPDataSinkAPIDialect[_CD]:
         return self._api_dialect
 
     @property
@@ -101,12 +100,10 @@ class HTTPDataSinkStream(
 
     def consume(
         self,
-        upload_content_meta: _UC,
         clean_data: _CD,
         progress: float,
     ) -> None:
         req: Request = self._api_dialect.consume_request_factory(
-            upload_content_meta=upload_content_meta,
             clean_data=clean_data,
             progress=progress,
         )
@@ -116,7 +113,6 @@ class HTTPDataSinkStream(
         )
         return self._api_dialect.handle_consume_response(
             response=res,
-            upload_content_meta=upload_content_meta,
             clean_data=clean_data,
             progress=progress,
         )
