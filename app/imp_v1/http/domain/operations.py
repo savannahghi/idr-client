@@ -7,7 +7,6 @@ from app.core_v1 import (
     BaseDataSink,
     BaseDataSinkStream,
     CleanedData,
-    DataSinkMetadata,
     ExtractMetadata,
     RawData,
     UploadMetadata,
@@ -15,6 +14,7 @@ from app.core_v1 import (
 
 from ..lib import HTTPDataSinkAPIDialect, HTTPTransport, if_request_accepted
 from ..typings import HTTPTransportFactory, ResponsePredicate
+from .metadata import BaseHTTPDataSinkMetadata
 
 if TYPE_CHECKING:
     from requests.models import Request, Response
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 # =============================================================================
 
 _CD = TypeVar("_CD", bound=CleanedData)
-_DS = TypeVar("_DS", bound=DataSinkMetadata)
+_DS = TypeVar("_DS", bound=BaseHTTPDataSinkMetadata)
 _EM = TypeVar("_EM", bound=ExtractMetadata)
 _RD = TypeVar("_RD", bound=RawData)
 _T = TypeVar("_T")
@@ -75,8 +75,13 @@ class HTTPDataSink(BaseDataSink[_DS, _UM, _CD], Generic[_DS, _UM, _CD]):
 
     @classmethod
     def from_data_sink_meta(cls, data_sink_meta: _DS) -> Self:
-        # FIXME: Add a proper implementation for this method
-        raise NotImplementedError
+        return cls(
+            name=data_sink_meta.name,  # pyright: ignore
+            description=data_sink_meta.description,  # pyright: ignore
+            transport_factory=data_sink_meta.transport_factory,  # pyright: ignore  # noqa: E501
+            api_dialect_factory=data_sink_meta.api_dialect_factory,  # pyright: ignore  # noqa: E501
+            valid_response_predicate=data_sink_meta.valid_response_predicate,  # pyright: ignore  # noqa: E501
+        )
 
 
 @define(order=False)
