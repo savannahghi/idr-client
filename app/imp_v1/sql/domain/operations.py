@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 from collections.abc import Callable, Iterator, Sequence
 from typing import Any, Final, Generic, Self, TypeVar, cast
 
@@ -97,6 +97,7 @@ class BaseSQLDataSource(
         default=simple_data_source_stream_factory,
         kw_only=True,
     )
+    _engine: Engine = field()
 
     @property
     def data_source_stream_factory(
@@ -116,13 +117,12 @@ class BaseSQLDataSource(
         return self._data_source_stream_factory
 
     @property
-    @abstractmethod
     def engine(self) -> Engine:
         """Return an :class:`Engine` used to connect to the data source.
 
         :return: An `Engine` object used to connect to the data source.
         """
-        ...
+        return self._engine
 
     def dispose(self) -> None:
         self._is_disposed = True
@@ -151,6 +151,7 @@ class BaseSQLDataSourceStream(
 # =============================================================================
 
 
+@define(slots=True)
 class PDDataFrame(BaseData[pd.DataFrame], RawData[pd.DataFrame]):
     """Raw data from an SQL database as a :class:`pd.DataFrame`."""
 
@@ -172,12 +173,6 @@ class SimpleSQLDatabase(
     """Simple implementation of an SQL database as a
     :class:`~app.core_v1.domain.DataSource`.
     """
-
-    _engine: Engine = field()
-
-    @property
-    def engine(self) -> Engine:
-        return self._engine
 
     @classmethod
     def from_data_source_meta(
@@ -204,7 +199,7 @@ class SimpleSQLDatabase(
         data_source_stream_factory: Callable[
             ["SimpleSQLDatabase[Any]", SimpleSQLQuery],
             DataSourceStream[SimpleSQLQuery, Any],
-        ] = pd_data_frame_data_source_stream_factory,
+        ] = simple_data_source_stream_factory,
     ) -> Self:
         return cls(
             name=name,  # pyright: ignore
@@ -267,7 +262,8 @@ class SimpleSQLDataSourceStream(
     BaseSQLDataSourceStream[SimpleSQLQuery, SQLRawData],
 ):
     """:class:`DataSourceStream` implementation that operates on SQL databases
-    and returns the extracted as a sequence of :class:`sqlalchemy.Row` objects.
+    and returns the extracted data as a sequence of :class:`sqlalchemy.Row`
+    objects.
 
     This implementation streams data from the database and thus operates as an
     unbound stream. As such, it doesn't provide any meaningful value for

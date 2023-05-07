@@ -19,7 +19,7 @@ from app.core_v1.domain import (
 
 from ..typings import ReadIsolationLevels
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     # noinspection PyUnresolvedReferences
     from .operations import BaseSQLDataSource
 

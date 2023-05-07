@@ -4,7 +4,11 @@ from typing import Any, cast
 import factory
 from toolz.curried import map, pipe
 
-from app.imp_v1.sql.domain import SimpleSQLDatabaseDescriptor, SimpleSQLQuery
+from app.imp_v1.sql.domain import (
+    SimpleSQLDatabaseDescriptor,
+    SimpleSQLQuery,
+    simple_data_source_stream_factory,
+)
 from tests.core_v1.factories import (
     DataSourceMetadataFactory,
     ExtractMetadataFactory,
@@ -19,6 +23,7 @@ class SimpleSQLDatabaseDescriptorFactory(DataSourceMetadataFactory):
     database_url = "sqlite+pysqlite:///:memory:"
     isolation_level = "REPEATABLE READ"
     logging_name = None
+    data_source_stream_factory = simple_data_source_stream_factory
 
     class Meta:  # pyright: ignore
         model = SimpleSQLDatabaseDescriptor
@@ -26,7 +31,7 @@ class SimpleSQLDatabaseDescriptorFactory(DataSourceMetadataFactory):
     # noinspection PyMethodParameters
     @factory.post_generation
     def queries_count(
-        obj: SimpleSQLDatabaseDescriptor,  # noqa: N805
+        obj: SimpleSQLDatabaseDescriptor,  # type: ignore  # noqa: N805
         create: bool,
         extracted: int | None,
         **kwargs: Any,  # noqa: ANN401
@@ -46,7 +51,7 @@ class SimpleSQLDatabaseDescriptorFactory(DataSourceMetadataFactory):
         _sq: SimpleSQLQuery
         kwargs["data_source_metadata"] = obj
         kwargs["ensure_attached"] = False
-        sql_queries: Mapping[str, SimpleSQLQuery] = pipe(
+        sql_queries: Mapping[str, SimpleSQLQuery] = pipe(  # type: ignore
             range(5 if extracted is None else extracted),
             map(lambda _: SimpleSQLQueryFactory(**kwargs)),
             map(lambda _sq: (_sq.id, _sq)),
@@ -60,7 +65,7 @@ class SimpleSQLQueryFactory(ExtractMetadataFactory):
     """Factory for :class:`SimpleSQLQueryFactory`."""
 
     name = factory.Sequence(lambda _n: f"Test Query {_n}")
-    description = "Test SQL Query."
+    description = "Test SQL Query."  # pyright: ignore
     data_source_metadata = factory.SubFactory(
         SimpleSQLDatabaseDescriptorFactory,
         queries_count=0,
@@ -81,7 +86,7 @@ class SimpleSQLQueryFactory(ExtractMetadataFactory):
     # noinspection PyMethodParameters
     @factory.post_generation
     def ensure_attached(
-        obj: SimpleSQLQuery,  # noqa: N805
+        obj: SimpleSQLQuery,  # type: ignore  # noqa: N805
         create: bool,
         extracted: bool | None,
         **kwargs: Any,  # noqa: ANN401

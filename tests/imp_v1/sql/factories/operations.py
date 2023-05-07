@@ -1,12 +1,29 @@
-from collections.abc import Callable
-from typing import Any
+from typing import Any, Protocol
 
 import factory
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 
-from app.imp_v1.sql.domain import SimpleSQLDatabase
+from app.imp_v1.sql.domain import (
+    SimpleSQLDatabase,
+    simple_data_source_stream_factory,
+)
 from tests.core_v1.factories import DataSourceFactory
+
+# =============================================================================
+# TYPES
+# =============================================================================
+
+
+class _SampleDataGenerator(Protocol):
+    def __call__(
+        self,
+        engine: Engine,
+        size: int,
+        **kwargs: Any,  # noqa: ANN401
+    ) -> None:
+        ...
+
 
 # =============================================================================
 # HELPERS
@@ -16,7 +33,7 @@ from tests.core_v1.factories import DataSourceFactory
 def create_and_populate_sample_table(
     engine: Engine,
     size: int,
-    echo: bool = False,
+    **kwargs,
 ) -> None:
     """Given a database `Engine`, create and populate a table with sample data.
 
@@ -28,12 +45,15 @@ def create_and_populate_sample_table(
         SQLite database.
     :param size: The sample size, i.e. The number of rows of the sample data
         to create.
-    :param echo: Enable logging on the `Engine`. When set to `True`, will set
-        the echo `Engine` attribute to `True`.
+
+    Supported keyword parameters include:
+
+    * echo: Enable logging on the `Engine`. When set to `True`, will set
+         the echo `Engine` attribute to `True`.
 
     :return: None.
     """
-    engine.echo = echo
+    engine.echo = kwargs.get("echo", False)
     with engine.connect().execution_options(
         logging_token="prelude",  # noqa: S106
     ) as connection:
@@ -58,18 +78,16 @@ class SimpleSQLDatabaseFactory(DataSourceFactory):
 
     name = factory.Sequence(lambda _n: f"Test Database {_n}")
     description = "An SQL Lite in memory database for testing."
+    data_source_stream_factory = simple_data_source_stream_factory
     engine = factory.LazyAttribute(lambda _o: create_engine(_o.database_url))
 
     # noinspection PyMethodParameters
     @factory.post_generation
     def add_sample_data(
-        obj: SimpleSQLDatabase,  # noqa: N805
+        obj: SimpleSQLDatabase,  # type: ignore  # noqa: N805
         create: bool,
         extracted: bool | None,
-        populate_func: Callable[
-            [Engine, int, ...],
-            None,
-        ] = create_and_populate_sample_table,
+        populate_func: _SampleDataGenerator = create_and_populate_sample_table,
         size: int = 5000,  # The size of the sample table to create
         **kwargs: Any,  # noqa: ANN401
     ) -> bool:
@@ -82,7 +100,7 @@ class SimpleSQLDatabaseFactory(DataSourceFactory):
             set to ``True``.
         :param populate_func: A callable that does the actual population of the
             database with sample data. The callable should take a database
-            `Engine` and a sample size as its parameters. To override the
+            `Engine` and a sample size as its first parameters. To override the
             default value, pass a custom value to the
             `add_sample_data__populate_func` parameter when calling this
             factory. See factory boy `docs <fboy_param_extraction_docs_>`_ for

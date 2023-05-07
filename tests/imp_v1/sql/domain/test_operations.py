@@ -1,10 +1,15 @@
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from app.imp_v1.sql.domain import (
+    PDDataFrame,
+    PDDataFrameDataSourceStream,
     SimpleSQLDatabase,
     SimpleSQLDatabaseDescriptor,
     SimpleSQLDataSourceStream,
     SimpleSQLQuery,
+    SQLRawData,
+    pd_data_frame_data_source_stream_factory,
+    simple_data_source_stream_factory,
 )
 from tests import TestCase
 
@@ -14,24 +19,29 @@ from ..factories import (
     SimpleSQLQueryFactory,
 )
 
+if TYPE_CHECKING:
+    from app.core_v1.domain import DataSourceStream
+
 
 class TestSimpleSQLDatabase(TestCase):
     """Tests for the :class:`SimpleSQLDatabase`. class."""
 
     def setUp(self) -> None:
         super().setUp()
-        self._instance1: SimpleSQLDatabase = cast(
-            SimpleSQLDatabase,
+        self._instance1: SimpleSQLDatabase[SQLRawData] = cast(
+            SimpleSQLDatabase[SQLRawData],
             SimpleSQLDatabaseFactory(
                 name="Test Database 1",
                 description="The first test database.",
+                data_source_stream_factory=simple_data_source_stream_factory,
             ),
         )
-        self._instance2: SimpleSQLDatabase = cast(
-            SimpleSQLDatabase,
+        self._instance2: SimpleSQLDatabase[PDDataFrame] = cast(
+            SimpleSQLDatabase[PDDataFrame],
             SimpleSQLDatabaseFactory(
                 name="Test Database 2",
                 description="The second test database.",
+                data_source_stream_factory=pd_data_frame_data_source_stream_factory,
             ),
         )
         self.addCleanup(self._instance1.dispose)
@@ -43,10 +53,18 @@ class TestSimpleSQLDatabase(TestCase):
         assert self._instance1.name == "Test Database 1"
         assert self._instance1.description == "The first test database."
         assert self._instance1.engine is not None
+        assert (
+            self._instance1.data_source_stream_factory
+            == simple_data_source_stream_factory
+        )
         assert not self._instance1.is_disposed
         assert self._instance2.name == "Test Database 2"
         assert self._instance2.description == "The second test database."
         assert self._instance2.engine is not None
+        assert (
+            self._instance2.data_source_stream_factory
+            is pd_data_frame_data_source_stream_factory
+        )
         assert not self._instance2.is_disposed
 
     def test_dispose_method(self) -> None:
@@ -72,9 +90,11 @@ class TestSimpleSQLDatabase(TestCase):
                 description="An SQLite in memory database for testing.",
                 database_url="sqlite+pysqlite:///:memory:",
                 isolation_level="READ UNCOMMITTED",
+                data_source_stream_factory=simple_data_source_stream_factory,
             ),
         )
-        db: SimpleSQLDatabase = SimpleSQLDatabase.from_data_source_meta(
+        db: SimpleSQLDatabase[SQLRawData]
+        db = SimpleSQLDatabase.from_data_source_meta(
             data_source_meta=db_descriptor,
         )
 
@@ -83,6 +103,9 @@ class TestSimpleSQLDatabase(TestCase):
         assert db.description == "An SQLite in memory database for testing."
         assert (
             db.engine.url.render_as_string() == "sqlite+pysqlite:///:memory:"
+        )
+        assert (
+            db.data_source_stream_factory is simple_data_source_stream_factory
         )
         assert not db.is_disposed
 
@@ -103,10 +126,13 @@ class TestSimpleSQLDatabase(TestCase):
         method creates and returns an instance in the expected state.
         """
 
-        db1: SimpleSQLDatabase = SimpleSQLDatabase.of_sqlite_in_memory()
-        db2: SimpleSQLDatabase = SimpleSQLDatabase.of_sqlite_in_memory(
+        db1: SimpleSQLDatabase[SQLRawData]
+        db1 = SimpleSQLDatabase.of_sqlite_in_memory()
+        db2: SimpleSQLDatabase[PDDataFrame]
+        db2 = SimpleSQLDatabase.of_sqlite_in_memory(
             name="Test DB",
             description="A Test database.",
+            data_source_stream_factory=pd_data_frame_data_source_stream_factory,
         )
 
         assert db1.name == "SQLite in Memory"
@@ -114,11 +140,18 @@ class TestSimpleSQLDatabase(TestCase):
         assert (
             db1.engine.url.render_as_string() == "sqlite+pysqlite:///:memory:"
         )
+        assert (
+            db1.data_source_stream_factory is simple_data_source_stream_factory
+        )
         assert not db1.is_disposed
         assert db2.name == "Test DB"
         assert db2.description == "A Test database."
         assert (
             db2.engine.url.render_as_string() == "sqlite+pysqlite:///:memory:"
+        )
+        assert (
+            db2.data_source_stream_factory
+            is pd_data_frame_data_source_stream_factory
         )
         assert not db2.is_disposed
 
@@ -146,24 +179,54 @@ class TestSimpleSQLDatabase(TestCase):
                 raw_sql_query="SELECT y, z FROM some_table",
             ),
         )
-        db: SimpleSQLDatabase = cast(
-            SimpleSQLDatabase,
+        db1: SimpleSQLDatabase[SQLRawData] = cast(
+            SimpleSQLDatabase[SQLRawData],
             SimpleSQLDatabaseFactory(
                 add_sample_data=True,
                 add_sample_data__size=1000,
+                data_source_stream_factory=simple_data_source_stream_factory,
             ),
         )
-        stream1: SimpleSQLDataSourceStream = db.start_extraction(query1)
-        stream2: SimpleSQLDataSourceStream = db.start_extraction(query2)
+        db2: SimpleSQLDatabase[PDDataFrame] = cast(
+            SimpleSQLDatabase[PDDataFrame],
+            SimpleSQLDatabaseFactory(
+                add_sample_data=True,
+                add_sample_data__size=3000,
+                data_source_stream_factory=pd_data_frame_data_source_stream_factory,
+            ),
+        )
+        stream1: DataSourceStream[
+            SimpleSQLQuery,
+            SQLRawData,
+        ] = db1.start_extraction(query1)
+        stream2: DataSourceStream[
+            SimpleSQLQuery,
+            SQLRawData,
+        ] = db1.start_extraction(query2)
+        stream3: DataSourceStream[
+            SimpleSQLQuery,
+            PDDataFrame,
+        ] = db2.start_extraction(query1)
+        stream4: DataSourceStream[
+            SimpleSQLQuery,
+            PDDataFrame,
+        ] = db2.start_extraction(query2)
 
         assert stream1 is not None
         assert isinstance(stream1, SimpleSQLDataSourceStream)
         assert stream2 is not None
         assert isinstance(stream2, SimpleSQLDataSourceStream)
+        assert stream3 is not None
+        assert isinstance(stream3, PDDataFrameDataSourceStream)
+        assert stream4 is not None
+        assert isinstance(stream4, PDDataFrameDataSourceStream)
 
         stream1.dispose()
         stream2.dispose()
-        db.dispose()
+        stream3.dispose()
+        stream4.dispose()
+        db1.dispose()
+        db2.dispose()
 
 
 class TestSimpleSQLDataSourceStream(TestCase):
@@ -189,8 +252,8 @@ class TestSimpleSQLDataSourceStream(TestCase):
                 yield_per=100,
             ),
         )
-        self.db: SimpleSQLDatabase = cast(
-            SimpleSQLDatabase,
+        self.db: SimpleSQLDatabase[SQLRawData] = cast(
+            SimpleSQLDatabase[SQLRawData],
             SimpleSQLDatabaseFactory(
                 add_sample_data=True,
                 add_sample_data__size=1000,
@@ -202,9 +265,10 @@ class TestSimpleSQLDataSourceStream(TestCase):
         """Ensure accessors reflect the current status of a
         :class:`SimpleSQLDataSourceStream` instance.
         """
-        stream: SimpleSQLDataSourceStream = self.db.start_extraction(
-            self.query1,
-        )
+        stream: DataSourceStream[
+            SimpleSQLQuery,
+            SQLRawData,
+        ] = self.db.start_extraction(self.query1)
 
         assert stream.data_source is self.db
         assert not stream.is_disposed
@@ -217,11 +281,13 @@ class TestSimpleSQLDataSourceStream(TestCase):
         leaves an instance in the expected state.
         """
 
-        stream1: SimpleSQLDataSourceStream = self.db.start_extraction(
-            self.query1,
+        stream1: SimpleSQLDataSourceStream = simple_data_source_stream_factory(
+            sql_data_source=self.db,
+            extract_metadata=self.query1,
         )
-        stream2: SimpleSQLDataSourceStream = self.db.start_extraction(
-            self.query2,
+        stream2: SimpleSQLDataSourceStream = simple_data_source_stream_factory(
+            sql_data_source=self.db,
+            extract_metadata=self.query2,
         )
 
         stream1.dispose()
@@ -245,12 +311,14 @@ class TestSimpleSQLDataSourceStream(TestCase):
         stream2: SimpleSQLDataSourceStream
         with self.db.start_extraction(self.query1) as stream1:
             for data, progress in stream1:
+                assert self.query1.yield_per is not None
                 assert len(data.content) <= self.query1.yield_per
                 assert progress == -1
                 stream1_extractions_count += 1
 
         with self.db.start_extraction(self.query2) as stream2:
             for data, progress in stream2:
+                assert self.query2.yield_per is not None
                 assert len(data.content) <= self.query2.yield_per
                 assert progress == -1
                 stream2_extractions_count += 1
@@ -265,8 +333,9 @@ class TestSimpleSQLDataSourceStream(TestCase):
         can be called multiple times without raising any errors.
         """
 
-        stream: SimpleSQLDataSourceStream = self.db.start_extraction(
-            self.query2,
+        stream: SimpleSQLDataSourceStream = simple_data_source_stream_factory(
+            sql_data_source=self.db,
+            extract_metadata=self.query2,
         )
 
         stream.dispose()

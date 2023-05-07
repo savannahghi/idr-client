@@ -7,6 +7,7 @@ from .metadata import (
 from .operations import (
     BaseSQLDataSource,
     BaseSQLDataSourceStream,
+    PDDataFrame,
     PDDataFrameDataSourceStream,
     SimpleSQLDatabase,
     SimpleSQLDataSourceStream,
@@ -20,6 +21,7 @@ __all__ = [
     "BaseSQLDataSourceMetadata",
     "BaseSQLDataSourceStream",
     "BaseSQLExtractMetadata",
+    "PDDataFrame",
     "PDDataFrameDataSourceStream",
     "SQLRawData",
     "SimpleSQLDatabase",
