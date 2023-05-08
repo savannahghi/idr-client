@@ -1,10 +1,12 @@
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from requests.models import Response
 
-from .lib import HTTPTransport
+if TYPE_CHECKING:
+    from .lib import HTTPTransport
 
-HTTPTransportFactory = Callable[[], HTTPTransport]
+HTTPTransportFactory = Callable[[], "HTTPTransport"]
 """
 Return instances of :class:`HTTPTransport`.
 

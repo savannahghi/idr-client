@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from collections.abc import Iterable, Mapping
-from typing import Any
+from typing import Any, Generic, TypeVar
 
 from ...mixins import Disposable
 from .base import NamedDomainObject
@@ -12,11 +12,26 @@ from .metadata import (
 )
 
 # =============================================================================
+# TYPES
+# =============================================================================
+
+
+_DM = TypeVar("_DM", bound=DataSourceMetadata)
+_DS = TypeVar("_DS", bound=DataSinkMetadata)
+_EM = TypeVar("_EM", bound=ExtractMetadata)
+_UM = TypeVar("_UM", bound=UploadMetadata)
+
+# =============================================================================
 # PIPELINE TERMINAL INTERFACES
 # =============================================================================
 
 
-class MetadataSink(NamedDomainObject, Disposable, metaclass=ABCMeta):
+class MetadataSink(
+    NamedDomainObject,
+    Disposable,
+    Generic[_UM, _EM],
+    metaclass=ABCMeta,
+):
     """Upload(s) related metadata consumer.
 
     An interface representing entities that consume metadata relating to
@@ -25,7 +40,7 @@ class MetadataSink(NamedDomainObject, Disposable, metaclass=ABCMeta):
 
     # TODO: Think🤔 about where are UploadMetadata ID's going to come from?
     @abstractmethod
-    def consume_upload_meta(self, upload_meta: UploadMetadata) -> None:
+    def consume_upload_meta(self, upload_meta: _UM) -> None:
         """
 
         :param upload_meta:
@@ -36,10 +51,10 @@ class MetadataSink(NamedDomainObject, Disposable, metaclass=ABCMeta):
     @abstractmethod
     def init_upload_metadata_consumption(
         self,
-        extract_metadata: ExtractMetadata,
+        extract_metadata: _EM,
         content_type: str,
         **kwargs: Mapping[str, Any],
-    ) -> UploadMetadata:
+    ) -> _UM:
         """
 
         :param extract_metadata:
@@ -49,7 +64,12 @@ class MetadataSink(NamedDomainObject, Disposable, metaclass=ABCMeta):
         ...
 
 
-class MetadataSource(NamedDomainObject, Disposable, metaclass=ABCMeta):
+class MetadataSource(
+    NamedDomainObject,
+    Disposable,
+    Generic[_DS, _DM, _EM],
+    metaclass=ABCMeta,
+):
     """Extract(s) related metadata producer/provider.
 
     An interface representing entities that serve/produce metadata describing
@@ -57,7 +77,7 @@ class MetadataSource(NamedDomainObject, Disposable, metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def provide_data_sink_meta(self) -> Iterable[DataSinkMetadata]:
+    def provide_data_sink_meta(self) -> Iterable[_DS]:
         """
 
         :return:
@@ -65,7 +85,7 @@ class MetadataSource(NamedDomainObject, Disposable, metaclass=ABCMeta):
         ...
 
     @abstractmethod
-    def provide_data_source_meta(self) -> Iterable[DataSourceMetadata]:
+    def provide_data_source_meta(self) -> Iterable[_DM]:
         """
 
         :return:
@@ -73,10 +93,7 @@ class MetadataSource(NamedDomainObject, Disposable, metaclass=ABCMeta):
         ...
 
     @abstractmethod
-    def provide_extract_meta(
-        self,
-        data_source: DataSourceMetadata,
-    ) -> Iterable[ExtractMetadata]:
+    def provide_extract_meta(self, data_source: _DM) -> Iterable[_EM]:
         """
 
         :return:

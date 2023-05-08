@@ -20,6 +20,10 @@ from ..typings import ResponsePredicate
 # =============================================================================
 
 _CD = TypeVar("_CD", bound=CleanedData)
+_DM = TypeVar("_DM", bound=DataSourceMetadata)
+_DS = TypeVar("_DS", bound=DataSinkMetadata)
+_EM = TypeVar("_EM", bound=ExtractMetadata)
+_UM = TypeVar("_UM", bound=UploadMetadata)
 
 
 # =============================================================================
@@ -90,17 +94,23 @@ class HTTPAuthAPIDialect(HTTPAPIDialect, metaclass=ABCMeta):
         ...
 
 
-class HTTPDataSinkAPIDialect(HTTPAPIDialect, Generic[_CD], metaclass=ABCMeta):
+class HTTPDataSinkAPIDialect(
+    HTTPAPIDialect,
+    Generic[_UM, _CD],
+    metaclass=ABCMeta,
+):
     # REQUEST FACTORIES
     # -------------------------------------------------------------------------
     @abstractmethod
     def consume_request_factory(
         self,
+        upload_meta: _UM,
         clean_data: _CD,
         progress: float,
     ) -> Request:
         """
 
+        :param upload_meta:
         :param clean_data:
         :param progress:
 
@@ -114,11 +124,13 @@ class HTTPDataSinkAPIDialect(HTTPAPIDialect, Generic[_CD], metaclass=ABCMeta):
     def handle_consume_response(
         self,
         response: Response,
+        upload_meta: _UM,
         clean_data: _CD,
         progress: float,
     ) -> None:
         """
 
+        :param upload_meta:
         :param response:
         :param clean_data:
         :param progress:
@@ -127,13 +139,17 @@ class HTTPDataSinkAPIDialect(HTTPAPIDialect, Generic[_CD], metaclass=ABCMeta):
         """
 
 
-class HTTPMetadataSinkAPIDialect(HTTPAPIDialect, metaclass=ABCMeta):
+class HTTPMetadataSinkAPIDialect(
+    HTTPAPIDialect,
+    Generic[_UM, _EM],
+    metaclass=ABCMeta,
+):
     # REQUEST FACTORIES
     # -------------------------------------------------------------------------
     @abstractmethod
     def consume_upload_meta_request_factory(
         self,
-        upload_meta: UploadMetadata,
+        upload_meta: _UM,
     ) -> Request:
         """
 
@@ -146,7 +162,7 @@ class HTTPMetadataSinkAPIDialect(HTTPAPIDialect, metaclass=ABCMeta):
     @abstractmethod
     def init_upload_metadata_consumption_request_factory(
         self,
-        extract_metadata: ExtractMetadata,
+        extract_metadata: _EM,
         content_type: str,
         **kwargs: Mapping[str, Any],
     ) -> Request:
@@ -166,7 +182,7 @@ class HTTPMetadataSinkAPIDialect(HTTPAPIDialect, metaclass=ABCMeta):
     def handle_consume_upload_meta_response(
         self,
         response: Response,
-        upload_meta: UploadMetadata,
+        upload_meta: _UM,
     ) -> None:
         """
 
@@ -181,10 +197,10 @@ class HTTPMetadataSinkAPIDialect(HTTPAPIDialect, metaclass=ABCMeta):
     def handle_init_upload_metadata_consumption_response(
         self,
         response: Response,
-        extract_metadata: ExtractMetadata,
+        extract_metadata: _EM,
         content_type: str,
         **kwargs: Mapping[str, Any],
-    ) -> UploadMetadata:
+    ) -> _UM:
         """
 
         :param response:
@@ -197,7 +213,11 @@ class HTTPMetadataSinkAPIDialect(HTTPAPIDialect, metaclass=ABCMeta):
         ...
 
 
-class HTTPMetadataSourceAPIDialect(HTTPAPIDialect, metaclass=ABCMeta):
+class HTTPMetadataSourceAPIDialect(
+    HTTPAPIDialect,
+    Generic[_DS, _DM, _EM],
+    metaclass=ABCMeta,
+):
     # REQUEST FACTORIES
     # -------------------------------------------------------------------------
     @abstractmethod
@@ -219,7 +239,7 @@ class HTTPMetadataSourceAPIDialect(HTTPAPIDialect, metaclass=ABCMeta):
     @abstractmethod
     def provide_extract_meta_request_factory(
         self,
-        data_source: DataSourceMetadata,
+        data_source: _DM,
     ) -> Request:
         """
 
@@ -236,7 +256,7 @@ class HTTPMetadataSourceAPIDialect(HTTPAPIDialect, metaclass=ABCMeta):
     def handle_provide_data_sink_meta_response(
         self,
         response: Response,
-    ) -> Iterable[DataSinkMetadata]:
+    ) -> Iterable[_DS]:
         """
 
         :param response:
@@ -247,7 +267,7 @@ class HTTPMetadataSourceAPIDialect(HTTPAPIDialect, metaclass=ABCMeta):
     def handle_provide_data_source_meta_response(
         self,
         response: Response,
-    ) -> Iterable[DataSourceMetadata]:
+    ) -> Iterable[_DM]:
         """
 
         :param response:
@@ -259,8 +279,8 @@ class HTTPMetadataSourceAPIDialect(HTTPAPIDialect, metaclass=ABCMeta):
     def handle_provide_extract_meta_response(
         self,
         response: Response,
-        data_source: DataSourceMetadata,
-    ) -> Iterable[ExtractMetadata]:
+        data_source: _DM,
+    ) -> Iterable[_EM]:
         """
 
         :param response:

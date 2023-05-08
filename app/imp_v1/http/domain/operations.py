@@ -42,7 +42,10 @@ class HTTPDataSink(BaseDataSink[_DS, _UM, _CD], Generic[_DS, _UM, _CD]):
     """A :class:`DataSink` backed by an HTTP server."""
 
     _transport_factory: HTTPTransportFactory = field()
-    _api_dialect_factory: Callable[[], HTTPDataSinkAPIDialect[_CD]] = field()
+    _api_dialect_factory: Callable[
+        [],
+        HTTPDataSinkAPIDialect[_UM, _CD],
+    ] = field()
     _valid_response_predicate: ResponsePredicate = field(
         default=if_request_accepted,
         kw_only=True,
@@ -51,7 +54,7 @@ class HTTPDataSink(BaseDataSink[_DS, _UM, _CD], Generic[_DS, _UM, _CD]):
     @property
     def api_dialect_factory(
         self,
-    ) -> Callable[[], HTTPDataSinkAPIDialect[_CD]]:
+    ) -> Callable[[], HTTPDataSinkAPIDialect[_UM, _CD]]:
         return self._api_dialect_factory
 
     @property
@@ -89,14 +92,14 @@ class HTTPDataSinkStream(BaseDataSinkStream[_UM, _CD], Generic[_UM, _CD]):
     """A :class:`DataSinkStream` backed by an HTTP server."""
 
     _transport: HTTPTransport = field()
-    _api_dialect: HTTPDataSinkAPIDialect[_CD] = field()
+    _api_dialect: HTTPDataSinkAPIDialect[_UM, _CD] = field()
     _valid_response_predicate: ResponsePredicate = field(
         default=if_request_accepted,
         kw_only=True,
     )
 
     @property
-    def api_dialect(self) -> HTTPDataSinkAPIDialect[_CD]:
+    def api_dialect(self) -> HTTPDataSinkAPIDialect[_UM, _CD]:
         return self._api_dialect
 
     @property
@@ -109,6 +112,7 @@ class HTTPDataSinkStream(BaseDataSinkStream[_UM, _CD], Generic[_UM, _CD]):
         progress: float,
     ) -> None:
         req: Request = self._api_dialect.consume_request_factory(
+            upload_meta=self.upload_metadata,
             clean_data=clean_data,
             progress=progress,
         )
@@ -118,6 +122,7 @@ class HTTPDataSinkStream(BaseDataSinkStream[_UM, _CD], Generic[_UM, _CD]):
         )
         return self._api_dialect.handle_consume_response(
             response=res,
+            upload_meta=self.upload_metadata,
             clean_data=clean_data,
             progress=progress,
         )

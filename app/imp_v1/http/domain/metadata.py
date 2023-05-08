@@ -25,7 +25,9 @@ class BaseHTTPDataSinkMetadata(BaseDataSinkMetadata, metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def api_dialect_factory(self) -> Callable[[], HTTPDataSinkAPIDialect[Any]]:
+    def api_dialect_factory(
+        self,
+    ) -> Callable[[], HTTPDataSinkAPIDialect[Any, Any]]:
         ...
 
     @property
@@ -44,14 +46,19 @@ class SimpleHTTPDataSinkMetadata(BaseHTTPDataSinkMetadata):
     """Simple `HTTPDataSink` descriptor."""
 
     _transport_factory: HTTPTransportFactory = field()
-    _api_dialect_factory: Callable[[], HTTPDataSinkAPIDialect[Any]] = field()
+    _api_dialect_factory: Callable[
+        [],
+        HTTPDataSinkAPIDialect[Any, Any],
+    ] = field()
     _valid_response_predicate: ResponsePredicate = field(
         default=if_request_accepted,
         kw_only=True,
     )
 
     @property
-    def api_dialect_factory(self) -> Callable[[], HTTPDataSinkAPIDialect[Any]]:
+    def api_dialect_factory(
+        self,
+    ) -> Callable[[], HTTPDataSinkAPIDialect[Any, Any]]:
         return self._api_dialect_factory
 
     @property

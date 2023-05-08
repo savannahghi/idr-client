@@ -1,5 +1,5 @@
 from collections.abc import Iterable, Mapping
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from attrs import define, field
 
@@ -23,27 +23,41 @@ from ..typings import ResponsePredicate
 if TYPE_CHECKING:
     from requests.models import Request, Response
 
+# =============================================================================
+# TYPES
+# =============================================================================
 
-@define
-class HTTPMetadataSink(BaseMetadataSink):
+_DM = TypeVar("_DM", bound=DataSourceMetadata)
+_DS = TypeVar("_DS", bound=DataSinkMetadata)
+_EM = TypeVar("_EM", bound=ExtractMetadata)
+_UM = TypeVar("_UM", bound=UploadMetadata)
+
+
+# =============================================================================
+# HTTP SKELETAL IMPLEMENTATIONS
+# =============================================================================
+
+
+@define(slots=True, order=False)
+class HTTPMetadataSink(BaseMetadataSink[_UM, _EM], Generic[_UM, _EM]):
     """:class:`MetadataSink` backed by an HTTP server."""
 
     _transport: HTTPTransport = field()
-    _api_dialect: HTTPMetadataSinkAPIDialect = field()
+    _api_dialect: HTTPMetadataSinkAPIDialect[_UM, _EM] = field()
     _valid_response_predicate: ResponsePredicate = field(
         default=if_request_accepted,
         kw_only=True,
     )
 
     @property
-    def api_dialect(self) -> HTTPMetadataSinkAPIDialect:
+    def api_dialect(self) -> HTTPMetadataSinkAPIDialect[_UM, _EM]:
         return self._api_dialect
 
     def dispose(self) -> None:
         self._is_disposed = True
         self._transport.dispose()
 
-    def consume_upload_meta(self, upload_meta: UploadMetadata) -> None:
+    def consume_upload_meta(self, upload_meta: _UM) -> None:
         req: Request = self._api_dialect.consume_upload_meta_request_factory(
             upload_meta=upload_meta,
         )
@@ -58,10 +72,10 @@ class HTTPMetadataSink(BaseMetadataSink):
 
     def init_upload_metadata_consumption(
         self,
-        extract_metadata: ExtractMetadata,
+        extract_metadata: _EM,
         content_type: str,
         **kwargs: Mapping[str, Any],
-    ) -> UploadMetadata:
+    ) -> _UM:
         req: Request = (
             self._api_dialect.init_upload_metadata_consumption_request_factory(
                 extract_metadata=extract_metadata,
@@ -83,25 +97,29 @@ class HTTPMetadataSink(BaseMetadataSink):
         )
 
 
-class HTTPMetadataSource(BaseMetadataSource):
+@define(slots=True, order=False)
+class HTTPMetadataSource(
+    BaseMetadataSource[_DS, _DM, _EM],
+    Generic[_DS, _DM, _EM],
+):
     """:class:`MetadataSource` backed by an HTTP server."""
 
     _transport: HTTPTransport = field()
-    _api_dialect: HTTPMetadataSourceAPIDialect = field()
+    _api_dialect: HTTPMetadataSourceAPIDialect[_DS, _DM, _EM] = field()
     _valid_response_predicate: ResponsePredicate = field(
         default=if_request_accepted,
         kw_only=True,
     )
 
     @property
-    def api_dialect(self) -> HTTPMetadataSourceAPIDialect:
+    def api_dialect(self) -> HTTPMetadataSourceAPIDialect[_DS, _DM, _EM]:
         return self._api_dialect
 
     def dispose(self) -> None:
         self._is_disposed = True
         self._transport.dispose()
 
-    def provide_data_sink_meta(self) -> Iterable[DataSinkMetadata]:
+    def provide_data_sink_meta(self) -> Iterable[_DS]:
         req: Request = (
             self._api_dialect.provide_data_sink_meta_request_factory()
         )
@@ -111,7 +129,7 @@ class HTTPMetadataSource(BaseMetadataSource):
         )
         return self._api_dialect.handle_provide_data_sink_meta_response(res)
 
-    def provide_data_source_meta(self) -> Iterable[DataSourceMetadata]:
+    def provide_data_source_meta(self) -> Iterable[_DM]:
         req: Request = (
             self._api_dialect.provide_data_source_meta_request_factory()
         )
@@ -123,8 +141,8 @@ class HTTPMetadataSource(BaseMetadataSource):
 
     def provide_extract_meta(
         self,
-        data_source: DataSourceMetadata,
-    ) -> Iterable[ExtractMetadata]:
+        data_source: _DM,
+    ) -> Iterable[_EM]:
         req: Request = self._api_dialect.provide_extract_meta_request_factory(
             data_source=data_source,
         )
