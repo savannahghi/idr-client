@@ -141,10 +141,10 @@ class HTTPMetadataSource(
 
     def provide_extract_meta(
         self,
-        data_source: _DM,
+        data_source_meta: _DM,
     ) -> Iterable[_EM]:
         req: Request = self._api_dialect.provide_extract_meta_request_factory(
-            data_source=data_source,
+            data_source_meta=data_source_meta,
         )
         res: Response = self._transport.make_request(
             request=req,
@@ -152,5 +152,5 @@ class HTTPMetadataSource(
         )
         return self._api_dialect.handle_provide_extract_meta_response(
             response=res,
-            data_source=data_source,
+            data_source_meta=data_source_meta,
         )

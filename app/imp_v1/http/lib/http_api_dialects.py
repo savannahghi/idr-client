@@ -239,11 +239,11 @@ class HTTPMetadataSourceAPIDialect(
     @abstractmethod
     def provide_extract_meta_request_factory(
         self,
-        data_source: _DM,
+        data_source_meta: _DM,
     ) -> Request:
         """
 
-        :param data_source:
+        :param data_source_meta:
 
         :return:
         """
@@ -279,12 +279,12 @@ class HTTPMetadataSourceAPIDialect(
     def handle_provide_extract_meta_response(
         self,
         response: Response,
-        data_source: _DM,
+        data_source_meta: _DM,
     ) -> Iterable[_EM]:
         """
 
         :param response:
-        :param data_source:
+        :param data_source_meta:
 
         :return:
         """

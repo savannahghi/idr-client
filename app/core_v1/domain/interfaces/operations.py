@@ -248,7 +248,7 @@ class DataSourceStream(
         ...
 
 
-class ExtractProcessor(Disposable, Generic[_RD, _CD], metaclass=ABCMeta):
+class ExtractProcessor(Disposable, Generic[_EM, _RD, _CD], metaclass=ABCMeta):
     """The post-extraction operation(s) to be performed on extracted data.
 
     This interface describes the post-extraction operation(s) to be performed
@@ -257,7 +257,7 @@ class ExtractProcessor(Disposable, Generic[_RD, _CD], metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def process(self, raw_data: _RD, extract_metadata: ExtractMetadata) -> _CD:
+    def process(self, raw_data: _RD, extract_metadata: _EM) -> _CD:
         """
 
         :param raw_data:

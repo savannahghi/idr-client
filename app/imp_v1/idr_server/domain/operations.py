@@ -15,7 +15,9 @@ class ParquetData(BaseData, CleanedData[pa.BufferReader]):
 
 
 @define(slots=True, order=False)
-class IDRServerExtractProcessor(ExtractProcessor[PDDataFrame, ParquetData]):
+class IDRServerExtractProcessor(
+    ExtractProcessor[SimpleSQLQuery, PDDataFrame, ParquetData],
+):
     _is_disposed: bool = field(default=False, init=False)
 
     def __attrs_post_init__(self) -> None:
