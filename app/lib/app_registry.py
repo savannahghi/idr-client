@@ -25,9 +25,8 @@ class AppRegistry:
 
     def __init__(self):
         self._data_source_types: dict[str, DataSourceType] = {}
-        self._default_transport_factory: None | (
-            DefaultTransportFactory
-        ) = None
+        self._default_transport_factory: DefaultTransportFactory | None
+        self._default_transport_factory = None
 
     @property
     def data_source_types(self) -> Mapping[str, DataSourceType]:
@@ -95,8 +94,8 @@ class AppRegistry:
             the app has not been set.
         """
         if not self.default_transport_factory:
-            raise ImproperlyConfiguredError(
-                message=error_message
-                or ("The default transport factor has not been set."),
+            _err_msg: str = error_message or (
+                "The default transport factor has not been set."
             )
+            raise ImproperlyConfiguredError(message=_err_msg)
         return self.default_transport_factory

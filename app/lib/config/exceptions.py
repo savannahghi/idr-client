@@ -12,11 +12,11 @@ class ConfigurationError(IDRClientException):
 
 
 class ImproperlyConfiguredError(ConfigurationError):
-    """Indicates that a configuration was found but it is invalid."""
+    """Indicates that a configuration was found, but it is invalid."""
 
 
 class MissingSettingError(ConfigurationError, LookupError):
-    """Non existing setting access error."""
+    """Non-existing setting access error."""
 
     def __init__(self, setting: str, message: str | None = None):
         """Initialize a ``MissingSettingError`` with the given properties.
@@ -33,9 +33,8 @@ class MissingSettingError(ConfigurationError, LookupError):
 
     @property
     def setting(self) -> str:
-        """
-        Return the missing setting that resulted in this exception being
-        raised.
+        """Return the missing setting whose attempted access resulted in this
+        exception being raised.
 
         :return: The missing setting.
         """

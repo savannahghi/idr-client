@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Mapping, Sequence
-from typing import Any
+from typing import Any, final
 
 from .exceptions import MissingSettingError
 from .setting_initializer import SettingInitializer
@@ -17,17 +17,24 @@ _LOGGER = logging.getLogger(__name__)
 # =============================================================================
 
 
+@final
 class Config:
     """An object that holds the app settings.
 
-    Only read only access to the settings is available post initialization. Any
+    At runtime, an instance of this class is accessible using the
+    :attr:`app.config` attribute.
+
+    Only read-only access to the settings is available post initialization. Any
     required modifications to the settings should be done at initialization
     time by passing a sequence of :class:`initializers <SettingInitializer>`
-    to this class's constructor.
+    to this class's constructor. Uppercase names for settings should be
+    preferred to convey that they are read only.
 
-    Setting names are encouraged to be uppercase to convey that they are read
-    only. Setting names that are also valid python identifiers can also be
-    accessed using the dot notation on instances of this class.
+    Setting names that are also valid python identifiers can be accessed using
+    the dot notation on an instance of this class. The :meth:`get` method can
+    also be used to access settings after initialization and is especially
+    useful for access to settings with names that are invalid python
+    identifies.
     """
 
     def __init__(
@@ -69,6 +76,11 @@ class Config:
             return self._settings[setting]
         except KeyError:
             raise MissingSettingError(setting=setting) from None
+
+    def __setattr__(self, name: str, value: Any):  # noqa: ANN401
+        """Disallow any attribute assignments on instances."""
+        msg = "App settings are read-only."
+        raise AttributeError(msg)
 
     def get(self, setting: str, default: Any = None) -> Any:  # noqa: ANN401
         """
