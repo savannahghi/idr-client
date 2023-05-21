@@ -9,15 +9,13 @@ from ...mixins import Disposable
 from .base import NamedDomainObject
 from .operations import (
     CleanedData,
-    DataSink,
     DataSinkMetadata,
-    DataSource,
     DataSourceMetadata,
     ExtractMetadata,
     RawData,
     UploadMetadata,
 )
-from .terminals import MetadataSink, MetadataSource
+from .terminals import MetadataSink, MetadataSource, UploadMetadataFactory
 
 # =============================================================================
 # TYPES
@@ -43,40 +41,23 @@ class ETLProtocol(
     Disposable,
     metaclass=ABCMeta,
 ):
-    """
-    A definition of the kinds of supported operations and concrete
-    implementations needed to facilitate an ETL Workflow.
+    """ETL "Service" Description.
+
+    Defines the concrete core interfaces implementations that when combined
+    constitute an ETL workflow.
     """
 
     @property
     @abstractmethod
-    def metadata_sink(self) -> MetadataSink:
-        # TODO: Brainstorm
-        #  Return a single sink so that it can be used to create new
-        #  UploadMetadata instances.
+    def metadata_sinks(self) -> Iterable[MetadataSink[_UM, _EM]]:
         ...
 
     @property
     @abstractmethod
-    def metadata_sources(self) -> Iterable[MetadataSource]:
+    def metadata_sources(self) -> Iterable[MetadataSource[_DS, _DM, _EM]]:
         ...
 
+    @property
     @abstractmethod
-    def pick_drain_target(self, upload_meta: _UM) -> DataSink[_DS, _UM, _CD]:
-        """
-
-        :param upload_meta:
-
-        :return:
-        """
-        ...
-
-    @abstractmethod
-    def pick_draw_target(self, extract_meta: _EM) -> DataSource[_DM, _EM, _RD]:
-        """
-
-        :param extract_meta:
-
-        :return:
-        """
+    def upload_metadata_factory(self) -> UploadMetadataFactory[_UM, _EM]:
         ...

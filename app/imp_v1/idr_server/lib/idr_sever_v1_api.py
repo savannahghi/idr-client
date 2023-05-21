@@ -8,11 +8,13 @@ from requests.models import PreparedRequest
 from toolz import pipe
 from toolz.curried import map
 
+from app import settings
 from app.imp_v1.http import (
     HTTPAuthAPIDialect,
     HTTPDataSinkAPIDialect,
     HTTPMetadataSinkAPIDialect,
     HTTPMetadataSourceAPIDialect,
+    HTTPUploadMetadataFactoryAPIDialect,
     ResponsePredicate,
     SimpleHTTPDataSinkMetadata,
     if_response_has_status_factory,
@@ -102,10 +104,14 @@ class _IDRServerAuth(AuthBase):
 class IDRServerV1API(
     HTTPAuthAPIDialect,
     HTTPDataSinkAPIDialect[IDRServerV1APIUploadMetadata, ParquetData],
-    HTTPMetadataSinkAPIDialect[IDRServerV1APIUploadMetadata, SimpleSQLQuery],
+    HTTPMetadataSinkAPIDialect[IDRServerV1APIUploadMetadata],
     HTTPMetadataSourceAPIDialect[
         SimpleHTTPDataSinkMetadata,
         SimpleSQLDatabaseDescriptor,
+        SimpleSQLQuery,
+    ],
+    HTTPUploadMetadataFactoryAPIDialect[
+        IDRServerV1APIUploadMetadata,
         SimpleSQLQuery,
     ],
 ):
@@ -204,32 +210,6 @@ class IDRServerV1API(
             ),
         )
 
-    def init_upload_metadata_consumption_request_factory(
-        self,
-        extract_metadata: SimpleSQLQuery,
-        content_type: str,
-        **kwargs: Mapping[str, Any],
-    ) -> Request:
-        org_unit_code: str = "00000"
-        org_unit_name: str = "Test Facility (dev)"
-        return Request(
-            headers={
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-            },
-            json={
-                "chunks": 0,
-                "org_unit_code": org_unit_code,
-                "org_unit_name": org_unit_name,
-                "content_type": content_type,
-                "extract_metadata": extract_metadata.id,
-            },
-            method=_POST_METHOD,
-            url="{api_url}/sql_data/sql_upload_metadata/".format(
-                api_url=self._base_api_url,
-            ),
-        )
-
     def handle_consume_upload_meta_response(
         self,
         response: Response,
@@ -237,23 +217,6 @@ class IDRServerV1API(
     ) -> None:
         response.json()
         return
-
-    def handle_init_upload_metadata_consumption_response(
-        self,
-        response: Response,
-        extract_metadata: SimpleSQLQuery,
-        content_type: str,
-        **kwargs: Mapping[str, Any],
-    ) -> IDRServerV1APIUploadMetadata:
-        result: _IDRServerUploadMetaAPIPayload = response.json()
-        return IDRServerV1APIUploadMetadata(
-            id=result["id"],
-            content_type=result["content_type"],
-            extract_metadata=extract_metadata,
-            chunks=result["chunks_count"],
-            org_unit_code=result["org_unit_code"],
-            org_unit_name=result["org_unit_name"],
-        )
 
     # HTTP METADATA SOURCE API DIALECT IMPLEMENTATION
     # -------------------------------------------------------------------------
@@ -334,4 +297,49 @@ class IDRServerV1API(
                 map(lambda _kwargs: SimpleSQLQuery(**_kwargs)),
                 tuple,
             ),
+        )
+
+    # HTTP UPLOAD METADATA API DIALECT IMPLEMENTATION
+    # -------------------------------------------------------------------------
+    def new_upload_meta_request_factory(
+        self,
+        extract_meta: SimpleSQLQuery,
+        content_type: str,
+        **kwargs: Mapping[str, Any],
+    ) -> Request:
+        org_unit_code: str = settings.LOCATION_ID
+        org_unit_name: str = settings.LOCATION_NAME
+        return Request(
+            headers={
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            },
+            json={
+                "chunks": 0,
+                "org_unit_code": org_unit_code,
+                "org_unit_name": org_unit_name,
+                "content_type": content_type,
+                "extract_metadata": extract_meta.id,
+            },
+            method=_POST_METHOD,
+            url="{api_url}/sql_data/sql_upload_metadata/".format(
+                api_url=self._base_api_url,
+            ),
+        )
+
+    def handle_new_upload_meta_response(
+        self,
+        response: Response,
+        extract_meta: SimpleSQLQuery,
+        content_type: str,
+        **kwargs: Mapping[str, Any],
+    ) -> IDRServerV1APIUploadMetadata:
+        result: _IDRServerUploadMetaAPIPayload = response.json()
+        return IDRServerV1APIUploadMetadata(
+            id=result["id"],
+            content_type=result["content_type"],
+            extract_metadata=extract_meta,
+            chunks=result["chunks_count"],
+            org_unit_code=result["org_unit_code"],
+            org_unit_name=result["org_unit_name"],
         )

@@ -10,6 +10,7 @@ from ..interfaces import (
     MetadataSink,
     MetadataSource,
     UploadMetadata,
+    UploadMetadataFactory,
 )
 from .base import BaseNamedDomainObject
 
@@ -32,8 +33,8 @@ _UM = TypeVar("_UM", bound=UploadMetadata)
 @define(slots=False)
 class BaseMetadataSink(
     BaseNamedDomainObject,
-    MetadataSink[_UM, _EM],
-    Generic[_UM, _EM],
+    MetadataSink[_UM],
+    Generic[_UM],
     metaclass=ABCMeta,
 ):
     """
@@ -57,6 +58,24 @@ class BaseMetadataSource(
 ):
     """
     Base skeletal implementation for most :class:`MetadataSource`
+    implementations.
+    """
+
+    _is_disposed: bool = field(default=False, init=False)
+
+    @property
+    def is_disposed(self) -> bool:
+        return self._is_disposed
+
+
+@define(slots=False)
+class BaseUploadMetadataFactory(
+    UploadMetadataFactory[_UM, _EM],
+    Generic[_UM, _EM],
+    metaclass=ABCMeta,
+):
+    """
+    Base skeletal implementation for most :class:`UploadMetadataFactory`
     implementations.
     """
 

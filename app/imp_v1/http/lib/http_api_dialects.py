@@ -141,7 +141,7 @@ class HTTPDataSinkAPIDialect(
 
 class HTTPMetadataSinkAPIDialect(
     HTTPAPIDialect,
-    Generic[_UM, _EM],
+    Generic[_UM],
     metaclass=ABCMeta,
 ):
     # REQUEST FACTORIES
@@ -159,23 +159,6 @@ class HTTPMetadataSinkAPIDialect(
         """
         ...
 
-    @abstractmethod
-    def init_upload_metadata_consumption_request_factory(
-        self,
-        extract_metadata: _EM,
-        content_type: str,
-        **kwargs: Mapping[str, Any],
-    ) -> Request:
-        """
-
-        :param extract_metadata:
-        :param content_type:
-        :param kwargs:
-
-        :return:
-        """
-        ...
-
     # RESPONSE HANDLERS
     # -------------------------------------------------------------------------
     @abstractmethod
@@ -188,25 +171,6 @@ class HTTPMetadataSinkAPIDialect(
 
         :param response:
         :param upload_meta:
-
-        :return:
-        """
-        ...
-
-    @abstractmethod
-    def handle_init_upload_metadata_consumption_response(
-        self,
-        response: Response,
-        extract_metadata: _EM,
-        content_type: str,
-        **kwargs: Mapping[str, Any],
-    ) -> _UM:
-        """
-
-        :param response:
-        :param extract_metadata:
-        :param content_type:
-        :param kwargs:
 
         :return:
         """
@@ -286,6 +250,50 @@ class HTTPMetadataSourceAPIDialect(
         :param response:
         :param data_source_meta:
 
+        :return:
+        """
+        ...
+
+
+class HTTPUploadMetadataFactoryAPIDialect(
+    HTTPAPIDialect,
+    Generic[_UM, _EM],
+    metaclass=ABCMeta,
+):
+    # REQUEST FACTORIES
+    # -------------------------------------------------------------------------
+    @abstractmethod
+    def new_upload_meta_request_factory(
+        self,
+        extract_meta: _EM,
+        content_type: str,
+        **kwargs: Mapping[str, Any],
+    ) -> Request:
+        """
+
+        :param extract_meta:
+        :param content_type:
+        :param kwargs:
+        :return:
+        """
+        ...
+
+    # RESPONSE HANDLERS
+    # -------------------------------------------------------------------------
+    @abstractmethod
+    def handle_new_upload_meta_response(
+        self,
+        response: Response,
+        extract_meta: _EM,
+        content_type: str,
+        **kwargs: Mapping[str, Any],
+    ) -> _UM:
+        """
+
+        :param response:
+        :param extract_meta:
+        :param content_type:
+        :param kwargs:
         :return:
         """
         ...

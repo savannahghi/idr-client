@@ -9,6 +9,7 @@ from .http_api_dialects import (
     HTTPDataSinkAPIDialect,
     HTTPMetadataSinkAPIDialect,
     HTTPMetadataSourceAPIDialect,
+    HTTPUploadMetadataFactoryAPIDialect,
 )
 from .http_transport import HTTPTransport
 
@@ -19,6 +20,7 @@ __all__ = [
     "HTTPMetadataSinkAPIDialect",
     "HTTPMetadataSourceAPIDialect",
     "HTTPTransport",
+    "HTTPUploadMetadataFactoryAPIDialect",
     "if_request_accepted",
     "if_response_has_status_factory",
     "to_appropriate_domain_error",

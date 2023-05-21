@@ -6,6 +6,7 @@ from attrs import define, field
 from app.core_v1 import (
     BaseMetadataSink,
     BaseMetadataSource,
+    BaseUploadMetadataFactory,
     DataSinkMetadata,
     DataSourceMetadata,
     ExtractMetadata,
@@ -16,6 +17,7 @@ from ..lib import (
     HTTPMetadataSinkAPIDialect,
     HTTPMetadataSourceAPIDialect,
     HTTPTransport,
+    HTTPUploadMetadataFactoryAPIDialect,
     if_request_accepted,
 )
 from ..typings import ResponsePredicate
@@ -39,7 +41,7 @@ _UM = TypeVar("_UM", bound=UploadMetadata)
 
 
 @define(slots=True, order=False)
-class HTTPMetadataSink(BaseMetadataSink[_UM, _EM], Generic[_UM, _EM]):
+class HTTPMetadataSink(BaseMetadataSink[_UM], Generic[_UM]):
     """:class:`MetadataSink` backed by an HTTP server."""
 
     _transport: HTTPTransport = field()
@@ -68,32 +70,6 @@ class HTTPMetadataSink(BaseMetadataSink[_UM, _EM], Generic[_UM, _EM]):
         return self._api_dialect.handle_consume_upload_meta_response(
             response=res,
             upload_meta=upload_meta,
-        )
-
-    def init_upload_metadata_consumption(
-        self,
-        extract_metadata: _EM,
-        content_type: str,
-        **kwargs: Mapping[str, Any],
-    ) -> _UM:
-        req: Request = (
-            self._api_dialect.init_upload_metadata_consumption_request_factory(
-                extract_metadata=extract_metadata,
-                content_type=content_type,
-                **kwargs,
-            )
-        )
-        res: Response = self._transport.make_request(
-            request=req,
-            valid_response_predicate=self._valid_response_predicate,
-        )
-        return (
-            self._api_dialect.handle_init_upload_metadata_consumption_response(
-                response=res,
-                extract_metadata=extract_metadata,
-                content_type=content_type,
-                **kwargs,
-            )
         )
 
 
@@ -153,4 +129,49 @@ class HTTPMetadataSource(
         return self._api_dialect.handle_provide_extract_meta_response(
             response=res,
             data_source_meta=data_source_meta,
+        )
+
+
+@define(slots=True, order=False)
+class HTTPUploadMetadataFactory(
+    BaseUploadMetadataFactory[_UM, _EM],
+    Generic[_UM, _EM],
+):
+    """:class:`UploadMetadataFactory` backed by an HTTP server."""
+
+    _transport: HTTPTransport = field()
+    _api_dialect: HTTPUploadMetadataFactoryAPIDialect[_UM, _EM] = field()
+    _valid_response_predicate: ResponsePredicate = field(
+        default=if_request_accepted,
+        kw_only=True,
+    )
+
+    @property
+    def api_dialect(self) -> HTTPUploadMetadataFactoryAPIDialect[_UM, _EM]:
+        return self._api_dialect
+
+    def dispose(self) -> None:
+        self._transport.dispose()
+        self._is_disposed = True
+
+    def new_upload_meta(
+        self,
+        extract_meta: _EM,
+        content_type: str,
+        **kwargs: Mapping[str, Any],
+    ) -> _UM:
+        req: Request = self._api_dialect.new_upload_meta_request_factory(
+            extract_meta=_EM,
+            content_type=content_type,
+            **kwargs,
+        )
+        res: Response = self._transport.make_request(
+            request=req,
+            valid_response_predicate=self._valid_response_predicate,
+        )
+        return self._api_dialect.handle_new_upload_meta_response(
+            response=res,
+            extract_meta=extract_meta,
+            content_type=content_type,
+            **kwargs,
         )

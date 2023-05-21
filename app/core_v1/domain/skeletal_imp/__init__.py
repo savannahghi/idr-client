@@ -16,7 +16,11 @@ from .operations import (
     BaseDataSource,
     BaseDataSourceStream,
 )
-from .terminals import BaseMetadataSink, BaseMetadataSource
+from .terminals import (
+    BaseMetadataSink,
+    BaseMetadataSource,
+    BaseUploadMetadataFactory,
+)
 
 __all__ = [
     "BaseData",
@@ -33,4 +37,5 @@ __all__ = [
     "BaseMetadataSource",
     "BaseNamedDomainObject",
     "BaseUploadMetadata",
+    "BaseUploadMetadataFactory",
 ]

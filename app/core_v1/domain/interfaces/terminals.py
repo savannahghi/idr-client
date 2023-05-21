@@ -29,7 +29,7 @@ _UM = TypeVar("_UM", bound=UploadMetadata)
 class MetadataSink(
     NamedDomainObject,
     Disposable,
-    Generic[_UM, _EM],
+    Generic[_UM],
     metaclass=ABCMeta,
 ):
     """Upload(s) related metadata consumer.
@@ -48,21 +48,6 @@ class MetadataSink(
         """
         ...
 
-    @abstractmethod
-    def init_upload_metadata_consumption(
-        self,
-        extract_metadata: _EM,
-        content_type: str,
-        **kwargs: Mapping[str, Any],
-    ) -> _UM:
-        """
-
-        :param extract_metadata:
-        :param content_type:
-        :return:
-        """
-        ...
-
 
 class MetadataSource(
     NamedDomainObject,
@@ -70,10 +55,11 @@ class MetadataSource(
     Generic[_DS, _DM, _EM],
     metaclass=ABCMeta,
 ):
-    """Extract(s) related metadata producer/provider.
+    """Known metadata producer/provider.
 
     An interface representing entities that serve/produce metadata describing
-    what data is to be extracted and from where.
+    what data is to be drawn/extracted and from where, and finally where that
+    data should be drained/uploaded to.
     """
 
     @abstractmethod
@@ -95,6 +81,31 @@ class MetadataSource(
     @abstractmethod
     def provide_extract_meta(self, data_source: _DM) -> Iterable[_EM]:
         """
+
+        :return:
+        """
+        ...
+
+
+class UploadMetadataFactory(Disposable, Generic[_UM, _EM], metaclass=ABCMeta):
+    """Create new :class:`UploadMetadata` instances on demand.
+
+    This class enables different ETLWorkflow definitions to provide a hook for
+    initializing :class:`UploadMetadata` instances that they work with.
+    """
+
+    @abstractmethod
+    def new_upload_meta(
+        self,
+        extract_meta: _EM,
+        content_type: str,
+        **kwargs: Mapping[str, Any],
+    ) -> _UM:
+        """
+
+        :param extract_meta:
+        :param content_type:
+        :param kwargs:
 
         :return:
         """
