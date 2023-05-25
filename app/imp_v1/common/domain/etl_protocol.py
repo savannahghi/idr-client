@@ -1,22 +1,24 @@
-"""
-ETL Protocol Definition.
-"""
-from abc import ABCMeta, abstractmethod
 from collections.abc import Callable, Iterable
 from typing import Generic, TypeVar
 
-from .base import IdentifiableDomainObject, NamedDomainObject
-from .operations import (
+from attrs import define, field
+
+from app.core_v1.domain import (
+    BaseIdentifiableDomainObject,
+    BaseNamedDomainObject,
     CleanedData,
     DataSink,
     DataSinkMetadata,
     DataSource,
     DataSourceMetadata,
+    ETLProtocol,
     ExtractMetadata,
+    MetadataSink,
+    MetadataSource,
     RawData,
     UploadMetadata,
+    UploadMetadataFactory,
 )
-from .terminals import MetadataSink, MetadataSource, UploadMetadataFactory
 
 # =============================================================================
 # TYPES
@@ -31,43 +33,41 @@ _UM = TypeVar("_UM", bound=UploadMetadata)
 
 
 # =============================================================================
-# ETL PROTOCOL DEFINITION
+# CONCRETE ETL PROTOCOL DEFINITION
 # =============================================================================
 
 
-class ETLProtocol(
-    IdentifiableDomainObject,
-    NamedDomainObject,
+@define(slots=True, order=False)
+class SimpleETLProtocol(
+    BaseIdentifiableDomainObject,
+    BaseNamedDomainObject,
+    ETLProtocol[_DM, _EM, _RD, _CD, _UM, _DS],
     Generic[_DM, _EM, _RD, _CD, _UM, _DS],
-    metaclass=ABCMeta,
 ):
-    """ETL "Service" Description.
+    """A simple implementation of an :class:`ETLProtocol`."""
 
-    Defines the concrete core interfaces implementations that when combined
-    constitute an ETL workflow.
-    """
+    _data_sink_factory: Callable[[_DS], DataSink] = field()
+    _data_source_factory: Callable[[_DM], DataSource] = field()
+    _metadata_sinks: Iterable[MetadataSink[_UM]] = field()
+    _metadata_sources: Iterable[MetadataSource[_DS, _DM, _EM]] = field()
+    _upload_metadata_factory: UploadMetadataFactory[_UM, _EM] = field()
 
     @property
-    @abstractmethod
     def data_sink_factory(self) -> Callable[[_DS], DataSink]:
-        ...
+        return self._data_sink_factory
 
     @property
-    @abstractmethod
     def data_source_factory(self) -> Callable[[_DM], DataSource]:
-        ...
+        return self._data_source_factory
 
     @property
-    @abstractmethod
     def metadata_sinks(self) -> Iterable[MetadataSink[_UM]]:
-        ...
+        return self._metadata_sinks
 
     @property
-    @abstractmethod
     def metadata_sources(self) -> Iterable[MetadataSource[_DS, _DM, _EM]]:
-        ...
+        return self._metadata_sources
 
     @property
-    @abstractmethod
     def upload_metadata_factory(self) -> UploadMetadataFactory[_UM, _EM]:
-        ...
+        return self._upload_metadata_factory

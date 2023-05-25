@@ -265,7 +265,7 @@ class IDRServerV1API(
                         "id": _result["id"],
                         "name": _result["name"],
                         "description": _result.get("description"),
-                        "database_url": "",
+                        "database_url": "",  # TODO: Implement this ...
                         "isolation_level": "REPEATABLE READ",
                         "data_source_stream_factory": pd_data_frame_data_source_stream_factory,  # noqa: E501
                     },

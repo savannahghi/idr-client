@@ -1,4 +1,5 @@
 from .base import DomainObject, IdentifiableDomainObject, NamedDomainObject
+from .etl_protocol import ETLProtocol
 from .metadata import (
     DataSinkMetadata,
     DataSourceMetadata,
@@ -29,6 +30,7 @@ __all__ = [
     "DataSourceStream",
     "DataSourceMetadata",
     "DomainObject",
+    "ETLProtocol",
     "ExtractMetadata",
     "ExtractProcessor",
     "IdentifiableDomainObject",

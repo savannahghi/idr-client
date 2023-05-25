@@ -45,14 +45,14 @@ class HTTPMetadataSink(BaseMetadataSink[_UM], Generic[_UM]):
     """:class:`MetadataSink` backed by an HTTP server."""
 
     _transport: HTTPTransport = field()
-    _api_dialect: HTTPMetadataSinkAPIDialect[_UM, _EM] = field()
+    _api_dialect: HTTPMetadataSinkAPIDialect[_UM] = field()
     _valid_response_predicate: ResponsePredicate = field(
         default=if_request_accepted,
         kw_only=True,
     )
 
     @property
-    def api_dialect(self) -> HTTPMetadataSinkAPIDialect[_UM, _EM]:
+    def api_dialect(self) -> HTTPMetadataSinkAPIDialect[_UM]:
         return self._api_dialect
 
     def dispose(self) -> None:

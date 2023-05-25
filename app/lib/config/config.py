@@ -77,11 +77,6 @@ class Config:
         except KeyError:
             raise MissingSettingError(setting=setting) from None
 
-    def __setattr__(self, name: str, value: Any):  # noqa: ANN401
-        """Disallow any attribute assignments on instances."""
-        msg = "App settings are read-only."
-        raise AttributeError(msg)
-
     def get(self, setting: str, default: Any = None) -> Any:  # noqa: ANN401
         """
         Retrieve the value of the given setting or return the given default if
