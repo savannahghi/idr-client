@@ -6,7 +6,6 @@ from requests.models import Request, Response
 
 
 class HTTPAPIDialect(metaclass=ABCMeta):
-
     @property
     @abstractmethod
     def auth_trigger_status(self) -> Sequence[int]:
@@ -35,5 +34,3 @@ class HTTPAPIDialect(metaclass=ABCMeta):
         :return:
         """
         ...
-
-

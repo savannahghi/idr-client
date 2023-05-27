@@ -161,7 +161,7 @@ class HTTPUploadMetadataFactory(
         **kwargs: Mapping[str, Any],
     ) -> _UM:
         req: Request = self._api_dialect.new_upload_meta_request_factory(
-            extract_meta=_EM,
+            extract_meta=extract_meta,
             content_type=content_type,
             **kwargs,
         )

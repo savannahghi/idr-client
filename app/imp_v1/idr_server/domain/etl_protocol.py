@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 from functools import cache
 
-from app import settings
+import app
 from app.imp_v1.common.domain import SimpleETLProtocol
 from app.imp_v1.http import (
     HTTPDataSink,
@@ -33,18 +33,24 @@ FYJCBSETLProtocol = SimpleETLProtocol[
 
 def _http_transport_factory() -> HTTPTransport:
     return HTTPTransport(
-        auth_api_dialect=_idr_server_api_factory(),
-        connect_timeout=settings.HTTP_TRANSPORT.get("connect_timeout", 60),
-        read_timeout=settings.HTTP_TRANSPORT.get("read_timeout", 60),
+        auth_api_dialect=_idr_server_api_factory(),  # pyright: ignore
+        connect_timeout=app.settings.HTTP_TRANSPORT.get(
+            "connect_timeout",
+            60,
+        ),  # pyright: ignore
+        read_timeout=app.settings.HTTP_TRANSPORT.get(
+            "read_timeout",
+            60,
+        ),  # pyright: ignore
     )
 
 
 @cache
 def _idr_server_api_factory() -> IDRServerV1API:
     return IDRServerV1API(
-        server_url=settings.REMOTE_SERVER["host"],
-        username=settings.REMOTE_SERVER["username"],
-        password=settings.REMOTE_SERVER["password"],
+        server_url=app.settings.REMOTE_SERVER["host"],  # pyright: ignore
+        username=app.settings.REMOTE_SERVER["username"],  # pyright: ignore
+        password=app.settings.REMOTE_SERVER["password"],  # pyright: ignore
     )
 
 
@@ -53,9 +59,9 @@ def _metadata_sinks_supplier() -> (
 ):
     return (
         HTTPMetadataSink(
-            name="FyJ IDR Server",
-            api_dialect=_idr_server_api_factory(),
-            transport=_http_transport_factory(),
+            name="FyJ IDR Server Metadata Sink",  # pyright: ignore
+            api_dialect=_idr_server_api_factory(),  # pyright: ignore
+            transport=_http_transport_factory(),  # pyright: ignore
         ),
     )
 
@@ -70,10 +76,10 @@ def _metadata_sources_supplier() -> (
     ]
 ):
     return (
-        HTTPMetadataSource(
-            name="FyJ IDR Server",
-            api_dialect=_idr_server_api_factory(),
-            transport=_http_transport_factory(),
+        HTTPMetadataSource(  # pyright: ignore
+            name="FyJ IDR Server Metadata Source",  # pyright: ignore
+            api_dialect=_idr_server_api_factory(),  # pyright: ignore
+            transport=_http_transport_factory(),  # pyright: ignore
         ),
     )
 
@@ -87,8 +93,8 @@ def fyj_cbs_etl_protocol_factory() -> FYJCBSETLProtocol:
         data_source_factory=SimpleSQLDatabase.from_data_source_meta,
         metadata_sinks=_metadata_sinks_supplier(),
         metadata_sources=_metadata_sources_supplier(),
-        upload_metadata_factory=HTTPUploadMetadataFactory(
-            api_dialect=_idr_server_api_factory(),
-            transport=_http_transport_factory(),
+        upload_metadata_factory=HTTPUploadMetadataFactory(  # pyright: ignore
+            api_dialect=_idr_server_api_factory(),  # pyright: ignore
+            transport=_http_transport_factory(),  # pyright: ignore
         ),
     )

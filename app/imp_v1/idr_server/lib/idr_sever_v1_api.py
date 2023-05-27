@@ -1,14 +1,15 @@
 from collections.abc import Iterable, Mapping
 from typing import Any, Final, Literal, TypedDict, cast
 
-from attrs import define, field
+from attrs import define, field, frozen
 from requests import Request, Response
 from requests.auth import AuthBase, HTTPBasicAuth
 from requests.models import PreparedRequest
+from sqlalchemy.engine.url import URL
 from toolz import pipe
 from toolz.curried import map
 
-from app import settings
+import app
 from app.imp_v1.http import (
     HTTPAuthAPIDialect,
     HTTPDataSinkAPIDialect,
@@ -24,6 +25,7 @@ from app.imp_v1.sql.domain import (
     SimpleSQLQuery,
     pd_data_frame_data_source_stream_factory,
 )
+from app.lib.config import ImproperlyConfiguredError
 
 from ..domain import IDRServerV1APIUploadMetadata, ParquetData
 
@@ -77,7 +79,16 @@ def _if_un_authenticated_response(response: Response) -> bool:
     return if_response_has_status_factory(401)(response)
 
 
-@define(slots=True)
+def _get_db_instance_url(db_instance_name: str) -> URL:
+    if db_instance_name not in app.settings.DATABASE_INSTANCES:
+        _err_msg: str = 'No such db instance "{}" configured.'.format(
+            db_instance_name,
+        )
+        raise ImproperlyConfiguredError(message=_err_msg)
+    return app.settings.DATABASE_INSTANCES.get(db_instance_name).db_url
+
+
+@frozen
 class _IDRServerAuth(AuthBase):
     """
     The :class:`~requests.auth.AuthBase` implementation used by the IDR Server.
@@ -265,7 +276,9 @@ class IDRServerV1API(
                         "id": _result["id"],
                         "name": _result["name"],
                         "description": _result.get("description"),
-                        "database_url": "",  # TODO: Implement this ...
+                        "database_url": _get_db_instance_url(
+                            _result["database_name"],
+                        ),
                         "isolation_level": "REPEATABLE READ",
                         "data_source_stream_factory": pd_data_frame_data_source_stream_factory,  # noqa: E501
                     },
@@ -307,8 +320,8 @@ class IDRServerV1API(
         content_type: str,
         **kwargs: Mapping[str, Any],
     ) -> Request:
-        org_unit_code: str = settings.LOCATION_ID
-        org_unit_name: str = settings.LOCATION_NAME
+        org_unit_code: str = app.settings.LOCATION_ID
+        org_unit_name: str = app.settings.LOCATION_NAME
         return Request(
             headers={
                 "Accept": "application/json",
@@ -336,10 +349,10 @@ class IDRServerV1API(
     ) -> IDRServerV1APIUploadMetadata:
         result: _IDRServerUploadMetaAPIPayload = response.json()
         return IDRServerV1APIUploadMetadata(
-            id=result["id"],
-            content_type=result["content_type"],
-            extract_metadata=extract_meta,
-            chunks=result["chunks_count"],
-            org_unit_code=result["org_unit_code"],
-            org_unit_name=result["org_unit_name"],
+            id=result["id"],  # pyright: ignore
+            content_type=result["content_type"],  # pyright: ignore
+            extract_metadata=extract_meta,  # pyright: ignore
+            chunks=result["chunks_count"],  # pyright: ignore
+            org_unit_code=result["org_unit_code"],  # pyright: ignore
+            org_unit_name=result["org_unit_name"],  # pyright: ignore
         )

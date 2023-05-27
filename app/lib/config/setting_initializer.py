@@ -17,6 +17,18 @@ class SettingInitializer(Task[Any, Any], metaclass=ABCMeta):
     """
 
     @property
+    def has_secrets(self) -> bool:
+        """Indicates whether the value of this setting contains secrets.
+
+        This is important, and it indicates the value should be handled with
+        special care to prevent accidental exposure.
+
+        :return: ``True`` if the value of this setting contains secretes or
+            ``False`` otherwise.
+        """
+        return False
+
+    @property
     @abstractmethod
     def setting(self) -> str:
         """Return the setting to be initialized using this initializer.

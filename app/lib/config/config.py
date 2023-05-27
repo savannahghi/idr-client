@@ -112,7 +112,9 @@ class Config:
             _LOGGER.debug(
                 'Ran initializer for the setting "%s" with raw value "%s".',
                 str(_setting),
-                str(raw_setting_val),
+                "******"
+                if any(_i.has_secrets for _i in _initializers)
+                else str(raw_setting_val),
             )
             self._settings[_setting] = setting_val
 

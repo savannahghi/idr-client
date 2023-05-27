@@ -79,7 +79,7 @@ class MetadataSource(
         ...
 
     @abstractmethod
-    def provide_extract_meta(self, data_source: _DM) -> Iterable[_EM]:
+    def provide_extract_meta(self, data_source_meta: _DM) -> Iterable[_EM]:
         """
 
         :return:
