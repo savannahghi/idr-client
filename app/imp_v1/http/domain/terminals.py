@@ -1,4 +1,6 @@
+import logging
 from collections.abc import Iterable, Mapping
+from logging import Logger
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from attrs import define, field
@@ -51,6 +53,11 @@ class HTTPMetadataSink(BaseMetadataSink[_UM], Generic[_UM]):
         kw_only=True,
     )
 
+    def __attrs_post_init__(self) -> None:
+        self._logger: Logger = logging.getLogger(
+            f"{self.__class__.__module__}.{self.__class__.__qualname__}",
+        )
+
     @property
     def api_dialect(self) -> HTTPMetadataSinkAPIDialect[_UM]:
         return self._api_dialect
@@ -58,8 +65,10 @@ class HTTPMetadataSink(BaseMetadataSink[_UM], Generic[_UM]):
     def dispose(self) -> None:
         self._is_disposed = True
         self._transport.dispose()
+        self._logger.debug("Disposal complete.")
 
     def consume_upload_meta(self, upload_meta: _UM) -> None:
+        self._logger.info('Consume upload metadata "%s".', upload_meta)
         req: Request = self._api_dialect.consume_upload_meta_request_factory(
             upload_meta=upload_meta,
         )
@@ -87,6 +96,11 @@ class HTTPMetadataSource(
         kw_only=True,
     )
 
+    def __attrs_post_init__(self) -> None:
+        self._logger: Logger = logging.getLogger(
+            f"{self.__class__.__module__}.{self.__class__.__qualname__}",
+        )
+
     @property
     def api_dialect(self) -> HTTPMetadataSourceAPIDialect[_DS, _DM, _EM]:
         return self._api_dialect
@@ -94,8 +108,10 @@ class HTTPMetadataSource(
     def dispose(self) -> None:
         self._is_disposed = True
         self._transport.dispose()
+        self._logger.debug("Disposal complete.")
 
     def provide_data_sink_meta(self) -> Iterable[_DS]:
+        self._logger.info("Provide data sink metadata.")
         req: Request = (
             self._api_dialect.provide_data_sink_meta_request_factory()
         )
@@ -106,6 +122,7 @@ class HTTPMetadataSource(
         return self._api_dialect.handle_provide_data_sink_meta_response(res)
 
     def provide_data_source_meta(self) -> Iterable[_DM]:
+        self._logger.info("Provide data source metadata.")
         req: Request = (
             self._api_dialect.provide_data_source_meta_request_factory()
         )
@@ -119,6 +136,10 @@ class HTTPMetadataSource(
         self,
         data_source_meta: _DM,
     ) -> Iterable[_EM]:
+        self._logger.info(
+            'Provide extract metadata for data source "%s".',
+            data_source_meta,
+        )
         req: Request = self._api_dialect.provide_extract_meta_request_factory(
             data_source_meta=data_source_meta,
         )
@@ -146,13 +167,19 @@ class HTTPUploadMetadataFactory(
         kw_only=True,
     )
 
+    def __attrs_post_init__(self) -> None:
+        self._logger: Logger = logging.getLogger(
+            f"{self.__class__.__module__}.{self.__class__.__qualname__}",
+        )
+
     @property
     def api_dialect(self) -> HTTPUploadMetadataFactoryAPIDialect[_UM, _EM]:
         return self._api_dialect
 
     def dispose(self) -> None:
-        self._transport.dispose()
         self._is_disposed = True
+        self._transport.dispose()
+        self._logger.debug("Disposal complete.")
 
     def new_upload_meta(
         self,
@@ -160,6 +187,12 @@ class HTTPUploadMetadataFactory(
         content_type: str,
         **kwargs: Mapping[str, Any],
     ) -> _UM:
+        self._logger.info(
+            'Initialize a new UploadMetadata instance of extract meta "%s" '
+            'and content type "%s"',
+            extract_meta,
+            content_type,
+        )
         req: Request = self._api_dialect.new_upload_meta_request_factory(
             extract_meta=extract_meta,
             content_type=content_type,

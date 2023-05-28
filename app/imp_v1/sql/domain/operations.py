@@ -1,5 +1,7 @@
+import logging
 from abc import ABCMeta
 from collections.abc import Callable, Iterator, Sequence
+from logging import Logger
 from typing import Any, Final, Generic, Self, TypeVar, cast
 
 import pandas as pd
@@ -99,6 +101,11 @@ class BaseSQLDataSource(
     )
     _engine: Engine = field()
 
+    def __attrs_post_init__(self) -> None:
+        self._logger: Logger = logging.getLogger(
+            f"{self.__class__.__module__}.{self.__class__.__qualname__}",
+        )
+
     @property
     def data_source_stream_factory(
         self,
@@ -127,11 +134,16 @@ class BaseSQLDataSource(
     def dispose(self) -> None:
         self._is_disposed = True
         self.engine.dispose(close=True)
+        self._logger.debug("Disposal complete.")
 
     def start_extraction(
         self,
         extract_metadata: _EM,
     ) -> DataSourceStream[_EM, _RD]:
+        self._logger.info(
+            'Start extraction for extract metadata "%s".',
+            extract_metadata,
+        )
         return self.data_source_stream_factory(self, extract_metadata)
 
 
@@ -228,6 +240,10 @@ class PDDataFrameDataSourceStream(
     _connection: Connection = field()
 
     def __attrs_post_init__(self):
+        self._logger: Logger = logging.getLogger(
+            f"{self.__class__.__module__}.{self.__class__.__qualname__}",
+        )
+        self._logger.debug("Prepare connection.")
         self._connection: Connection = self._connection.execution_options(
             logging_token=self._extract_metadata.logging_token,
             max_row_buffer=DEFAULT_MAX_EXTRACTION_ROWS,
@@ -236,6 +252,7 @@ class PDDataFrameDataSourceStream(
                 self._extract_metadata.yield_per or DEFAULT_MAX_EXTRACTION_ROWS
             ),
         )
+        self._logger.debug("Query database.")
         self._extraction_results: Iterator[pd.DataFrame] = pd.read_sql(
             sql=self._extract_metadata.select_clause,
             con=self._connection,
@@ -246,15 +263,25 @@ class PDDataFrameDataSourceStream(
         )
 
     def extract(self) -> tuple[PDDataFrame, float]:
+        self._logger.info(
+            'Extract data - [ExtractMeta="%s", Progress="Indeterminate"].',
+            self.extract_metadata.name,
+        )
         try:
             # noinspection PyArgumentList
             return PDDataFrame(next(self._extraction_results)), -1.0
         except StopIteration:
+            self._logger.debug(
+                'All rows for extract meta "%s" fetched, stream exhausted. '
+                "Stop extraction.",
+                self.extract_metadata.name,
+            )
             raise DataSourceStream.StopExtraction from None
 
     def dispose(self) -> None:
         self._is_disposed = True
         self._connection.close()
+        self._logger.debug("Disposal complete.")
 
 
 @define(order=False, slots=True)
@@ -273,6 +300,10 @@ class SimpleSQLDataSourceStream(
     _connection: Connection = field()
 
     def __attrs_post_init__(self) -> None:
+        self._logger: Logger = logging.getLogger(
+            f"{self.__class__.__module__}.{self.__class__.__qualname__}",
+        )
+        self._logger.debug("Prepare connection.")
         self._connection: Connection = self._connection.execution_options(
             logging_token=self._extract_metadata.logging_token,
             max_row_buffer=DEFAULT_MAX_EXTRACTION_ROWS,
@@ -281,6 +312,7 @@ class SimpleSQLDataSourceStream(
                 self._extract_metadata.yield_per or DEFAULT_MAX_EXTRACTION_ROWS
             ),
         )
+        self._logger.debug("Query database.")
         self._extraction_result: CursorResult[Any] = self._connection.execute(
             self.extract_metadata.select_clause,
         )
@@ -290,13 +322,23 @@ class SimpleSQLDataSourceStream(
         )
 
     def extract(self) -> tuple[SQLRawData, float]:
+        self._logger.info(
+            'Extract data - [ExtractMeta="%s", Progress="Indeterminate"].',
+            self.extract_metadata.name,
+        )
         try:
             # noinspection PyArgumentList
             return SQLRawData(next(self._partitions)), -1.0
         except StopIteration:
+            self._logger.debug(
+                'All rows for extract meta "%s" fetched, stream exhausted. '
+                "Stop extraction.",
+                self.extract_metadata.name,
+            )
             raise DataSourceStream.StopExtraction from None
 
     def dispose(self) -> None:
         self._is_disposed = True
         self._extraction_result.close()
         self._connection.close()
+        self._logger.debug("Disposal complete.")

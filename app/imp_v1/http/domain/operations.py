@@ -1,4 +1,6 @@
+import logging
 from collections.abc import Callable
+from logging import Logger
 from typing import TYPE_CHECKING, Generic, Self, TypeVar
 
 from attrs import define, field
@@ -51,6 +53,11 @@ class HTTPDataSink(BaseDataSink[_DS, _UM, _CD], Generic[_DS, _UM, _CD]):
         kw_only=True,
     )
 
+    def __attrs_post_init__(self) -> None:
+        self._logger: Logger = logging.getLogger(
+            f"{self.__class__.__module__}.{self.__class__.__qualname__}",
+        )
+
     @property
     def api_dialect_factory(
         self,
@@ -63,11 +70,16 @@ class HTTPDataSink(BaseDataSink[_DS, _UM, _CD], Generic[_DS, _UM, _CD]):
 
     def dispose(self) -> None:
         self._is_disposed = True
+        self._logger.debug("Disposal complete.")
 
     def start_consumption(
         self,
         upload_metadata: _UM,
     ) -> "HTTPDataSinkStream[_UM, _CD]":
+        self._logger.info(
+            'Start consumption for upload metadata "%s".',
+            upload_metadata,
+        )
         return HTTPDataSinkStream(
             self,
             upload_metadata,
@@ -98,6 +110,11 @@ class HTTPDataSinkStream(BaseDataSinkStream[_UM, _CD], Generic[_UM, _CD]):
         kw_only=True,
     )
 
+    def __attrs_post_init__(self) -> None:
+        self._logger: Logger = logging.getLogger(
+            f"{self.__class__.__module__}.{self.__class__.__qualname__}",
+        )
+
     @property
     def api_dialect(self) -> HTTPDataSinkAPIDialect[_UM, _CD]:
         return self._api_dialect
@@ -111,6 +128,7 @@ class HTTPDataSinkStream(BaseDataSinkStream[_UM, _CD], Generic[_UM, _CD]):
         clean_data: _CD,
         progress: float,
     ) -> None:
+        self._logger.info("Consume cleaned data, progress = %d.", progress)
         req: Request = self._api_dialect.consume_request_factory(
             upload_meta=self.upload_metadata,
             clean_data=clean_data,
@@ -130,3 +148,4 @@ class HTTPDataSinkStream(BaseDataSinkStream[_UM, _CD], Generic[_UM, _CD]):
     def dispose(self) -> None:
         self._is_disposed = True
         self._transport.dispose()
+        self._logger.debug("Disposal complete.")

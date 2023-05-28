@@ -273,3 +273,10 @@ def setup(
         settings=_settings_dict,
         settings_initializers=_initializers,
     )
+
+
+def setup_v1(
+    initial_settings: Mapping[str, Any] | None = None,
+    settings_initializers: Sequence[SettingInitializer] | None = None,
+) -> None:
+    raise NotImplementedError

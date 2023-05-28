@@ -1,16 +1,10 @@
 import logging
 from collections.abc import Mapping, Sequence
+from logging import Logger
 from typing import Any, final
 
 from .exceptions import MissingSettingError
 from .setting_initializer import SettingInitializer
-
-# =============================================================================
-# CONSTANTS
-# =============================================================================
-
-_LOGGER = logging.getLogger(__name__)
-
 
 # =============================================================================
 # CONFIG
@@ -68,6 +62,9 @@ class Config:
             str,
             Sequence[SettingInitializer],
         ] = self._group_related_initializers(settings_initializers or ())
+        self._logger: Logger = logging.getLogger(
+            f"{self.__class__.__module__}.{self.__class__.__qualname__}",
+        )
         self._run_initializers()
 
     def __getattr__(self, setting: str) -> Any:  # noqa: ANN401
@@ -109,7 +106,7 @@ class Config:
             raw_setting_val: Any = self._settings.get(_setting)
             initializer_pipeline: Pipeline = Pipeline(*_initializers)
             setting_val: Any = initializer_pipeline(raw_setting_val)
-            _LOGGER.debug(
+            self._logger.debug(
                 'Ran initializer for the setting "%s" with raw value "%s".',
                 str(_setting),
                 "******"

@@ -1,4 +1,6 @@
+import logging
 from collections.abc import Mapping
+from logging import Logger
 from typing import Any
 
 from attrs import define, field
@@ -33,6 +35,7 @@ class _NoAuth(AuthBase):
     def __call__(self, r: PreparedRequest, *args, **kwargs) -> PreparedRequest:
         return r
 
+
 # =============================================================================
 # HTTP TRANSPORT AUTH
 # =============================================================================
@@ -58,6 +61,12 @@ class HTTPTransport(Disposable):
     _read_timeout: float = field(default=60, kw_only=True)
     _session: Session = field(factory=Session, kw_only=True)
 
+    def __attrs_post_init__(self) -> None:
+        self._logger: Logger = logging.getLogger(
+            f"{self.__class__.__module__}.{self.__class__.__qualname__}",
+        )
+        self._session.hooks["response"].append(self._log_response)
+
     @property
     def auth_api_dialect(self) -> HTTPAuthAPIDialect:
         return self._auth_api_dialect
@@ -75,6 +84,7 @@ class HTTPTransport(Disposable):
             a remote server.
         """
         self._ensure_not_disposed()
+        self._logger.debug("Authenticate HTTP transport.")
 
         prepared_request: PreparedRequest
         settings: Mapping[str, Any]
@@ -89,19 +99,22 @@ class HTTPTransport(Disposable):
             )
         except RequestException as exp:
             err_msg: str = "Error: unable to authenticate."
+            self._logger.exception(err_msg)
             raise to_appropriate_domain_error(exp, message=err_msg) from exp
 
         self._auth = self._auth_api_dialect.handle_auth_response(response)
+        self._logger.debug("Authentication successful.")
 
     def dispose(self) -> None:
         self._is_disposed = True
         self._auth = _NoAuth()
         self._session.close()
+        self._logger.debug("Disposal complete.")
 
     def make_request(
-            self,
-            request: Request,
-            valid_response_predicate: ResponsePredicate = if_request_accepted,
+        self,
+        request: Request,
+        valid_response_predicate: ResponsePredicate = if_request_accepted,
     ) -> Response:
         """Make an HTTP request to a remote server and return the response.
 
@@ -127,6 +140,7 @@ class HTTPTransport(Disposable):
             )
         except RequestException as exp:
             err_msg: str = "Error: unable to make request to remote server."
+            self._logger.exception(err_msg)
             raise to_appropriate_domain_error(exp, message=err_msg) from exp
 
         # Return the Response immediately if valid.
@@ -137,13 +151,20 @@ class HTTPTransport(Disposable):
         # exception and stop further processing.
         if not self._auth_api_dialect.re_authenticate_predicate(response):
             err_msg: str = (
-                "Error: Invalid response received from the remote server"
+                "Error: Invalid response received from the remote server."
             )
+            self._logger.error(err_msg)
             raise HTTPTransportTransientError(message=err_msg)
 
         # Else authenticate and retry the request again with the new auth
         # details.
+        self._logger.debug(
+            "Request unauthorized. Re-authenticating HTTP transport.",
+        )
         self.authenticate()
+        self._logger.debug(
+            "Re-authentication successful, retrying the request.",
+        )
         return self.make_request(
             request=request,
             valid_response_predicate=valid_response_predicate,
@@ -158,8 +179,22 @@ class HTTPTransport(Disposable):
         if self._is_disposed:
             raise HTTPTransportDisposedError()
 
+    def _log_response(
+        self,
+        response: Response,
+        *args: Any,  # noqa: ANN401
+        **kwargs: Any,  # noqa: ANN401
+    ) -> None:  # pragma: no cover
+        self._logger.debug(
+            "HTTP Request, [%s - %s] -> Response [status %d]",
+            response.request.method,
+            response.request.url,
+            response.status_code,
+        )
+
     def _prepare_request(
-            self, request: Request,
+        self,
+        request: Request,
     ) -> tuple[PreparedRequest, Mapping[str, Any]]:
         """Prepare a `Request` for sending and return it and its new settings.
 
@@ -172,6 +207,10 @@ class HTTPTransport(Disposable):
 
         req: PreparedRequest = self._session.prepare_request(request=request)
         settings: Mapping[str, Any] = self._session.merge_environment_settings(
-            req.url, {}, None, None, None,
+            req.url,
+            {},
+            None,
+            None,
+            None,
         )
         return req, settings
