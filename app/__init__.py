@@ -7,6 +7,7 @@ import yaml
 from app.core import DataSourceType
 from app.lib import (
     AppRegistry,
+    AppRegistryV1,
     Config,
     DefaultTransportFactory,
     ImproperlyConfiguredError,
@@ -66,6 +67,12 @@ registry: Final[AppRegistry] = None  # type: ignore
 The application registry. Provides lookup for important resources and services
 within the application. This value is only available after a successful
 application set up. That is, after ``app.setup()`` completes successfully.
+"""
+
+registry_v1: Final[AppRegistryV1] = AppRegistryV1()
+"""
+The application registry. Provides lookup for important resources and services
+within the application.
 """
 
 settings: Final[Config] = None  # type: ignore

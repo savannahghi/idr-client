@@ -1,5 +1,6 @@
 from collections.abc import Iterable
 from functools import cache
+from typing import TYPE_CHECKING
 
 import app
 from app.imp_v1.common.domain import SimpleETLProtocol
@@ -18,8 +19,11 @@ from app.imp_v1.sql import (
     SimpleSQLQuery,
 )
 
-from ..domain import IDRServerV1APIUploadMetadata, ParquetData
-from ..lib import IDRServerV1API
+from .metadata import IDRServerV1APIUploadMetadata
+from .operations import ParquetData
+
+if TYPE_CHECKING:
+    from ..lib import IDRServerV1API
 
 FYJCBSETLProtocol = SimpleETLProtocol[
     SimpleSQLDatabaseDescriptor,
@@ -46,7 +50,9 @@ def _http_transport_factory() -> HTTPTransport:
 
 
 @cache
-def _idr_server_api_factory() -> IDRServerV1API:
+def _idr_server_api_factory() -> "IDRServerV1API":
+    from ..lib import IDRServerV1API
+
     return IDRServerV1API(
         server_url=app.settings.REMOTE_SERVER["host"],  # pyright: ignore
         username=app.settings.REMOTE_SERVER["username"],  # pyright: ignore
