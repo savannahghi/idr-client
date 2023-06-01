@@ -37,16 +37,21 @@ _UM = TypeVar("_UM", bound=UploadMetadata)
 
 
 @define(slots=False)
-class BaseData(Generic[_T], Data[_T], metaclass=ABCMeta):
+class BaseData(Data[_T], Generic[_T], metaclass=ABCMeta):
     """
     The base skeletal implementation for most :class:`<Data>` implementations.
     """
 
     _content: _T = field()
+    _index: int = field()
 
     @property
     def content(self) -> _T:
         return self._content
+
+    @property
+    def index(self) -> int:
+        return self._index
 
 
 @define(slots=False)

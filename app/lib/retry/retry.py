@@ -4,7 +4,7 @@ from collections.abc import Callable, Generator, Mapping
 from datetime import datetime, timedelta
 from functools import partial
 from logging import Logger, getLogger
-from typing import Any, Final
+from typing import Any
 
 import wrapt
 
@@ -19,13 +19,6 @@ from .constants import (
 )
 from .exceptions import RetryError
 from .types import Predicate, RetryConfig
-
-# =============================================================================
-# CONSTANT
-# =============================================================================
-
-_LOGGER: Final[Logger] = getLogger(__name__)
-
 
 # =============================================================================
 # HELPERS
@@ -114,6 +107,9 @@ class Retry:
         self._multiplicative_factor: float = multiplicative_factor  # type: ignore  # noqa
         self._deadline: float | None = None
         self._kwargs: Mapping[str, float | None] = kwargs
+        self._logger: Logger = getLogger(
+            f"{self.__class__.__module__}.{self.__class__.__qualname__}",
+        )
 
     @wrapt.decorator(enabled=_enable_retries)
     def __call__(
@@ -215,11 +211,10 @@ class Retry:
                 deadline_time=deadline_time,
                 last_exp=last_exp,
             )
-            _LOGGER.debug(
-                'Retrying due to "{}", sleeping for {:.1f}s ...'.format(
-                    last_exp,
-                    sleep,
-                ),
+            self._logger.debug(
+                'Retrying due to "%s", sleeping for %.2f seconds ...',
+                last_exp,
+                sleep,
             )
             time.sleep(sleep)
 

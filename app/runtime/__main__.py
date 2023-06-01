@@ -9,8 +9,8 @@ from typing import Any, Final, cast
 
 import click
 import yaml
-from toolz import pipe
-from toolz.curried import groupby, map
+from toolz import first, pipe
+from toolz.curried import groupby, map, valmap
 
 import app
 from app.core_v1.domain import ETLProtocol
@@ -83,6 +83,7 @@ def _initialize_and_load_etl_protocols(
                 'Invalid ETLProtocol, the factory "{}.{}" returned an '
                 'instance that is not a subclass of "app.core.domain.'
                 'ETLProtocol".'.format(
+                    # noinspection PyUnresolvedReferences
                     _etl_protocol_factory.__module__,
                     _etl_protocol_factory.__qualname__,
                 )
@@ -97,6 +98,7 @@ def _initialize_and_load_etl_protocols(
             etl_protocol_factories,
             map(_etl_protocol_factory_to_instance),
             groupby(lambda _ep: _ep.id),
+            valmap(first),
         ),
     )
 
@@ -276,7 +278,8 @@ def setup(
         initializers.insert(0, _LoggingInitializer())
         initializers.insert(1, _ETLProtocolInitializer())
     app.registry_v1.log_level = log_level
-    app.settings = Config(  # type: ignore
+    # noinspection PyUnresolvedReferences
+    app.settings = Config(
         settings=settings_dict,
         settings_initializers=initializers,
     )
@@ -300,8 +303,10 @@ def setup(
     "--config",
     default=None,
     envvar="IDR_CLIENT_CONFIG",
-    help="Set the location of the configuration file to use. Only yaml files "
-    "are currently supported.",
+    help=(
+        "Set the location of the configuration file to use. Only yaml files "
+        "are currently supported."
+    ),
     type=click.Path(exists=True, readable=True, resolve_path=True),
 )
 @click.option(
@@ -314,9 +319,7 @@ def setup(
     type=click.Choice(
         choices=(
             "CRITICAL",
-            "FATAL",
             "ERROR",
-            "WARN",
             "WARNING",
             "INFO",
             "DEBUG",
@@ -331,8 +334,10 @@ def setup(
     count=True,
     default=0,
     envvar="IDR_CLIENT_VERBOSITY",
-    help="Set the level of output to expect from the program on stdout."
-    "This is different from the log level.",
+    help=(
+        "Set the level of output to expect from the program on stdout. This "
+        "is different from log level."
+    ),
 )
 @click.version_option(package_name="idr-client", message="%(version)s")
 def main(config: str | None, log_level: str, verbosity: int) -> None:
@@ -347,8 +352,13 @@ def main(config: str | None, log_level: str, verbosity: int) -> None:
         app.registry_v1.set("verbosity", verbosity)
         app.setup = setup
         app.setup(settings=config_contents, log_level=log_level)
+
+        from .usecases import start
+
+        start()
     except LoadConfigError as exp:
-        print_error(error_message=exp.message, exception=exp)
+        _default_err: str = "Error loading configuration."
+        print_error(error_message=exp.message or _default_err, exception=exp)
         sys.exit(2)
     except ConfigurationError as exp:
         _err_msg: str = (
@@ -363,7 +373,7 @@ def main(config: str | None, log_level: str, verbosity: int) -> None:
     except Exception as exp:  # noqa: BLE001
         _err_msg: str = (
             "An unknown error occurred during runtime setup. The cause of the "
-            'error was: "{}."'.format(str(exp))
+            'error was: "{}".'.format(str(exp))
         )
         # This might not be logged as logging may still be un-configured when
         # this error occurs.
@@ -371,7 +381,7 @@ def main(config: str | None, log_level: str, verbosity: int) -> None:
         print_error(error_message=_err_msg, exception=exp)
         sys.exit(4)
 
-    click.echo(click.style("Done ...", fg="green"))
+    click.echo(click.style("Done 😁", fg="green"))
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -51,6 +51,27 @@ class Data(Generic[_T], metaclass=ABCMeta):
         """
         ...
 
+    @property
+    @abstractmethod
+    def content_type(self) -> str:
+        """Return a MIME type representing the type of this data.
+
+        :return: the MIME type representing the of this data.
+        """
+        ...
+
+    @property
+    @abstractmethod
+    def index(self) -> int:
+        """Return an integer representing the offset of this data since the
+        draw or drain was started.
+
+        For cases where this is not available, or where the ordering of the
+        data is not important, a value of -1 should be returned instead.
+
+        :return: the offset of this data since the draw or drain was started.
+        """
+
 
 class CleanedData(Generic[_T], Data[_T], metaclass=ABCMeta):
     """:class:`RawData` after it is processed.

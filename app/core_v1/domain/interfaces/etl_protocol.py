@@ -13,6 +13,7 @@ from .operations import (
     DataSource,
     DataSourceMetadata,
     ExtractMetadata,
+    ExtractProcessor,
     RawData,
     UploadMetadata,
 )
@@ -55,6 +56,13 @@ class ETLProtocol(
     @property
     @abstractmethod
     def data_source_factory(self) -> Callable[[_DM], DataSource]:
+        ...
+
+    @property
+    @abstractmethod
+    def extract_processor_factory(
+        self,
+    ) -> Callable[[], ExtractProcessor[_EM, _RD, _CD]]:
         ...
 
     @property

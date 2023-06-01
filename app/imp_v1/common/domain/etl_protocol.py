@@ -13,6 +13,7 @@ from app.core_v1.domain import (
     DataSourceMetadata,
     ETLProtocol,
     ExtractMetadata,
+    ExtractProcessor,
     MetadataSink,
     MetadataSource,
     RawData,
@@ -48,6 +49,10 @@ class SimpleETLProtocol(
 
     _data_sink_factory: Callable[[_DS], DataSink] = field()
     _data_source_factory: Callable[[_DM], DataSource] = field()
+    _extract_processor_factory: Callable[
+        [],
+        ExtractProcessor[_EM, _RD, _CD],
+    ] = field()
     _metadata_sinks: Iterable[MetadataSink[_UM]] = field()
     _metadata_sources: Iterable[MetadataSource[_DS, _DM, _EM]] = field()
     _upload_metadata_factory: UploadMetadataFactory[_UM, _EM] = field()
@@ -59,6 +64,12 @@ class SimpleETLProtocol(
     @property
     def data_source_factory(self) -> Callable[[_DM], DataSource]:
         return self._data_source_factory
+
+    @property
+    def extract_processor_factory(
+        self,
+    ) -> Callable[[], ExtractProcessor[_EM, _RD, _CD]]:
+        return self._extract_processor_factory
 
     @property
     def metadata_sinks(self) -> Iterable[MetadataSink[_UM]]:

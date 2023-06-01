@@ -20,7 +20,7 @@ from app.imp_v1.sql import (
 )
 
 from .metadata import IDRServerV1APIUploadMetadata
-from .operations import ParquetData
+from .operations import IDRServerExtractProcessor, ParquetData
 
 if TYPE_CHECKING:
     from ..lib import IDRServerV1API
@@ -97,6 +97,7 @@ def fyj_cbs_etl_protocol_factory() -> FYJCBSETLProtocol:
         description="Fahari ya Jamii, CBS ETL Protocol",
         data_sink_factory=HTTPDataSink.from_data_sink_meta,
         data_source_factory=SimpleSQLDatabase.from_data_source_meta,
+        extract_processor_factory=IDRServerExtractProcessor,
         metadata_sinks=_metadata_sinks_supplier(),
         metadata_sources=_metadata_sources_supplier(),
         upload_metadata_factory=HTTPUploadMetadataFactory(  # pyright: ignore

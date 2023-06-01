@@ -153,6 +153,8 @@ class BaseSQLDataSourceStream(
     Generic[_EM, _RD],
     metaclass=ABCMeta,
 ):
+    _index: int = field(default=-1, init=False)
+
     @property
     def data_source(self) -> BaseSQLDataSource[Any, _EM, _RD]:
         return cast(BaseSQLDataSource[Any, _EM, _RD], self._data_source)
@@ -167,14 +169,18 @@ class BaseSQLDataSourceStream(
 class PDDataFrame(BaseData[pd.DataFrame], RawData[pd.DataFrame]):
     """Raw data from an SQL database as a :class:`pd.DataFrame`."""
 
-    ...
+    @property
+    def content_type(self) -> str:
+        return "application/octet-stream"
 
 
 @define(slots=True)
 class SQLRawData(BaseData[_DBRows], RawData[_DBRows]):
     """Raw data from an SQL database as :class:`sqlalchemy.Row` objects."""
 
-    ...
+    @property
+    def content_type(self) -> str:
+        return "application/octet-stream"
 
 
 @define(order=False, slots=True)
@@ -268,8 +274,15 @@ class PDDataFrameDataSourceStream(
             self.extract_metadata.name,
         )
         try:
+            self._index += 1
             # noinspection PyArgumentList
-            return PDDataFrame(next(self._extraction_results)), -1.0
+            return (
+                PDDataFrame(
+                    next(self._extraction_results),
+                    self._index,
+                ),
+                -1.0,
+            )
         except StopIteration:
             self._logger.debug(
                 'All rows for extract meta "%s" fetched, stream exhausted. '
@@ -327,8 +340,9 @@ class SimpleSQLDataSourceStream(
             self.extract_metadata.name,
         )
         try:
+            self._index += 1
             # noinspection PyArgumentList
-            return SQLRawData(next(self._partitions)), -1.0
+            return SQLRawData(next(self._partitions), self._index), -1.0
         except StopIteration:
             self._logger.debug(
                 'All rows for extract meta "%s" fetched, stream exhausted. '

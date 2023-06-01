@@ -151,7 +151,8 @@ class HTTPTransport(Disposable):
         # exception and stop further processing.
         if not self._auth_api_dialect.re_authenticate_predicate(response):
             err_msg: str = (
-                "Error: Invalid response received from the remote server."
+                "Error: Invalid response received from the remote server. "
+                'Server says: "{}"'.format(response.text)
             )
             self._logger.error(err_msg)
             raise HTTPTransportTransientError(message=err_msg)

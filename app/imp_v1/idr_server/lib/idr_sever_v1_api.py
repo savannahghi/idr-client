@@ -168,11 +168,11 @@ class IDRServerV1API(
         progress: float,
     ) -> Request:
         return Request(
-            data={"chunk_index": -1},
+            data={"chunk_index": clean_data.index},
             files={
                 "chunk_content": (
-                    f"-1_{upload_meta.id}",
-                    clean_data.content,
+                    f"{clean_data.index}_{upload_meta.id}",
+                    clean_data.content.getvalue(),
                     upload_meta.content_type,
                 ),
             },
@@ -192,7 +192,7 @@ class IDRServerV1API(
         clean_data: ParquetData,
         progress: float,
     ) -> None:
-        response.json()
+        response.close()
         return
 
     # HTTP METADATA SINK API DIALECT IMPLEMENTATION
@@ -226,13 +226,18 @@ class IDRServerV1API(
         response: Response,
         upload_meta: IDRServerV1APIUploadMetadata,
     ) -> None:
-        response.json()
+        response.close()
         return
 
     # HTTP METADATA SOURCE API DIALECT IMPLEMENTATION
     # -------------------------------------------------------------------------
     def provide_data_sink_meta_request_factory(self) -> Request:
-        raise NotImplementedError
+        return Request(
+            headers=self._common_headers,
+            method=_GET_METHOD,
+            # This is a dummy call since IDR Server does not offer this API.
+            url=f"{self._base_api_url}/",
+        )
 
     def provide_data_source_meta_request_factory(self) -> Request:
         return Request(
@@ -260,7 +265,21 @@ class IDRServerV1API(
         self,
         response: Response,
     ) -> Iterable[SimpleHTTPDataSinkMetadata]:
-        raise NotImplementedError
+        response.close()
+        # TODO: Revisit this!!!
+        from ..domain.etl_protocol import (
+            _http_transport_factory,
+            _idr_server_api_factory,
+        )
+
+        return (
+            SimpleHTTPDataSinkMetadata(
+                id="fyj-cbs-http-data-sink",
+                name="FyJ CBS HTTP Data Sink",
+                api_dialect_factory=_idr_server_api_factory,
+                transport_factory=_http_transport_factory,
+            ),
+        )
 
     def handle_provide_data_source_meta_response(
         self,
