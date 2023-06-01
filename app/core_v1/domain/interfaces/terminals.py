@@ -98,13 +98,11 @@ class UploadMetadataFactory(Disposable, Generic[_UM, _EM], metaclass=ABCMeta):
     def new_upload_meta(
         self,
         extract_meta: _EM,
-        content_type: str,
         **kwargs: Mapping[str, Any],
     ) -> _UM:
         """
 
         :param extract_meta:
-        :param content_type:
         :param kwargs:
 
         :return:

@@ -278,42 +278,15 @@ class ExtractProcessor(Disposable, Generic[_EM, _RD, _CD], metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def process(self, raw_data: _RD, extract_metadata: _EM) -> _CD:
+    def process(
+        self,
+        raw_data: _RD,
+        extract_metadata: _EM,
+    ) -> _CD:
         """
 
         :param raw_data:
         :param extract_metadata:
-        :return:
-        """
-        ...
-
-
-class Protocol(NamedDomainObject, metaclass=ABCMeta):
-    """
-    An interface that defines the kind of data being worked on and the
-    operations that can be performed around that data.
-    """
-
-    @abstractmethod
-    def is_supported_data_source(
-        self,
-        data_source_meta: DataSourceMetadata,
-    ) -> bool:
-        """
-
-        :param data_source_meta:
-        :return:
-        """
-        ...
-
-    @abstractmethod
-    def load_data_source(
-        self,
-        data_source_meta: DataSourceMetadata,
-    ) -> DataSource:
-        """
-
-        :param data_source_meta:
         :return:
         """
         ...

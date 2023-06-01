@@ -75,7 +75,7 @@ class HTTPTransport(Disposable):
     def is_disposed(self) -> bool:
         return self._is_disposed
 
-    def authenticate(self) -> None:
+    def authenticate(self) -> AuthBase:
         """Authenticate this `HTTPTransport` instance.
 
         :return: None.
@@ -104,6 +104,7 @@ class HTTPTransport(Disposable):
 
         self._auth = self._auth_api_dialect.handle_auth_response(response)
         self._logger.debug("Authentication successful.")
+        return self._auth
 
     def dispose(self) -> None:
         self._is_disposed = True

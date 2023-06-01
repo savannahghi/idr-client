@@ -266,13 +266,11 @@ class HTTPUploadMetadataFactoryAPIDialect(
     def new_upload_meta_request_factory(
         self,
         extract_meta: _EM,
-        content_type: str,
         **kwargs: Mapping[str, Any],
     ) -> Request:
         """
 
         :param extract_meta:
-        :param content_type:
         :param kwargs:
         :return:
         """
@@ -285,14 +283,12 @@ class HTTPUploadMetadataFactoryAPIDialect(
         self,
         response: Response,
         extract_meta: _EM,
-        content_type: str,
         **kwargs: Mapping[str, Any],
     ) -> _UM:
         """
 
         :param response:
         :param extract_meta:
-        :param content_type:
         :param kwargs:
         :return:
         """

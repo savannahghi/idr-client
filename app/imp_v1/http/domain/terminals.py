@@ -184,18 +184,14 @@ class HTTPUploadMetadataFactory(
     def new_upload_meta(
         self,
         extract_meta: _EM,
-        content_type: str,
         **kwargs: Mapping[str, Any],
     ) -> _UM:
         self._logger.info(
-            'Initialize a new UploadMetadata instance of extract meta "%s" '
-            'and content type "%s"',
+            'Initialize a new UploadMetadata instance of extract meta "%s".',
             extract_meta,
-            content_type,
         )
         req: Request = self._api_dialect.new_upload_meta_request_factory(
             extract_meta=extract_meta,
-            content_type=content_type,
             **kwargs,
         )
         res: Response = self._transport.make_request(
@@ -205,6 +201,5 @@ class HTTPUploadMetadataFactory(
         return self._api_dialect.handle_new_upload_meta_response(
             response=res,
             extract_meta=extract_meta,
-            content_type=content_type,
             **kwargs,
         )

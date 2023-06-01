@@ -38,7 +38,6 @@ class ETLWorkflow(Task[ExtractMetadata, None]):
             upload_meta: UploadMetadata
             upload_meta = self._upload_metadata_factory.new_upload_meta(
                 extract_meta=an_input,
-                content_type="application/vnd.apache-parquet",
             )
 
             drain_streams: Sequence[DataSinkStream[Any, Any]]

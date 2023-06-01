@@ -336,7 +336,6 @@ class IDRServerV1API(
     def new_upload_meta_request_factory(
         self,
         extract_meta: SimpleSQLQuery,
-        content_type: str,
         **kwargs: Mapping[str, Any],
     ) -> Request:
         org_unit_code: str = app.settings.LOCATION_ID
@@ -350,7 +349,9 @@ class IDRServerV1API(
                 "chunks": 0,
                 "org_unit_code": org_unit_code,
                 "org_unit_name": org_unit_name,
-                "content_type": content_type,
+                # This is hard-coded content type is bad, but it is required by
+                # this version of the IDR Server API.
+                "content_type": "application/vnd.apache-parquet",
                 "extract_metadata": extract_meta.id,
             },
             method=_POST_METHOD,
@@ -363,7 +364,6 @@ class IDRServerV1API(
         self,
         response: Response,
         extract_meta: SimpleSQLQuery,
-        content_type: str,
         **kwargs: Mapping[str, Any],
     ) -> IDRServerV1APIUploadMetadata:
         result: _IDRServerUploadMetaAPIPayload = response.json()
