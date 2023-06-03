@@ -67,7 +67,7 @@ class _IDRServerUploadMetaAPIPayload(TypedDict):
 # =============================================================================
 
 _GET_METHOD: Final[str] = "GET"
-_PATH_METHOD: Final[str] = "PATCH"
+_PATCH_METHOD: Final[str] = "PATCH"
 _POST_METHOD: Final[str] = "POST"
 
 # =============================================================================
@@ -213,7 +213,7 @@ class IDRServerV1API(
                 "content_type": upload_meta.content_type,
                 "extract_metadata": upload_meta.extract_metadata.id,
             },
-            method=_PATH_METHOD,
+            method=_PATCH_METHOD,
             url="{api_url}/sql_data/sql_upload_metadata/"
             "{upload_meta_id}/mark_as_complete/".format(
                 api_url=self._base_api_url,
@@ -268,16 +268,18 @@ class IDRServerV1API(
         response.close()
         # TODO: Revisit this!!!
         from ..domain.etl_protocol import (
-            _http_transport_factory,
-            _idr_server_api_factory,
+            _http_transport_factory,  # pyright: ignore
+        )
+        from ..domain.etl_protocol import (
+            _idr_server_api_factory,  # pyright: ignore
         )
 
         return (
             SimpleHTTPDataSinkMetadata(
-                id="fyj-cbs-http-data-sink",
-                name="FyJ CBS HTTP Data Sink",
-                api_dialect_factory=_idr_server_api_factory,
-                transport_factory=_http_transport_factory,
+                id="fyj-cbs-http-data-sink",  # pyright: ignore
+                name="FyJ CBS HTTP Data Sink",  # pyright: ignore
+                api_dialect_factory=_idr_server_api_factory,  # pyright: ignore
+                transport_factory=_http_transport_factory,  # pyright: ignore
             ),
         )
 

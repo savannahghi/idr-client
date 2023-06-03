@@ -9,7 +9,7 @@ class DataSinkFactory(NamedDomainObjectFactory):
     name = factory.Sequence(lambda _n: f"Data Sink {_n}")
     description = factory.Sequence(lambda _n: f"Test Data Sink {_n}")
 
-    class Meta:
+    class Meta(NamedDomainObjectFactory.Meta):
         abstract = True
 
 
@@ -19,5 +19,5 @@ class DataSourceFactory(NamedDomainObjectFactory):
     name = factory.Sequence(lambda _n: f"Data Source {_n}")
     description = factory.Sequence(lambda _n: f"Test Data Source {_n}")
 
-    class Meta:
+    class Meta(NamedDomainObjectFactory.Meta):
         abstract = True

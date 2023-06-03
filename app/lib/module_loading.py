@@ -48,7 +48,7 @@ def import_string(dotted_path: str) -> ModuleType:
     try:
         module_path, class_name = dotted_path.rsplit(".", 1)
     except ValueError as err:
-        err_msg: str = "%s doesn't look like a module path" % dotted_path
+        err_msg: str = f'"{dotted_path}" does not look like a module path.'
         raise ImportError(err_msg, path=dotted_path) from err
 
     try:
@@ -85,8 +85,8 @@ def import_string_as_klass(
     _module = import_string(dotted_path)
     if not inspect.isclass(_module) or not issubclass(_module, target_klass):
         err_msg: str = (
-            'Invalid value, "%s" is either not a class or a subclass of "%s".'
-            % (dotted_path, target_klass.__qualname__)
+            'Invalid value, "{}" is either not a class or a subclass of '
+            '"{}".'.format(dotted_path, target_klass.__qualname__)
         )
         raise TypeError(err_msg)
 

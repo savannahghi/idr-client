@@ -38,14 +38,14 @@ FYJCBSETLProtocol = SimpleETLProtocol[
 def _http_transport_factory() -> HTTPTransport:
     return HTTPTransport(
         auth_api_dialect=_idr_server_api_factory(),  # pyright: ignore
-        connect_timeout=app.settings.HTTP_TRANSPORT.get(
+        connect_timeout=app.settings.HTTP_TRANSPORT.get(  # pyright: ignore
             "connect_timeout",
             60,
-        ),  # pyright: ignore
-        read_timeout=app.settings.HTTP_TRANSPORT.get(
+        ),
+        read_timeout=app.settings.HTTP_TRANSPORT.get(  # pyright: ignore
             "read_timeout",
             60,
-        ),  # pyright: ignore
+        ),
     )
 
 

@@ -10,7 +10,7 @@ from .base import (
 class MetadataObjectFactory(DomainObjectFactory):
     """Base factory for most :class:`MetadataObject` implementations."""
 
-    class Meta:
+    class Meta(DomainObjectFactory.Meta):
         abstract = True
 
 
@@ -22,7 +22,10 @@ class IdentifiableMetadataObjectFactory(
     Base factory for most :class:`IdentifiableMetadataObject` implementations.
     """
 
-    class Meta:
+    class Meta(
+        MetadataObjectFactory.Meta,
+        IdentifiableDomainObjectFactory.Meta,
+    ):
         abstract = True
 
 
@@ -35,7 +38,10 @@ class DataSourceMetadataFactory(
     name = factory.Sequence(lambda _n: f"Data Source {_n}")
     description = factory.Sequence(lambda _n: f"Test Data Source {_n}.")
 
-    class Meta:
+    class Meta(
+        NamedDomainObjectFactory.Meta,
+        IdentifiableMetadataObjectFactory.Meta,
+    ):
         abstract = True
 
 
@@ -48,19 +54,22 @@ class ExtractMetadataFactory(
     name = factory.Sequence(lambda _n: f"Extract Metadata {_n}")
     description = factory.Sequence(lambda _n: f"Test Extract Metadata {_n}.")
 
-    class Meta:
+    class Meta(
+        NamedDomainObjectFactory.Meta,
+        IdentifiableMetadataObjectFactory.Meta,
+    ):
         abstract = True
 
 
 class UploadContentMetadataFactory(IdentifiableMetadataObjectFactory):
     """Base factory for most :class:`UploadContentMetadata` implementations."""
 
-    class Meta:
+    class Meta(IdentifiableMetadataObjectFactory.Meta):
         abstract = True
 
 
 class UploadMetadataFactory(IdentifiableMetadataObjectFactory):
     """Base factory for most :class:`UploadMetadata` implementations."""
 
-    class Meta:
+    class Meta(IdentifiableMetadataObjectFactory.Meta):
         abstract = True

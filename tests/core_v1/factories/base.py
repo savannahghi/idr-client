@@ -6,7 +6,7 @@ import factory
 class DomainObjectFactory(factory.Factory):
     """Base factory for most :class:`DomainObject` implementations."""
 
-    class Meta:
+    class Meta:  # pyright: ignore
         abstract = True
 
 
@@ -17,7 +17,7 @@ class IdentifiableDomainObjectFactory(DomainObjectFactory):
 
     id = factory.LazyFunction(lambda: str(uuid.uuid4()))  # noqa: A003
 
-    class Meta:
+    class Meta(DomainObjectFactory.Meta):
         abstract = True
 
 
@@ -26,5 +26,5 @@ class NamedDomainObjectFactory(DomainObjectFactory):
 
     description = factory.Faker("sentence")
 
-    class Meta:
+    class Meta(DomainObjectFactory.Meta):
         abstract = True

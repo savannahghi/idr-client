@@ -352,10 +352,6 @@ def main(config: str | None, log_level: str, verbosity: int) -> None:
         app.registry_v1.set("verbosity", verbosity)
         app.setup = setup
         app.setup(settings=config_contents, log_level=log_level)
-
-        from .usecases import start
-
-        start()
     except LoadConfigError as exp:
         _default_err: str = "Error loading configuration."
         print_error(error_message=exp.message or _default_err, exception=exp)
@@ -381,7 +377,19 @@ def main(config: str | None, log_level: str, verbosity: int) -> None:
         print_error(error_message=_err_msg, exception=exp)
         sys.exit(4)
 
-    click.echo(click.style("Done 😁", fg="green"))
+    try:
+        from .usecases import start
+
+        start()
+        click.echo(click.style("Done 😁", fg="green"))
+    except Exception as exp:  # noqa: BLE001
+        _err_msg: str = (
+            "An unhandled error occurred at runtime. The cause of the error "
+            'was: "{}".'.format(str(exp))
+        )
+        _LOGGER.exception(_err_msg)
+        print_error(error_message=_err_msg, exception=exp)
+        sys.exit(4)
 
 
 if __name__ == "__main__":  # pragma: no cover
