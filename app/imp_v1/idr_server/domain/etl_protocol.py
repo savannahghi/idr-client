@@ -1,4 +1,4 @@
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from functools import cache
 from typing import TYPE_CHECKING
 
@@ -36,13 +36,15 @@ FYJCBSETLProtocol = SimpleETLProtocol[
 
 
 def _http_transport_factory() -> HTTPTransport:
+    http_transport_settings: Mapping[str, int | float]
+    http_transport_settings = app.settings.get("HTTP_TRANSPORT", {})
     return HTTPTransport(
         auth_api_dialect=_idr_server_api_factory(),  # pyright: ignore
-        connect_timeout=app.settings.HTTP_TRANSPORT.get(  # pyright: ignore
+        connect_timeout=http_transport_settings.get(  # pyright: ignore
             "connect_timeout",
             60,
         ),
-        read_timeout=app.settings.HTTP_TRANSPORT.get(  # pyright: ignore
+        read_timeout=http_transport_settings.get(  # pyright: ignore
             "read_timeout",
             60,
         ),
@@ -53,10 +55,11 @@ def _http_transport_factory() -> HTTPTransport:
 def _idr_server_api_factory() -> "IDRServerV1API":
     from ..lib import IDRServerV1API
 
+    idr_server_settings: Mapping[str, str] = app.settings.IDR_SERVER_SETTINGS
     return IDRServerV1API(
-        server_url=app.settings.REMOTE_SERVER["host"],  # pyright: ignore
-        username=app.settings.REMOTE_SERVER["username"],  # pyright: ignore
-        password=app.settings.REMOTE_SERVER["password"],  # pyright: ignore
+        server_url=idr_server_settings["host"],  # pyright: ignore
+        username=idr_server_settings["username"],  # pyright: ignore
+        password=idr_server_settings["password"],  # pyright: ignore
     )
 
 

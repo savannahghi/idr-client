@@ -308,6 +308,7 @@ dist/*
 .env
 .envs/*
 !.envs/.local/
+config.toml
 config.yaml
 local.sh
 logs/*

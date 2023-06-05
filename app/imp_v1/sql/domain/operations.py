@@ -44,7 +44,7 @@ DataSourceStreamFactory = Callable[
 # CONSTANTS
 # =============================================================================
 
-DEFAULT_MAX_EXTRACTION_ROWS: Final[int] = 10_000
+DEFAULT_MAX_EXTRACTION_ROWS: Final[int] = 50_000
 """The maximum number of rows to extract from a database at any one time."""
 
 
