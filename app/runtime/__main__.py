@@ -8,6 +8,12 @@ import click
 import app
 from app.lib import ConfigurationError
 
+from .utils.config_file_loaders import (
+    CONFIG_FORMATS,
+    LoadConfigError,
+    load_config_file,
+)
+
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
@@ -24,18 +30,27 @@ _LOGGER: Final[Logger] = logging.getLogger("app.runtime")
 # =============================================================================
 
 
-def _configure_runtime(config: str, log_level: str, verbosity: int) -> None:
+def _configure_runtime(
+    config: str,
+    config_format: CONFIG_FORMATS,
+    log_level: str,
+    verbosity: int,
+) -> None:
     from .setup import setup
-    from .utils.config_file_loaders import LoadConfigError, load_config_file
     from .utils.printers import print_error
 
     try:
+        app.registry_v1.set("config_format", config_format)
+        app.registry_v1.set("verbosity", verbosity)
+
         config_contents: Mapping[str, Any] | None = (
-            load_config_file(config_file_path=config)
+            load_config_file(
+                config_file_path=config,
+                config_format=config_format,
+            )
             if config is not None
             else None
         )
-        app.registry_v1.set("verbosity", verbosity)
         app.setup = setup
         app.setup(settings=config_contents, log_level=log_level)
     except LoadConfigError as exp:
@@ -80,10 +95,24 @@ def _configure_runtime(config: str, log_level: str, verbosity: int) -> None:
     default=None,
     envvar="IDR_CLIENT_CONFIG",
     help=(
-        "Set the location of the configuration file to use. Only yaml files "
-        "are currently supported."
+        "Set the location of the configuration file to use. Both toml and "
+        "yaml file formats are supported."
     ),
     type=click.Path(exists=True, readable=True, resolve_path=True),
+)
+@click.option(
+    "--config-format",
+    default="auto",
+    envvar="IDR_CLIENT_CONFIG_FORMAT",
+    help=(
+        "The config format of the configuration file in use. Both toml and "
+        "yaml configuration formats are supported. 'auto' determines the "
+        "configuration file in use based on the extension of the file and "
+        "when that fails, defaults to assuming the configuration file is a "
+        "toml file."
+    ),
+    show_default=True,
+    type=click.Choice(choices=("auto", "toml", "yaml")),
 )
 @click.option(
     "-l",
@@ -116,10 +145,21 @@ def _configure_runtime(config: str, log_level: str, verbosity: int) -> None:
     ),
 )
 @click.version_option(package_name="idr-client", message="%(version)s")
-def main(config: str | None, log_level: str, verbosity: int) -> None:
+def main(
+    config: str | None,
+    config_format: CONFIG_FORMATS,
+    log_level: str,
+    verbosity: int,
+) -> None:
+    _configure_runtime(
+        config=config,
+        config_format=config_format,
+        log_level=log_level,
+        verbosity=verbosity,
+    )
+
     from .utils.printers import print_error, print_success
 
-    _configure_runtime(config=config, log_level=log_level, verbosity=verbosity)
     try:
         # Delay this import as late as possible to avoid cyclic imports,
         # especially before configuration has been loaded.
