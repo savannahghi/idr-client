@@ -1,13 +1,12 @@
 import builtins
 from collections.abc import Iterable
+from concurrent.futures import Executor, ThreadPoolExecutor
 from contextlib import ExitStack
 from typing import Any
 
-import click
 from attrs import define, field
 from toolz import compose, juxt
 
-import app
 from app.core import Task
 from app.core_v1.domain import (
     DataSink,
@@ -21,6 +20,7 @@ from app.core_v1.domain import (
 from app.core_v1.exceptions import TransientError
 from app.lib import Retry, if_exception_type_factory
 
+from ..utils.printers import print_debug
 from .etl_workflow import ETLWorkflow
 
 # =============================================================================
@@ -74,6 +74,9 @@ class RunETLProtocol(Task[None, None]):
         self._data_sink_metas: list[DataSinkMetadata] = []
         self._data_source_metas: list[DataSourceMetadata] = []
         self._protocol_stack: ExitStack = ExitStack()
+        self._executor: Executor = ThreadPoolExecutor(
+            thread_name_prefix=self._etl_protocol.id,
+        )
         self._set_up_resources()
 
     def execute(self, an_input: None) -> None:
@@ -128,10 +131,17 @@ class RunETLProtocol(Task[None, None]):
         self._protocol_stack.enter_context(
             self._etl_protocol.upload_metadata_factory,
         )
+        self._protocol_stack.enter_context(self._executor)
 
     def _start_etl_workflows(self) -> None:
         for data_source, data_source_meta in self._data_sources:
             for _, extract_meta in data_source_meta.extract_metadata.items():
+                print_debug(
+                    "- Running ETLWorkflow for extract '{}'".format(
+                        extract_meta.name,
+                    ),
+                    nl=False,
+                )
                 ETLWorkflow(
                     data_source=data_source,  # pyright: ignore
                     extract_processor_factory=self._etl_protocol.extract_processor_factory,  # pyright: ignore  # noqa: E501
@@ -139,6 +149,7 @@ class RunETLProtocol(Task[None, None]):
                     metadata_sinks=self._etl_protocol.metadata_sinks,  # pyright: ignore  # noqa: E501
                     data_sinks=self._data_sinks,  # pyright: ignore
                 ).execute(extract_meta)
+                print_debug(" ✔️")
 
     @staticmethod
     def _do_get_data_source_and_extract_metas(
@@ -154,21 +165,3 @@ class RunETLProtocol(Task[None, None]):
                 )
             }
         return data_source_metas
-
-
-def start() -> None:
-    click.echo(click.style("Starting ...", fg="blue"))
-    for protocol_id, etl_protocol in app.registry_v1.etl_protocols.items():
-        click.echo(
-            click.style(
-                'Running "{}:{}" protocol ...'.format(
-                    protocol_id,
-                    etl_protocol.name,
-                ),
-                fg="bright_blue",
-            ),
-        )
-        RunETLProtocol(etl_protocol).execute(None)
-        click.echo(
-            click.style("✔️Protocol run successfully", fg="bright_blue"),
-        )

@@ -31,7 +31,7 @@ _LOGGER: Final[Logger] = logging.getLogger("app.runtime")
 
 
 def _configure_runtime(
-    config: str,
+    config: str | None,
     config_format: CONFIG_FORMATS,
     log_level: str,
     verbosity: int,
@@ -85,9 +85,7 @@ def _configure_runtime(
 
 
 @click.command(
-    epilog="An ETL tool that draws/extracts data from data sources, "
-    "transforms and/or cleans the data and then drains/uploads the "
-    "cleaned data to a data sink.",
+    epilog="Lets do this! ;)",
 )
 @click.option(
     "-c",
@@ -151,6 +149,23 @@ def main(
     log_level: str,
     verbosity: int,
 ) -> None:
+    """
+    An ETL tool that draws/extracts data from data sources, transforms
+    and/or cleans the data and then drains/uploads the cleaned data to a data
+    sink.
+
+    \f
+
+    :param config: An option path to a configuration file.
+    :param config_format: The format of the config contents. Can be auto which
+        allows the configuration format to be determined from the extension of
+        the file name.
+    :param log_level: The log level of the "root application" logger.
+    :param verbosity: The level of output to expect from the application on
+        stdout. This is different from log level.
+
+    :return: None.
+    """
     _configure_runtime(
         config=config,
         config_format=config_format,
