@@ -1,5 +1,9 @@
 from typing import Any, Final
 
+APP_DISPATCHER_REG_KEY: Final[str] = "runtime.app_dispatcher"
+
+APP_VERBOSITY_REG_KEY: Final[str] = "runtime.verbosity"
+
 ETL_PROTOCOLS_CONFIG_KEY: Final[str] = "ETL_PROTOCOLS"
 
 LOGGING_CONFIG_KEY: Final[str] = "LOGGING"

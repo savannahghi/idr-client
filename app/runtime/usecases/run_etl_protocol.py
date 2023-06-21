@@ -19,8 +19,9 @@ from app.core_v1.domain import (
 )
 from app.core_v1.exceptions import TransientError
 from app.lib import Retry, if_exception_type_factory
+from app.runtime.constants import APP_DISPATCHER_REG_KEY
+from app.runtime.utils import dispatch
 
-from ..utils.printers import print_debug
 from .etl_workflow import ETLWorkflow
 
 # =============================================================================
@@ -80,6 +81,10 @@ class RunETLProtocol(Task[None, None]):
         self._set_up_resources()
 
     def execute(self, an_input: None) -> None:
+        import app
+
+        app_dispatcher: dispatch.Dispatcher
+        app_dispatcher = app.registry_v1.get(APP_DISPATCHER_REG_KEY)
         with self._protocol_stack:
             for metadata_source in self._etl_protocol.metadata_sources:
                 self._data_sink_metas.extend(
@@ -96,7 +101,7 @@ class RunETLProtocol(Task[None, None]):
             self._load_data_sources()
             self._load_data_sinks()
 
-            self._start_etl_workflows()
+            self._start_etl_workflows(app_dispatcher)
 
     def _load_data_sinks(self) -> None:
         self._data_sinks.extend(
@@ -133,14 +138,17 @@ class RunETLProtocol(Task[None, None]):
         )
         self._protocol_stack.enter_context(self._executor)
 
-    def _start_etl_workflows(self) -> None:
+    def _start_etl_workflows(
+        self,
+        app_dispatcher: dispatch.Dispatcher,
+    ) -> None:
         for data_source, data_source_meta in self._data_sources:
             for _, extract_meta in data_source_meta.extract_metadata.items():
-                print_debug(
-                    "- Running ETLWorkflow for extract '{}'".format(
-                        extract_meta.name,
+                app_dispatcher.send(
+                    dispatch.PreETLWorkflowRunSignal(
+                        etl_protocol=self._etl_protocol,
+                        extract_meta=extract_meta,
                     ),
-                    nl=False,
                 )
                 ETLWorkflow(
                     data_source=data_source,  # pyright: ignore
@@ -149,7 +157,12 @@ class RunETLProtocol(Task[None, None]):
                     metadata_sinks=self._etl_protocol.metadata_sinks,  # pyright: ignore  # noqa: E501
                     data_sinks=self._data_sinks,  # pyright: ignore
                 ).execute(extract_meta)
-                print_debug(" ✔️")
+                app_dispatcher.send(
+                    dispatch.PostETLWorkflowRunSignal(
+                        etl_protocol=self._etl_protocol,
+                        extract_meta=extract_meta,
+                    ),
+                )
 
     @staticmethod
     def _do_get_data_source_and_extract_metas(

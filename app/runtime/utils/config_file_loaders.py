@@ -100,10 +100,10 @@ def load_toml_config_file(config_file_path: str) -> Mapping[str, Any]:
         raise
     except Exception as exp:  # noqa: BLE001
         _err_msg: str = (
-            "Error opening the given configuration file. Please ensure that "
-            "the configuration file contents consist of valid toml, and that "
-            '"{}" points to an existing readable file. The cause of the error '
-            'was: "{}"'.format(config_file_path, exp)
+            "Error opening/reading the given configuration file. Please "
+            "ensure that the configuration file contents consist of valid "
+            'toml, and that "{}" points to an existing readable file. The '
+            'cause of the error was: "{}"'.format(config_file_path, exp)
         )
         raise LoadConfigError(message=_err_msg) from exp
     return config_content
@@ -121,10 +121,10 @@ def load_yaml_config_file(config_file_path: str) -> Mapping[str, Any]:
         raise
     except Exception as exp:  # noqa: BLE001
         _err_msg: str = (
-            "Error opening the given configuration file. Please ensure that "
-            "the configuration file contents consist of valid yaml, and that "
-            '"{}" points to an existing readable file. The cause of the error '
-            'was: "{}"'.format(config_file_path, exp)
+            "Error opening/reading the given configuration file. Please "
+            "ensure that the configuration file contents consist of valid "
+            'yaml, and that "{}" points to an existing readable file. The '
+            'cause of the error was: "{}"'.format(config_file_path, exp)
         )
         raise LoadConfigError(message=_err_msg) from exp
     return config_content

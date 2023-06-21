@@ -1,13 +1,16 @@
 import logging
 import sys
 from logging import Logger
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 import click
 
 import app
 from app.lib import ConfigurationError
 
+from .constants import APP_DISPATCHER_REG_KEY, APP_VERBOSITY_REG_KEY
+from .ui import UI, NoUI
+from .utils import dispatch
 from .utils.config_file_loaders import (
     CONFIG_FORMATS,
     LoadConfigError,
@@ -16,6 +19,13 @@ from .utils.config_file_loaders import (
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
+
+
+# =============================================================================
+# TYPES
+# =============================================================================
+
+Supported_UIs = Literal["none", "simple", "rich"]
 
 
 # =============================================================================
@@ -31,17 +41,16 @@ _LOGGER: Final[Logger] = logging.getLogger("app.runtime")
 
 
 def _configure_runtime(
+    app_dispatcher: dispatch.Dispatcher,
     config: str | None,
     config_format: CONFIG_FORMATS,
     log_level: str,
     verbosity: int,
 ) -> None:
     from .setup import setup
-    from .utils.printers import print_error
 
     try:
-        app.registry_v1.set("config_format", config_format)
-        app.registry_v1.set("verbosity", verbosity)
+        app.registry_v1.set(APP_VERBOSITY_REG_KEY, verbosity)
 
         config_contents: Mapping[str, Any] | None = (
             load_config_file(
@@ -55,28 +64,47 @@ def _configure_runtime(
         app.setup(settings=config_contents, log_level=log_level)
     except LoadConfigError as exp:
         _default_err: str = "Error loading configuration."
-        print_error(error_message=exp.message or _default_err, exception=exp)
+        app_dispatcher.send(
+            dispatch.ConfigErrorSignal(exp.message or _default_err, exp),
+        )
         sys.exit(2)
     except ConfigurationError as exp:
         _err_msg: str = (
             "Error configuring the runtime. The cause of the error was: "
-            '"{}".'.format(exp.message)
+            "{}".format(exp.message)
         )
         # This might not be logged as logging may still be un-configured when
         # this error occurs.
         _LOGGER.exception(_err_msg)
-        print_error(error_message=_err_msg, exception=exp)
+        app_dispatcher.send(dispatch.ConfigErrorSignal(_err_msg, exp))
         sys.exit(3)
     except Exception as exp:  # noqa: BLE001
         _err_msg: str = (
             "An unknown error occurred during runtime setup. The cause of the "
-            'error was: "{}".'.format(str(exp))
+            "error was: {}".format(str(exp))
         )
         # This might not be logged as logging may still be un-configured when
         # this error occurs.
         _LOGGER.exception(_err_msg)
-        print_error(error_message=_err_msg, exception=exp)
+        app_dispatcher.send(dispatch.ConfigErrorSignal(_err_msg, exp))
         sys.exit(4)
+
+
+def _set_ui(preferred_ui: Supported_UIs) -> UI:
+    match preferred_ui:
+        case "none":
+            return NoUI()
+        case "simple":
+            from app.runtime.tui.simple import SimpleUI
+
+            return SimpleUI()
+        case "rich":
+            from app.runtime.tui.rich import RichUI
+
+            return RichUI()
+        case _:
+            _err_msg: str = "Unsupported UI option given."
+            raise ConfigurationError(message=_err_msg)
 
 
 # =============================================================================
@@ -131,6 +159,16 @@ def _configure_runtime(
     ),
 )
 @click.option(
+    "--ui",
+    default="none",
+    envvar="IDR_CLIENT_UI",
+    help="Select a user interface to use.",
+    show_default=True,
+    type=click.Choice(
+        choices=("none", "simple", "rich"),
+    ),
+)
+@click.option(
     "-v",
     "--verbose",
     "verbosity",
@@ -147,6 +185,7 @@ def main(
     config: str | None,
     config_format: CONFIG_FORMATS,
     log_level: str,
+    ui: Supported_UIs,
     verbosity: int,
 ) -> None:
     """
@@ -161,34 +200,44 @@ def main(
         allows the configuration format to be determined from the extension of
         the file name.
     :param log_level: The log level of the "root application" logger.
+    :param ui: The preferred user interface to use.
     :param verbosity: The level of output to expect from the application on
         stdout. This is different from log level.
 
     :return: None.
     """
+    app_dispatcher: dispatch.Dispatcher = dispatch.Dispatcher()
+    app.registry_v1.set(APP_DISPATCHER_REG_KEY, app_dispatcher)
+
+    _set_ui(preferred_ui=ui).start()
+
+    app_dispatcher.send(dispatch.PreConfigSignal())
     _configure_runtime(
+        app_dispatcher=app_dispatcher,
         config=config,
         config_format=config_format,
         log_level=log_level,
         verbosity=verbosity,
     )
-
-    from .utils.printers import print_error, print_success
+    app_dispatcher.send(dispatch.PostConfigSignal())
 
     try:
         # Delay this import as late as possible to avoid cyclic imports,
         # especially before configuration has been loaded.
         from .usecases import start
 
+        app_dispatcher.send(dispatch.AppPreStartSignal())
         start()
-        print_success("Done 😁")
+        app_dispatcher.send(dispatch.AppPreStopSignal())
     except Exception as exp:  # noqa: BLE001
         _err_msg: str = (
             "An unhandled error occurred at runtime. The cause of the error "
-            'was: "{}".'.format(str(exp))
+            "was: {}.".format(str(exp))
         )
         _LOGGER.exception(_err_msg)
-        print_error(error_message=_err_msg, exception=exp)
+        app_dispatcher.send(
+            dispatch.UnhandledRuntimeErrorSignal(_err_msg, exp),
+        )
         sys.exit(5)
 
 

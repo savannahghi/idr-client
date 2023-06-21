@@ -1,0 +1,128 @@
+from attrs import field, frozen
+from rich.console import Console
+from rich.live import Live
+from rich.status import Status
+
+from app.runtime.constants import APP_DISPATCHER_REG_KEY
+from app.runtime.ui import UI
+from app.runtime.utils import dispatch
+
+from .console import CONSOLE
+from .protocol_ui import ETLProtocolUI, ProtocolRunStatus
+
+
+def _app_live_display_factory(console: Console = CONSOLE) -> Live:
+    return Live(console=console, refresh_per_second=12.5)
+
+
+def _app_run_status_factory(console: Console = CONSOLE) -> Status:
+    return Status(
+        "[bold]Running ...",
+        console=console,
+        spinner="dots",
+        spinner_style="bright_yellow",
+    )
+
+
+@frozen
+class RichUI(UI):
+    """:class:`UI` implementation that uses a :class:`rich.console.Console`
+    to render output on the console.
+    """
+
+    _app_run_status: Status = field(
+        factory=_app_run_status_factory,
+        init=False,
+    )
+    _console: Console = field(default=CONSOLE, init=False)
+    _etl_proto_statuses: dict[str, Status] = field(factory=dict, init=False)
+    _etl_proto_uis: dict[str, ETLProtocolUI] = field(factory=dict, init=False)
+    _live_display: Live = field(factory=_app_live_display_factory, init=False)
+
+    def start(self) -> None:
+        import app
+
+        app_dispatcher: dispatch.Dispatcher
+        app_dispatcher = app.registry_v1.get(APP_DISPATCHER_REG_KEY)
+        app_dispatcher.connect(dispatch.AppPreStartSignal, self.on_app_start)
+        app_dispatcher.connect(dispatch.AppPreStopSignal, self.on_app_stop)
+        app_dispatcher.connect(
+            dispatch.ConfigErrorSignal,
+            self.on_config_error,
+        )
+        app_dispatcher.connect(dispatch.PostConfigSignal, self.on_config_stop)
+        app_dispatcher.connect(dispatch.PreConfigSignal, self.on_config_start)
+        app_dispatcher.connect(
+            dispatch.PostETLProtocolRunSignal,
+            self.on_etl_protocol_stop,
+        )
+        app_dispatcher.connect(
+            dispatch.PostETLWorkflowRunSignal,
+            self.on_etl_workflow_stop,
+        )
+        app_dispatcher.connect(
+            dispatch.PreETLProtocolRunSignal,
+            self.on_etl_protocol_start,
+        )
+        app_dispatcher.connect(
+            dispatch.PreETLWorkflowRunSignal,
+            self.on_etl_workflow_start,
+        )
+
+    def on_app_start(self, signal: dispatch.AppPreStartSignal) -> None:
+        self._console.log("[bold cyan]Starting ... ")
+        self._live_display.start()
+
+    def on_app_stop(self, signal: dispatch.AppPreStopSignal) -> None:
+        self._live_display.stop()
+        self._console.log("[bold green]Done :+1:")
+
+    def on_config_error(self, signal: dispatch.ConfigErrorSignal) -> None:
+        ...
+
+    def on_config_start(self, signal: dispatch.PreConfigSignal) -> None:
+        self._console.rule("[bold red]IDR Client", style="bold cyan")
+
+    def on_config_stop(self, signal: dispatch.PostConfigSignal) -> None:
+        ...
+
+    def on_etl_protocol_start(
+        self,
+        signal: dispatch.PreETLProtocolRunSignal,
+    ) -> None:
+        status_msg: str = "Running '{}' protocol ...".format(
+            signal.etl_protocol.name,
+        )
+        status_msg.upper()
+
+        self._etl_proto_uis[signal.etl_protocol.id] = ETLProtocolUI(
+            etl_protocol=signal.etl_protocol,
+            console=self._console,
+            status=ProtocolRunStatus.RUNNING,
+        )
+        self._live_display.update(self._etl_proto_uis[signal.etl_protocol.id])
+        # gh self._app_run_status.update(status=f"[bright_yellow]{status_msg}")
+        # gh self._console.log(f"[bold cyan]{status_msg}")
+
+    def on_etl_protocol_stop(
+        self,
+        signal: dispatch.PostETLProtocolRunSignal,
+    ) -> None:
+        self._etl_proto_uis[signal.etl_protocol.id].complete()
+        self._live_display.update(self._etl_proto_uis[signal.etl_protocol.id])
+
+    def on_etl_workflow_start(
+        self,
+        signal: dispatch.PreETLWorkflowRunSignal,
+    ) -> None:
+        self._etl_proto_uis[signal.etl_protocol.id].start_workflow(
+            extract_meta=signal.extract_meta,
+        )
+
+    def on_etl_workflow_stop(
+        self,
+        signal: dispatch.PostETLWorkflowRunSignal,
+    ) -> None:
+        self._etl_proto_uis[signal.etl_protocol.id].stop_workflow(
+            extract_meta=signal.extract_meta,
+        )
