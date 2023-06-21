@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, cast
 
 from sqlalchemy import text
 
-from app.imp_v1.sql import SimpleSQLDatabaseDescriptor, SimpleSQLQuery
+from app.mods.sql import SimpleSQLDatabaseDescriptor, SimpleSQLQuery
 from tests import TestCase
 
 from ..factories import (

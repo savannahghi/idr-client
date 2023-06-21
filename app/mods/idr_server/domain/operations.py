@@ -5,7 +5,7 @@ from logging import Logger
 from attrs import define, field
 
 from app.core_v1.domain import BaseData, CleanedData, ExtractProcessor
-from app.imp_v1.sql.domain import PDDataFrame, SimpleSQLQuery
+from app.mods.sql.domain import PDDataFrame, SimpleSQLQuery
 
 
 @define(slots=True)

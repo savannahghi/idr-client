@@ -4,7 +4,7 @@ from typing import Any, cast
 import factory
 from toolz.curried import map, pipe
 
-from app.imp_v1.sql.domain import (
+from app.mods.sql.domain import (
     SimpleSQLDatabaseDescriptor,
     SimpleSQLQuery,
     simple_data_source_stream_factory,

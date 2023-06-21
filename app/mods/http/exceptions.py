@@ -3,6 +3,7 @@ from app.core_v1.exceptions import IDRClientError, TransientError
 
 class HTTPTransportError(IDRClientError):
     """Unknown error occurred while performing a HTTP Transport operation."""
+
     ...
 
 
@@ -10,6 +11,7 @@ class HTTPTransportTransientError(HTTPTransportError, TransientError):
     """
     Recoverable error occurred while performing a HTTP Transport operation.
     """
+
     ...
 
 

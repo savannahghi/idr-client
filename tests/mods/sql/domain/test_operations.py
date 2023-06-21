@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, cast
 
-from app.imp_v1.sql.domain import (
+from app.mods.sql.domain import (
     PDDataFrame,
     PDDataFrameDataSourceStream,
     SimpleSQLDatabase,

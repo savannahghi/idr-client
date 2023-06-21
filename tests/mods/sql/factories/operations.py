@@ -4,7 +4,7 @@ import factory
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 
-from app.imp_v1.sql.domain import (
+from app.mods.sql.domain import (
     SimpleSQLDatabase,
     simple_data_source_stream_factory,
 )

@@ -3,8 +3,8 @@ from functools import cache
 from typing import TYPE_CHECKING
 
 import app
-from app.imp_v1.common.domain import SimpleETLProtocol
-from app.imp_v1.http import (
+from app.mods.common.domain import SimpleETLProtocol
+from app.mods.http import (
     HTTPDataSink,
     HTTPMetadataSink,
     HTTPMetadataSource,
@@ -12,7 +12,7 @@ from app.imp_v1.http import (
     HTTPUploadMetadataFactory,
     SimpleHTTPDataSinkMetadata,
 )
-from app.imp_v1.sql import (
+from app.mods.sql import (
     PDDataFrame,
     SimpleSQLDatabase,
     SimpleSQLDatabaseDescriptor,

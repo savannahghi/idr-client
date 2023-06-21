@@ -11,7 +11,7 @@ from ..typings import ResponsePredicate
 
 
 def if_response_has_status_factory(
-        *http_status: int,
+    *http_status: int,
 ) -> ResponsePredicate:
     """Create a response predicate for responses with the given statuses.
 

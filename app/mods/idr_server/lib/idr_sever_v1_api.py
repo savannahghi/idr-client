@@ -10,7 +10,8 @@ from toolz import pipe
 from toolz.curried import map
 
 import app
-from app.imp_v1.http import (
+from app.lib.config import ImproperlyConfiguredError
+from app.mods.http import (
     HTTPAuthAPIDialect,
     HTTPDataSinkAPIDialect,
     HTTPMetadataSinkAPIDialect,
@@ -20,12 +21,11 @@ from app.imp_v1.http import (
     SimpleHTTPDataSinkMetadata,
     if_response_has_status_factory,
 )
-from app.imp_v1.sql.domain import (
+from app.mods.sql.domain import (
     SimpleSQLDatabaseDescriptor,
     SimpleSQLQuery,
     pd_data_frame_data_source_stream_factory,
 )
-from app.lib.config import ImproperlyConfiguredError
 
 from ..domain import IDRServerV1APIUploadMetadata, ParquetData
 
