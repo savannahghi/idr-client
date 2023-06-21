@@ -10,7 +10,7 @@ from sqlalchemy.engine import URL
 from sqlalchemy.sql.elements import TextClause
 from sqlalchemy.sql.selectable import SelectBase
 
-from app.core_v1.domain import (
+from app.core.domain import (
     BaseDataSourceMetadata,
     BaseExtractMetadata,
     DataSourceStream,

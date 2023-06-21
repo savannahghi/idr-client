@@ -20,7 +20,7 @@ from ..factories import (
 )
 
 if TYPE_CHECKING:
-    from app.core_v1.domain import DataSourceStream
+    from app.core.domain import DataSourceStream
 
 
 class TestSimpleSQLDatabase(TestCase):

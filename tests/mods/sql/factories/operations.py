@@ -8,7 +8,7 @@ from app.mods.sql.domain import (
     SimpleSQLDatabase,
     simple_data_source_stream_factory,
 )
-from tests.core_v1.factories import DataSourceFactory
+from tests.core.factories import DataSourceFactory
 
 # =============================================================================
 # TYPES

@@ -9,7 +9,7 @@ from app.mods.sql.domain import (
     SimpleSQLQuery,
     simple_data_source_stream_factory,
 )
-from tests.core_v1.factories import (
+from tests.core.factories import (
     DataSourceMetadataFactory,
     ExtractMetadataFactory,
 )

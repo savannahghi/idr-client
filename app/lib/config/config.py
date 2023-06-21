@@ -3,6 +3,7 @@ from collections.abc import Mapping, Sequence
 from logging import Logger
 from typing import Any, final
 
+from ..common_utils import type_fqn
 from .exceptions import MissingSettingError
 from .setting_initializer import SettingInitializer
 
@@ -49,9 +50,9 @@ class Config:
         appropriate value. The value is then set as the new value of the
         setting and will remain that way for the duration of the runtime of the
         app. If multiple initializers are given for the same setting, they are
-        executed in the given order with the output of the previous initializer
-        becoming the input of the next initializer. The output of the last
-        initializer is then set as the final value of the setting.
+        executed in the encounter order with the output of the previous
+        initializer becoming the input of the next initializer. The output of
+        the last initializer is then set as the final value of the setting.
 
         :param settings: The configurations/settings to use as a mapping.
         :param settings_initializers: Optional initializers to perform post
@@ -62,9 +63,7 @@ class Config:
             str,
             Sequence[SettingInitializer],
         ] = self._group_related_initializers(settings_initializers or ())
-        self._logger: Logger = logging.getLogger(
-            f"{self.__class__.__module__}.{self.__class__.__qualname__}",
-        )
+        self._logger: Logger = logging.getLogger(type_fqn(self.__class__))
         self._run_initializers()
 
     def __getattr__(self, setting: str) -> Any:  # noqa: ANN401

@@ -20,7 +20,15 @@ _RT = TypeVar("_RT")
 
 
 class Disposable(AbstractContextManager, metaclass=ABCMeta):
-    """Represents an entity that uses resources that need to be cleaned up."""
+    """An entity that uses resources that need to be cleaned up.
+
+    As such, this interface supports the
+    `context manager protocol <https://docs.python.org/3.11/library/stdtypes.html#typecontextmanager>`_
+    making its derivatives usable with Python's ``with`` statement.
+    Implementors should override the :meth:`dispose` method and define the
+    resource clean up logic. The :attr:`is_disposed` property can be used to
+    check whether an instance has been disposed.
+    """
 
     def __exit__(
         self,
@@ -28,6 +36,7 @@ class Disposable(AbstractContextManager, metaclass=ABCMeta):
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> bool | None:
+        super().__exit__(exc_type, exc_val, exc_tb)
         self.dispose()
         return False
 
@@ -45,17 +54,18 @@ class Disposable(AbstractContextManager, metaclass=ABCMeta):
 
     @abstractmethod
     def dispose(self) -> None:
-        """
-        Dispose this object releasing any underlying resources that it may
-        have.
+        """Release any underlying resources contained by this object.
+
+        After this method returns successfully, the :attr:`is_disposed`
+        property should return ``True``.
 
         .. note::
             Unless otherwise specified, trying to use other methods of this
             class on an instance after this method returns should generally be
             considered a programming error and should result in an exception
-            being raised. This method which should be idempotent allowing it
-            to be called more that once; only the first call, however, should
-            have an effect.
+            being raised. This method should be idempotent allowing it to be
+            called more that once; only the first call, however, should have an
+            effect.
 
         :return: None.
         """
@@ -63,22 +73,24 @@ class Disposable(AbstractContextManager, metaclass=ABCMeta):
 
 
 class InitFromMapping(metaclass=ABCMeta):
-    """
-    Represents objects that can initialize themselves from a serialized
-    mapping of their state.
+    """A type that can instantiate itself from a `Mapping` of it's state.
+
+    Derivatives of this interface can instantiate themselves from a serialized
+    mapping of their state. This can be achieved by calling the
+    :meth:`of_method` class method and passing a `Mapping` of the object's
+    state.
     """
 
     @classmethod
     @abstractmethod
-    def of_mapping(cls, mapping: Mapping[str, Any]) -> object:
-        """
-        Initialize an object given a mapping representing the object's state.
+    def of_mapping(cls, mapping: Mapping[str, Any]) -> "InitFromMapping":
+        """Initialize an object given a `Mapping` of its state.
 
         .. note::
             This method is defined as a class method to allow implementing
             classes to self initialize using this method.
 
-        :param mapping: A mapping containing/representing an object's state.
+        :param mapping: A `Mapping` containing/representing an object's state.
 
         :return: the initialized object.
         """
@@ -86,28 +98,32 @@ class InitFromMapping(metaclass=ABCMeta):
 
 
 class ToMapping(metaclass=ABCMeta):
-    """Represents objects that can serialize their state into a mapping.
+    """A type whose instances' state be serialized into a `Mapping`.
 
-    This mapping can then be used to initialize the object later.
+    Instances of this interface can call the :meth:`to_mapping` method to get a
+    `Mapping` of their states.
     """
 
     @abstractmethod
     def to_mapping(self) -> Mapping[str, Any]:
-        """
-        Serialize an object's state into a mapping and return that mapping.
+        """Serialize this object's state into a `Mapping` and return it.
 
-        :return: a mapping containing the object's state.
+        :return: a Mapping containing the object's state.
         """
         ...
 
 
 class ToTask(Generic[_IN, _RT], metaclass=ABCMeta):
-    """Represents an object that can create or be converted to a `Task`."""
+    """A type whose instances can create or be converted to a :class:`Task`.
+
+    Instances of this interface can call the :meth:`to_task` method to get a
+    `Task` representation of the instance.
+    """
 
     @abstractmethod
     def to_task(self) -> Task[_IN, _RT]:
         """Create and return a `Task` instance from this object.
 
-        :return: a task created from this object.
+        :return: a `Task` created from this object.
         """
         ...

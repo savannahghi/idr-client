@@ -1,6 +1,6 @@
 from attrs import define, field
 
-from app.core_v1.domain import BaseUploadMetadata
+from app.core.domain import BaseUploadMetadata
 
 
 @define(slots=True)

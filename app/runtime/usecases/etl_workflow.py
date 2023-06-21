@@ -5,7 +5,7 @@ from typing import Any
 from attrs import define, field
 
 from app.core import Task
-from app.core_v1.domain import (
+from app.core.domain import (
     CleanedData,
     DataSink,
     DataSinkStream,
@@ -18,7 +18,7 @@ from app.core_v1.domain import (
     UploadMetadata,
     UploadMetadataFactory,
 )
-from app.core_v1.exceptions import TransientError
+from app.core.exceptions import TransientError
 from app.lib import Retry, if_exception_type_factory
 
 # =============================================================================

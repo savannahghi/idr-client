@@ -12,12 +12,15 @@ from ..interfaces import (
 @define(slots=False)
 class BaseDomainObject(DomainObject, metaclass=ABCMeta):
     """Base skeletal implementation for most :class:`DomainObject` s."""
+
     ...
 
 
 @define(slots=False)
 class BaseIdentifiableDomainObject(
-    BaseDomainObject, IdentifiableDomainObject, metaclass=ABCMeta,
+    BaseDomainObject,
+    IdentifiableDomainObject,
+    metaclass=ABCMeta,
 ):
     """
     Base skeletal implementation for most :class:`IdentifiableDomainObject` s.
@@ -32,7 +35,9 @@ class BaseIdentifiableDomainObject(
 
 @define(slots=False)
 class BaseNamedDomainObject(
-    BaseDomainObject, NamedDomainObject, metaclass=ABCMeta,
+    BaseDomainObject,
+    NamedDomainObject,
+    metaclass=ABCMeta,
 ):
     """Base skeletal implementation for most :class:`NamedDomainObject` s."""
 

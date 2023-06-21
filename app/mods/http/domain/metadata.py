@@ -4,7 +4,7 @@ from typing import Any
 
 from attrs import define, field
 
-from app.core_v1.domain import BaseDataSinkMetadata
+from app.core.domain import BaseDataSinkMetadata
 
 from ..lib import HTTPDataSinkAPIDialect, if_request_accepted
 from ..typings import HTTPTransportFactory, ResponsePredicate

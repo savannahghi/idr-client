@@ -17,7 +17,7 @@ class SimpleUI(UI):
         import app
 
         app_dispatcher: dispatch.Dispatcher
-        app_dispatcher = app.registry_v1.get(APP_DISPATCHER_REG_KEY)
+        app_dispatcher = app.registry.get(APP_DISPATCHER_REG_KEY)
         app_dispatcher.connect(dispatch.AppPreStartSignal, self.on_app_start)
         app_dispatcher.connect(dispatch.AppPreStopSignal, self.on_app_stop)
         app_dispatcher.connect(

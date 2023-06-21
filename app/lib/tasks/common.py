@@ -23,21 +23,26 @@ class Chainable(
     Task[Callable[[_IN], _RT], "Chainable[_RT, Any]"],
 ):
     def __init__(self, value: _IN):
+        super().__init__()
         self._value: _IN = value
 
     @property
     def value(self) -> _IN:
         return self._value
 
-    def execute(self, bind: Callable[[_IN], _RT]) -> "Chainable[_RT, Any]":
+    def execute(
+        self,
+        an_input: Callable[[_IN], _RT],
+    ) -> "Chainable[_RT, Any]":
         from app.lib import ensure_not_none
 
-        ensure_not_none(bind, '"bind" cannot be None.')
-        return Chainable(bind(self._value))
+        ensure_not_none(an_input, '"bind" cannot be None.')
+        return Chainable(an_input(self._value))
 
 
 class Consumer(Generic[_IN], Task[_IN, _IN]):
     def __init__(self, consume: Callable[[_IN], None]):
+        super().__init__()
         from app.lib import ensure_not_none
 
         ensure_not_none(consume, "consume cannot be None.")
@@ -50,6 +55,7 @@ class Consumer(Generic[_IN], Task[_IN, _IN]):
 
 class Pipeline(Generic[_IN, _RT], Task[_IN, _RT]):
     def __init__(self, *tasks: Task[Any, Any]):
+        super().__init__()
         from app.lib import ensure_not_none_nor_empty
 
         ensure_not_none_nor_empty(tasks, "tasks cannot be None or empty.")

@@ -10,6 +10,7 @@ class DomainObject(metaclass=ABCMeta):  # noqa: B024
 
     All domain objects should implement this interface.
     """
+
     ...
 
 

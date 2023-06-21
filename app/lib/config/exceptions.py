@@ -1,7 +1,7 @@
-from app.core import IDRClientException
+from app.core import IDRClientError
 
 
-class ConfigurationError(IDRClientException):
+class ConfigurationError(IDRClientError):
     """Indicates a generic configuration error occurred."""
 
     def __init__(self, message: str | None = None):

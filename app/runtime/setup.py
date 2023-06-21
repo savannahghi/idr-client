@@ -5,7 +5,7 @@ from toolz import first, pipe
 from toolz.curried import groupby, map, valmap
 
 import app
-from app.core_v1.domain import ETLProtocol
+from app.core.domain import ETLProtocol
 from app.lib import (
     Config,
     ImproperlyConfiguredError,
@@ -71,7 +71,7 @@ def _etl_protocol_factory_to_instance(
 def _initialize_and_load_etl_protocols(
     etl_protocol_factories: Sequence[ETLProtocol_Factory],
 ) -> None:
-    app.registry_v1.etl_protocols = cast(
+    app.registry.etl_protocols = cast(
         Mapping[str, ETLProtocol],
         pipe(
             etl_protocol_factories,
@@ -141,7 +141,7 @@ def setup(
 
         initializers.insert(0, LoggingInitializer())
         initializers.insert(1, ETLProtocolInitializer())
-    app.registry_v1.log_level = log_level
+    app.registry.log_level = log_level
     # noinspection
     app.settings = Config(
         settings=settings_dict,

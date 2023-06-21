@@ -9,7 +9,7 @@ from requests.exceptions import RequestException
 from requests.models import PreparedRequest, Request, Response
 from requests.sessions import Session
 
-from app.core_v1 import Disposable
+from app.core import Disposable
 
 from ..exceptions import (
     HTTPTransportDisposedError,

@@ -66,5 +66,5 @@ class LoggingInitializer(SettingInitializer):
             an_input or DEFAULT_CONFIG[self.setting],
         )
         dictConfig(logging_config)
-        logging.getLogger("app").setLevel(app.registry_v1.log_level)
+        logging.getLogger("app").setLevel(app.registry.log_level)
         return logging_config

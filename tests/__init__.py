@@ -1,7 +1,8 @@
 from unittest import TestCase as _TestCase
 from unittest.mock import patch
 
-from app.lib import AppRegistry, Config
+from app.lib import AppRegistry as AppRegistry
+from app.lib import Config
 
 from .factories import config_factory as _cf
 

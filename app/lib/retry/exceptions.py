@@ -1,7 +1,7 @@
-from app.core import IDRClientException
+from app.core import IDRClientError
 
 
-class RetryError(IDRClientException):
+class RetryError(IDRClientError):
     """An exception used to indicate that a retry failed."""
 
     def __init__(

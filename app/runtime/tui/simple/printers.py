@@ -16,7 +16,7 @@ def print_info(message: str) -> None:
 
 
 def print_error(error_message: str, exception: BaseException | None) -> None:
-    verbosity: int = app.registry_v1.get(APP_VERBOSITY_REG_KEY, 0)
+    verbosity: int = app.registry.get(APP_VERBOSITY_REG_KEY, 0)
     click.echo(click.style(error_message, fg="red"), file=sys.stderr)
     match verbosity:
         case 1 if exception is not None:

@@ -43,7 +43,7 @@ class RichUI(UI):
         import app
 
         app_dispatcher: dispatch.Dispatcher
-        app_dispatcher = app.registry_v1.get(APP_DISPATCHER_REG_KEY)
+        app_dispatcher = app.registry.get(APP_DISPATCHER_REG_KEY)
         app_dispatcher.connect(dispatch.AppPreStartSignal, self.on_app_start)
         app_dispatcher.connect(dispatch.AppPreStopSignal, self.on_app_stop)
         app_dispatcher.connect(
@@ -96,13 +96,11 @@ class RichUI(UI):
         status_msg.upper()
 
         self._etl_proto_uis[signal.etl_protocol.id] = ETLProtocolUI(
-            etl_protocol=signal.etl_protocol,
-            console=self._console,
-            status=ProtocolRunStatus.RUNNING,
+            etl_protocol=signal.etl_protocol,  # pyright: ignore
+            console=self._console,  # pyright: ignore
+            status=ProtocolRunStatus.RUNNING,  # pyright: ignore
         )
         self._live_display.update(self._etl_proto_uis[signal.etl_protocol.id])
-        # gh self._app_run_status.update(status=f"[bright_yellow]{status_msg}")
-        # gh self._console.log(f"[bold cyan]{status_msg}")
 
     def on_etl_protocol_stop(
         self,

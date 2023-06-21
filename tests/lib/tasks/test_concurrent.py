@@ -187,7 +187,9 @@ class TestConcurrentModule(TestCase):
             len(
                 tuple(
                     filter(
-                        lambda _r: not completed_successfully(_r),
+                        lambda _r: not completed_successfully(
+                            _r,
+                        ),  # pyright: ignore
                         results3,
                     ),
                 ),

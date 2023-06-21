@@ -8,7 +8,7 @@ from attrs import define, field
 from toolz import compose, juxt
 
 from app.core import Task
-from app.core_v1.domain import (
+from app.core.domain import (
     DataSink,
     DataSinkMetadata,
     DataSource,
@@ -17,7 +17,7 @@ from app.core_v1.domain import (
     ExtractMetadata,
     MetadataSource,
 )
-from app.core_v1.exceptions import TransientError
+from app.core.exceptions import TransientError
 from app.lib import Retry, if_exception_type_factory
 from app.runtime.constants import APP_DISPATCHER_REG_KEY
 from app.runtime.utils import dispatch
@@ -84,7 +84,7 @@ class RunETLProtocol(Task[None, None]):
         import app
 
         app_dispatcher: dispatch.Dispatcher
-        app_dispatcher = app.registry_v1.get(APP_DISPATCHER_REG_KEY)
+        app_dispatcher = app.registry.get(APP_DISPATCHER_REG_KEY)
         with self._protocol_stack:
             for metadata_source in self._etl_protocol.metadata_sources:
                 self._data_sink_metas.extend(

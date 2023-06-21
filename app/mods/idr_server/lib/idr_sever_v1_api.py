@@ -270,8 +270,8 @@ class IDRServerV1API(
         from ..domain.etl_protocol import (
             _http_transport_factory,  # pyright: ignore
         )
-        from ..domain.etl_protocol import (
-            _idr_server_api_factory,  # pyright: ignore
+        from ..domain.etl_protocol import (  # ; pyright: ignore
+            _idr_server_api_factory,
         )
 
         return (

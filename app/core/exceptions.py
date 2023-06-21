@@ -1,8 +1,8 @@
-class IDRClientException(Exception):  # noqa: N818
-    """Base exception for most explicit exceptions raised by this app."""
+class IDRClientError(Exception):
+    """Base exception for most explicit exceptions raised by the client."""
 
     def __init__(self, message: str | None = None, *args):
-        """Initialize an ``IDRClientException`` with the given parameters.
+        """Initialize an ``IDRClientError`` with the given parameters.
 
         :param message: An optional error message.
         :param args: args to pass to forward to the base exception.
@@ -22,12 +22,14 @@ class IDRClientException(Exception):  # noqa: N818
         return self._message
 
 
-class ExtractionOperationError(IDRClientException):
+class ExtractionOperationError(IDRClientError):
     """
     An exception indicating that some error occurred during data extraction
     from a ``DataSource`` or while attempting to perform operations on/against
     a ``DataSource``.
     """
+
+    ...
 
 
 class DataSourceDisposedError(ExtractionOperationError):
@@ -49,23 +51,11 @@ class DataSourceDisposedError(ExtractionOperationError):
         super().__init__(message, *args)
 
 
-class TransportError(IDRClientException):
-    """
-    An exception indicating that some error occurred during transport of data
-    from the client to an IDR Server or vice versa.
-    """
+class TransientError(IDRClientError):
+    """A recoverable error occurred.
 
-
-class TransportClosedError(TransportError):
-    """
-    An exception indicating that an erroneous usage of a closed transport was
-    made.
+    Operations that raise these types of errors are good candidates to be
+    retried using the :class:`app.lib.Retry` decorator.
     """
 
-    def __init__(self, message: str | None = "Transport closed.", *args):
-        """Initialize a ``TransportClosedError`` with the given parameters.
-
-        :param message: An optional error message.
-        :param args: args to pass to forward to the base exception.
-        """
-        super().__init__(message, *args)
+    ...

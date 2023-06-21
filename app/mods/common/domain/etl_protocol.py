@@ -3,7 +3,7 @@ from typing import Generic, TypeVar
 
 from attrs import define, field
 
-from app.core_v1.domain import (
+from app.core.domain import (
     BaseIdentifiableDomainObject,
     BaseNamedDomainObject,
     CleanedData,

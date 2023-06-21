@@ -5,7 +5,7 @@ from typing import Any, Generic, TypeVar
 from requests.auth import AuthBase
 from requests.models import Request, Response
 
-from app.core_v1 import (
+from app.core import (
     CleanedData,
     DataSinkMetadata,
     DataSourceMetadata,

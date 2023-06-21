@@ -1,14 +1,16 @@
-from collections.abc import Callable, Mapping
+import logging
+from collections.abc import Mapping
+from typing import Any
 
-from app.core import DataSourceType, Transport
+from app.core.domain import ETLProtocol
 
-from .config import ImproperlyConfiguredError
+from .checkers import ensure_not_none
 
 # =============================================================================
 # TYPES
 # =============================================================================
 
-DefaultTransportFactory = Callable[[], Transport]
+_LogLevel = int | str
 
 
 # =============================================================================
@@ -17,85 +19,52 @@ DefaultTransportFactory = Callable[[], Transport]
 
 
 class AppRegistry:
-    """
-    This class provides lookup functionality to important resources and
-    services needed within the app. At runtime, an instance of this class can
-    be accessed at `app.registry`.
+    """Application registry.
+
+    This class provides lookup functionality for important resources and
+    services at runtime as well as a means to change the values for these
+    resources at runtime.
+
+    At runtime, an instance of this class can be accessed using the
+    :attr:`app.registry` property.
     """
 
     def __init__(self):
-        self._data_source_types: dict[str, DataSourceType] = {}
-        self._default_transport_factory: DefaultTransportFactory | None
-        self._default_transport_factory = None
+        super().__init__()
+        self._etl_protocols: dict[str, ETLProtocol] = {}
+        self._log_level: _LogLevel = logging.NOTSET
+        self._items: dict[str, Any] = {}
 
     @property
-    def data_source_types(self) -> Mapping[str, DataSourceType]:
-        """
-        Return a readonly mapping of the data source types supported by the
-        app.
+    def etl_protocols(self) -> Mapping[str, ETLProtocol]:
+        return self._etl_protocols
 
-        :return: A readonly mapping of the data source types supported by the
-            app.
-        """
-        return self._data_source_types
-
-    @data_source_types.setter
-    def data_source_types(
+    @etl_protocols.setter
+    def etl_protocols(
         self,
-        data_source_types: Mapping[str, DataSourceType],
+        etl_protocols: Mapping[str, ETLProtocol],
     ) -> None:
-        """Set the data sources supported by the app.
-
-        :param data_source_types: A readonly mapping of the data source types
-            supported by the app.
-
-        :return: None.
-        """
-        self._data_source_types = dict(**data_source_types)
+        self._etl_protocols = dict(
+            ensure_not_none(
+                etl_protocols,
+                message='"etl_protocols" must not be None.',
+            ),
+        )
 
     @property
-    def default_transport_factory(self) -> DefaultTransportFactory | None:
-        """Return the default transport factory for the app if set.
+    def log_level(self) -> _LogLevel:
+        return self._log_level
 
-        :return: The default transport factory for the app if set or ``None``
-            otherwise.
-        """
-        return self._default_transport_factory
+    @log_level.setter
+    def log_level(self, log_level: _LogLevel) -> None:
+        self._log_level = ensure_not_none(
+            log_level,
+            message='"log_level" must not be None.',
+        )
+        logging.getLogger("app").setLevel(self._log_level)
 
-    @default_transport_factory.setter
-    def default_transport_factory(
-        self,
-        transport_factory: DefaultTransportFactory,
-    ) -> None:
-        """Set the default transport factory for the app.
+    def get(self, key: str, default: Any = None) -> Any:  # noqa: ANN401
+        return self._items.get(key, default)
 
-        :param transport_factory: The transport factory to set as the default
-            for the app.
-
-        :return: None.
-        """
-        self._default_transport_factory = transport_factory
-
-    def get_default_transport_factory_or_raise(
-        self,
-        error_message: str | None = None,
-    ) -> DefaultTransportFactory:
-        """
-        Returns the default transport factory if set or raise an
-        :class:`ImproperlyConfiguredError` otherwise. An optional error message
-        can be provided to be used as the exception message.
-
-        :param error_message: An optional error message to be used as the
-            exception message.
-
-        :return: The default transport factory for the app.
-
-        :raise ImproperlyConfiguredError: If the default transport factory for
-            the app has not been set.
-        """
-        if not self.default_transport_factory:
-            _err_msg: str = error_message or (
-                "The default transport factor has not been set."
-            )
-            raise ImproperlyConfiguredError(message=_err_msg)
-        return self.default_transport_factory
+    def set(self, key: str, value: Any) -> None:  # noqa: A003, ANN401
+        self._items[key] = value

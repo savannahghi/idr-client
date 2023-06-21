@@ -50,7 +50,7 @@ def _configure_runtime(
     from .setup import setup
 
     try:
-        app.registry_v1.set(APP_VERBOSITY_REG_KEY, verbosity)
+        app.registry.set(APP_VERBOSITY_REG_KEY, verbosity)
 
         config_contents: Mapping[str, Any] | None = (
             load_config_file(
@@ -207,7 +207,7 @@ def main(
     :return: None.
     """
     app_dispatcher: dispatch.Dispatcher = dispatch.Dispatcher()
-    app.registry_v1.set(APP_DISPATCHER_REG_KEY, app_dispatcher)
+    app.registry.set(APP_DISPATCHER_REG_KEY, app_dispatcher)
 
     _set_ui(preferred_ui=ui).start()
 

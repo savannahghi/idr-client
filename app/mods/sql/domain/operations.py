@@ -8,7 +8,7 @@ import pandas as pd
 from attrs import define, field
 from sqlalchemy import Connection, CursorResult, Engine, Row, create_engine
 
-from app.core_v1.domain import (
+from app.core.domain import (
     BaseData,
     BaseDataSource,
     BaseDataSourceStream,
@@ -189,7 +189,7 @@ class SimpleSQLDatabase(
     Generic[_RD],
 ):
     """Simple implementation of an SQL database as a
-    :class:`~app.core_v1.domain.DataSource`.
+    :class:`~app.core.domain.DataSource`.
     """
 
     @classmethod

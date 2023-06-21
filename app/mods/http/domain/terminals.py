@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from attrs import define, field
 
-from app.core_v1 import (
+from app.core import (
     BaseMetadataSink,
     BaseMetadataSource,
     BaseUploadMetadataFactory,

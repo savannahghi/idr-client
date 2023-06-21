@@ -8,7 +8,7 @@ from typing import Any
 
 import wrapt
 
-from app.core import IDRClientException
+from app.core import IDRClientError
 
 from .constants import (
     DEFAULT_DEADLINE,
@@ -57,7 +57,7 @@ def if_idr_exception(exp: BaseException) -> bool:
     :return: ``True`` if the given exception is an ``IDRClientException``,
         ``False`` otherwise.
     """
-    return if_exception_type_factory(IDRClientException)(exp)
+    return if_exception_type_factory(IDRClientError)(exp)
 
 
 # =============================================================================
@@ -101,6 +101,7 @@ class Retry:
             is made.
         """
 
+        super().__init__()
         self._predicate: Predicate = predicate
         self._initial_delay: float = initial_delay  # type: ignore
         self._maximum_delay: float = maximum_delay  # type: ignore
@@ -269,22 +270,22 @@ class Retry:
 
         retry_config: RetryConfig = settings.get("RETRY", DEFAULT_RETRY_CONFIG)
 
-        self._initial_delay = (  # type: ignore
-            self._initial_delay
-            or retry_config.get("default_initial_delay", DEFAULT_INITIAL_DELAY)
+        self._initial_delay = self._initial_delay or retry_config.get(
+            "default_initial_delay",
+            DEFAULT_INITIAL_DELAY,
         )
-        self._maximum_delay: float = (  # type: ignore
-            self._maximum_delay
-            or retry_config.get("default_maximum_delay", DEFAULT_MAXIMUM_DELAY)
+        self._maximum_delay: float = self._maximum_delay or retry_config.get(
+            "default_maximum_delay",
+            DEFAULT_MAXIMUM_DELAY,
         )
-        self._multiplicative_factor: float = (  # type: ignore
+        self._multiplicative_factor: float = (
             self._multiplicative_factor
             or retry_config.get(
                 "default_multiplicative_factor",
                 DEFAULT_MULTIPLICATIVE_FACTOR,
             )
         )
-        self._deadline: float | None = self._kwargs.get(  # type: ignore
+        self._deadline: float | None = self._kwargs.get(
             "deadline",
             retry_config.get("default_deadline", DEFAULT_DEADLINE),
         )

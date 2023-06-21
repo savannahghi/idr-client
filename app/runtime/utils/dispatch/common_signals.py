@@ -2,7 +2,7 @@ from typing import Any
 
 from attrs import field, frozen
 
-from app.core_v1.domain import ETLProtocol, ExtractMetadata
+from app.core.domain import ETLProtocol, ExtractMetadata
 
 from .dispatcher import Signal
 

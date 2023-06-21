@@ -10,8 +10,8 @@ def start() -> None:
     """Entry point for running all use-cases."""
 
     app_dispatcher: dispatch.Dispatcher
-    app_dispatcher = app.registry_v1.get(APP_DISPATCHER_REG_KEY)
-    for etl_protocol in app.registry_v1.etl_protocols.values():
+    app_dispatcher = app.registry.get(APP_DISPATCHER_REG_KEY)
+    for etl_protocol in app.registry.etl_protocols.values():
         app_dispatcher.send(dispatch.PreETLProtocolRunSignal(etl_protocol))
         RunETLProtocol(etl_protocol).execute(None)
         app_dispatcher.send(dispatch.PostETLProtocolRunSignal(etl_protocol))

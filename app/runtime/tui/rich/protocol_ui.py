@@ -15,7 +15,7 @@ from rich.spinner import Spinner
 from rich.table import Table
 from rich.text import Text
 
-from app.core_v1.domain import ETLProtocol, ExtractMetadata
+from app.core.domain import ETLProtocol, ExtractMetadata
 
 from .console import CONSOLE
 

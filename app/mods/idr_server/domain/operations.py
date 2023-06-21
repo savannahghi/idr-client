@@ -4,7 +4,7 @@ from logging import Logger
 
 from attrs import define, field
 
-from app.core_v1.domain import BaseData, CleanedData, ExtractProcessor
+from app.core.domain import BaseData, CleanedData, ExtractProcessor
 from app.mods.sql.domain import PDDataFrame, SimpleSQLQuery
 
 

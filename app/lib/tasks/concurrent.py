@@ -4,7 +4,7 @@ from functools import reduce
 from logging import getLogger
 from typing import Any, Generic, TypeVar
 
-from app.core import Disposable, IDRClientException, Task
+from app.core import Disposable, IDRClientError, Task
 
 # =============================================================================
 # TYPES
@@ -52,7 +52,7 @@ def completed_successfully(future: Future[Any]) -> bool:
     )
 
 
-class ConcurrentExecutorDisposedError(IDRClientException):
+class ConcurrentExecutorDisposedError(IDRClientError):
     """
     An exception indicating that an erroneous usage of a disposed
     :class:`concurrent executor <ConcurrentExecutor>` was made.
@@ -115,6 +115,7 @@ class ConcurrentExecutor(
             instance to use when executing the tasks. A ``ThreadPoolExecutor``
             is used by default when one isn't provided.
         """
+        super().__init__()
         self._tasks: Sequence[Task[_IN, _RT]] = tuple(tasks)
         self._accumulator: Accumulator = (
             accumulator or self._default_accumulator
@@ -126,6 +127,7 @@ class ConcurrentExecutor(
 
     def __enter__(self) -> "ConcurrentExecutor":
         self._ensure_not_disposed()
+        super().__enter__()
         return self
 
     @property

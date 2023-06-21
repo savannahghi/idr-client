@@ -1,26 +1,36 @@
 from abc import ABCMeta, abstractmethod
 from typing import Generic, TypeVar
 
-IN = TypeVar("IN")
-RT = TypeVar("RT")
+_IN = TypeVar("_IN")
+_RT = TypeVar("_RT")
 
 
-class Task(Generic[IN, RT], metaclass=ABCMeta):
-    """Interface that describes a job or action to perform."""
+class Task(Generic[_IN, _RT], metaclass=ABCMeta):
+    """A job or action to perform.
 
-    def __call__(self, an_input: IN) -> RT:
-        """
-        Allow calling tasks as callables.
+    An interface that describes a job or action to be performed. The interface
+    defines a single method :meth:`execute`, that accepts a single input value
+    and returns a result. A `Task` instance can also be used as a callable, the
+    actual call is delegated to `self.execute` method.
+    """
 
-        Delegates actual call to `self.execute`.
+    def __call__(self, an_input: _IN) -> _RT:
+        """Perform a computation given an input and return a result.
+
+        Call the `Task` as a callable. Delegate actual call to :meth:`execute`.
+
+        :param an_input: An input to the task.
+
+        :return: The result of the computation.
         """
         return self.execute(an_input)
 
     @abstractmethod
-    def execute(self, an_input: IN) -> RT:
+    def execute(self, an_input: _IN) -> _RT:
         """Perform a computation given an input and return a result.
 
         :param an_input: An input to the task.
+
         :return: The result of the computation.
         """
         ...

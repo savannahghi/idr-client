@@ -1,4 +1,4 @@
-from app.core_v1.exceptions import IDRClientError, TransientError
+from app.core.exceptions import IDRClientError, TransientError
 
 
 class HTTPTransportError(IDRClientError):
