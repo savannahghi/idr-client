@@ -2,7 +2,7 @@
 ETL Protocol Definition.
 """
 from abc import ABCMeta, abstractmethod
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
 from typing import Generic, TypeVar
 
 from .base import IdentifiableDomainObject, NamedDomainObject
@@ -71,12 +71,12 @@ class ETLProtocol(
 
     @property
     @abstractmethod
-    def metadata_sinks(self) -> Iterable[MetadataConsumer[_UM]]:
+    def metadata_consumer(self) -> MetadataConsumer[_UM]:
         ...
 
     @property
     @abstractmethod
-    def metadata_sources(self) -> Iterable[MetadataSupplier[_DS, _DM, _EM]]:
+    def metadata_supplier(self) -> MetadataSupplier[_DS, _DM, _EM]:
         ...
 
     @property

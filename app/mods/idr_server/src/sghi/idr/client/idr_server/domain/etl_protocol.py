@@ -1,8 +1,7 @@
-from collections.abc import Iterable, Mapping
+from collections.abc import Mapping
 from functools import cache
 from typing import TYPE_CHECKING
 
-import sghi.idr.client.core as app
 from sghi.idr.client.common.domain import SimpleETLProtocol
 from sghi.idr.client.http import (
     HTTPDataSink,
@@ -18,6 +17,8 @@ from sghi.idr.client.sql import (
     SimpleSQLDatabaseDescriptor,
     SimpleSQLQuery,
 )
+
+import sghi.idr.client.core as app
 
 from .metadata import IDRServerV1APIUploadMetadata
 from .operations import IDRServerExtractProcessor, ParquetData
@@ -63,36 +64,6 @@ def _idr_server_api_factory() -> "IDRServerV1API":
     )
 
 
-def _metadata_sinks_supplier() -> (
-    Iterable[HTTPMetadataConsumer[IDRServerV1APIUploadMetadata]]
-):
-    return (
-        HTTPMetadataConsumer(
-            name="FyJ IDR Server Metadata Sink",  # pyright: ignore
-            api_dialect=_idr_server_api_factory(),  # pyright: ignore
-            transport=_http_transport_factory(),  # pyright: ignore
-        ),
-    )
-
-
-def _metadata_sources_supplier() -> (
-    Iterable[
-        HTTPMetadataSupplier[
-            SimpleHTTPDataSinkMetadata,
-            SimpleSQLDatabaseDescriptor,
-            SimpleSQLQuery,
-        ]
-    ]
-):
-    return (
-        HTTPMetadataSupplier(  # pyright: ignore
-            name="FyJ IDR Server Metadata Source",  # pyright: ignore
-            api_dialect=_idr_server_api_factory(),  # pyright: ignore
-            transport=_http_transport_factory(),  # pyright: ignore
-        ),
-    )
-
-
 def fyj_cbs_etl_protocol_factory() -> FYJCBSETLProtocol:
     return SimpleETLProtocol(
         id="fyj-cbs",
@@ -101,8 +72,16 @@ def fyj_cbs_etl_protocol_factory() -> FYJCBSETLProtocol:
         data_sink_factory=HTTPDataSink.from_data_sink_meta,
         data_source_factory=SimpleSQLDatabase.from_data_source_meta,
         extract_processor_factory=IDRServerExtractProcessor,
-        metadata_sinks=_metadata_sinks_supplier(),
-        metadata_sources=_metadata_sources_supplier(),
+        metadata_consumer=HTTPMetadataConsumer(
+            name="FyJ IDR Server Metadata Consumer",  # pyright: ignore
+            api_dialect=_idr_server_api_factory(),  # pyright: ignore
+            transport=_http_transport_factory(),  # pyright: ignore
+        ),
+        metadata_supplier=HTTPMetadataSupplier(  # pyright: ignore
+            name="FyJ IDR Server Metadata Supplier",  # pyright: ignore
+            api_dialect=_idr_server_api_factory(),  # pyright: ignore
+            transport=_http_transport_factory(),  # pyright: ignore
+        ),
         upload_metadata_factory=HTTPUploadMetadataFactory(  # pyright: ignore
             api_dialect=_idr_server_api_factory(),  # pyright: ignore
             transport=_http_transport_factory(),  # pyright: ignore

@@ -1,7 +1,8 @@
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
 from typing import Generic, TypeVar
 
 from attrs import define, field
+
 from sghi.idr.client.core.domain import (
     BaseIdentifiableDomainObject,
     BaseNamedDomainObject,
@@ -52,8 +53,8 @@ class SimpleETLProtocol(
         [],
         ExtractProcessor[_EM, _RD, _CD],
     ] = field()
-    _metadata_sinks: Iterable[MetadataConsumer[_UM]] = field()
-    _metadata_sources: Iterable[MetadataSupplier[_DS, _DM, _EM]] = field()
+    _metadata_consumer: MetadataConsumer[_UM] = field()
+    _metadata_supplier: MetadataSupplier[_DS, _DM, _EM] = field()
     _upload_metadata_factory: UploadMetadataFactory[_UM, _EM] = field()
 
     @property
@@ -71,12 +72,12 @@ class SimpleETLProtocol(
         return self._extract_processor_factory
 
     @property
-    def metadata_sinks(self) -> Iterable[MetadataConsumer[_UM]]:
-        return self._metadata_sinks
+    def metadata_consumer(self) -> MetadataConsumer[_UM]:
+        return self._metadata_consumer
 
     @property
-    def metadata_sources(self) -> Iterable[MetadataSupplier[_DS, _DM, _EM]]:
-        return self._metadata_sources
+    def metadata_supplier(self) -> MetadataSupplier[_DS, _DM, _EM]:
+        return self._metadata_supplier
 
     @property
     def upload_metadata_factory(self) -> UploadMetadataFactory[_UM, _EM]:

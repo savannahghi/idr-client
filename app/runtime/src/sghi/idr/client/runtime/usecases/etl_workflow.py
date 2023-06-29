@@ -3,6 +3,7 @@ from contextlib import ExitStack
 from typing import Any
 
 from attrs import define, field
+
 from sghi.idr.client.core.domain import (
     CleanedData,
     DataSink,
@@ -51,10 +52,10 @@ def _do_consume(
 
 @Retry(predicate=_if_idr_transient_exception)
 def _do_consume_upload_meta(
-    metadata_sink: MetadataConsumer,
+    metadata_consumer: MetadataConsumer,
     upload_meta: UploadMetadata,
 ) -> None:
-    metadata_sink.consume_upload_meta(upload_meta=upload_meta)
+    metadata_consumer.consume_upload_meta(upload_meta=upload_meta)
 
 
 @Retry(predicate=_if_idr_transient_exception)
@@ -107,7 +108,7 @@ class ETLWorkflow(Task[ExtractMetadata, None]):
         ExtractProcessor[Any, Any, Any],
     ] = field()
     _upload_metadata_factory: UploadMetadataFactory[Any, Any] = field()
-    _metadata_sinks: Iterable[MetadataConsumer[Any]] = field()
+    _metadata_consumer: MetadataConsumer[Any] = field()
     _data_sinks: Iterable[DataSink[Any, Any, Any]] = field()
 
     def execute(self, an_input: ExtractMetadata) -> None:
@@ -136,12 +137,8 @@ class ETLWorkflow(Task[ExtractMetadata, None]):
                 extract_metadata=an_input,
                 drain_streams=drain_streams,
             )
-            self._drain_upload_metadata(upload_meta)
-
-    def _drain_upload_metadata(self, upload_meta: UploadMetadata) -> None:
-        for meta_sink in self._metadata_sinks:
             _do_consume_upload_meta(
-                metadata_sink=meta_sink,
+                metadata_consumer=self._metadata_consumer,
                 upload_meta=upload_meta,
             )
 
