@@ -3,7 +3,6 @@ from contextlib import ExitStack
 from typing import Any
 
 from attrs import define, field
-
 from sghi.idr.client.core.domain import (
     CleanedData,
     DataSink,
@@ -51,14 +50,6 @@ def _do_consume(
 
 
 @Retry(predicate=_if_idr_transient_exception)
-def _do_consume_upload_meta(
-    metadata_consumer: MetadataConsumer,
-    upload_meta: UploadMetadata,
-) -> None:
-    metadata_consumer.consume_upload_meta(upload_meta=upload_meta)
-
-
-@Retry(predicate=_if_idr_transient_exception)
 def _do_extract(
     data_source_stream: DataSourceStream[Any, Any],
 ) -> tuple[RawData[Any], float]:
@@ -91,6 +82,14 @@ def _do_start_extraction(
     extract_metadata: ExtractMetadata,
 ) -> DataSourceStream[Any, Any]:
     return data_source.start_extraction(extract_metadata=extract_metadata)
+
+
+@Retry(predicate=_if_idr_transient_exception)
+def _do_take_upload_meta(
+    metadata_consumer: MetadataConsumer,
+    upload_meta: UploadMetadata,
+) -> None:
+    metadata_consumer.take_upload_meta(upload_meta=upload_meta)
 
 
 # =============================================================================
@@ -137,7 +136,7 @@ class ETLWorkflow(Task[ExtractMetadata, None]):
                 extract_metadata=an_input,
                 drain_streams=drain_streams,
             )
-            _do_consume_upload_meta(
+            _do_take_upload_meta(
                 metadata_consumer=self._metadata_consumer,
                 upload_meta=upload_meta,
             )

@@ -66,16 +66,16 @@ class HTTPMetadataConsumer(BaseMetadataConsumer[_UM], Generic[_UM]):
         self._transport.dispose()
         self._logger.debug("Disposal complete.")
 
-    def consume_upload_meta(self, upload_meta: _UM) -> None:
-        self._logger.info('Consume upload metadata "%s".', upload_meta)
-        req: Request = self._api_dialect.consume_upload_meta_request_factory(
+    def take_upload_meta(self, upload_meta: _UM) -> None:
+        self._logger.info('Accept upload metadata "%s".', upload_meta)
+        req: Request = self._api_dialect.take_upload_meta_request_factory(
             upload_meta=upload_meta,
         )
         res: Response = self._transport.make_request(
             request=req,
             valid_response_predicate=self._valid_response_predicate,
         )
-        return self._api_dialect.handle_consume_upload_meta_response(
+        return self._api_dialect.handle_take_upload_meta_response(
             response=res,
             upload_meta=upload_meta,
         )

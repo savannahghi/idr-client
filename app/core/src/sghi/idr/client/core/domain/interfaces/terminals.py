@@ -34,12 +34,12 @@ class MetadataConsumer(
 ):
     """Upload/Drain related metadata consumer.
 
-    An interface representing entities that consume metadata relating to
+    An interface representing entities that take/accept metadata relating to
     uploaded/drained data.
     """
 
     @abstractmethod
-    def consume_upload_meta(self, upload_meta: _UM) -> None:
+    def take_upload_meta(self, upload_meta: _UM) -> None:
         """
 
         :param upload_meta:

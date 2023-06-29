@@ -7,6 +7,15 @@ from requests import Request, Response
 from requests.auth import AuthBase, HTTPBasicAuth
 from requests.models import PreparedRequest
 from sghi.idr.client.core.lib.config import ImproperlyConfiguredError
+from sghi.idr.client.sql.domain import (
+    SimpleSQLDatabaseDescriptor,
+    SimpleSQLQuery,
+    pd_data_frame_data_source_stream_factory,
+)
+from sqlalchemy.engine.url import URL
+from toolz import pipe
+from toolz.curried import map
+
 from sghi.idr.client.http import (
     HTTPAuthAPIDialect,
     HTTPDataSinkAPIDialect,
@@ -17,14 +26,6 @@ from sghi.idr.client.http import (
     SimpleHTTPDataSinkMetadata,
     if_response_has_status_factory,
 )
-from sghi.idr.client.sql.domain import (
-    SimpleSQLDatabaseDescriptor,
-    SimpleSQLQuery,
-    pd_data_frame_data_source_stream_factory,
-)
-from sqlalchemy.engine.url import URL
-from toolz import pipe
-from toolz.curried import map
 
 from ..domain import IDRServerV1APIUploadMetadata, ParquetData
 
@@ -196,7 +197,7 @@ class IDRServerV1API(
 
     # HTTP METADATA SINK API DIALECT IMPLEMENTATION
     # -------------------------------------------------------------------------
-    def consume_upload_meta_request_factory(
+    def take_upload_meta_request_factory(
         self,
         upload_meta: IDRServerV1APIUploadMetadata,
     ) -> Request:
@@ -220,7 +221,7 @@ class IDRServerV1API(
             ),
         )
 
-    def handle_consume_upload_meta_response(
+    def handle_take_upload_meta_response(
         self,
         response: Response,
         upload_meta: IDRServerV1APIUploadMetadata,
@@ -266,8 +267,10 @@ class IDRServerV1API(
     ) -> Iterable[SimpleHTTPDataSinkMetadata]:
         response.close()
         # TODO: Revisit this!!!
-        from ..domain.etl_protocol import (  # ; pyright: ignore
+        from ..domain.etl_protocol import (
             _http_transport_factory,  # pyright: ignore
+        )
+        from ..domain.etl_protocol import (  # ; pyright: ignore
             _idr_server_api_factory,
         )
 

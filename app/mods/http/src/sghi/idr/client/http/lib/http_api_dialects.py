@@ -146,7 +146,7 @@ class HTTPMetadataConsumerAPIDialect(
     # REQUEST FACTORIES
     # -------------------------------------------------------------------------
     @abstractmethod
-    def consume_upload_meta_request_factory(
+    def take_upload_meta_request_factory(
         self,
         upload_meta: _UM,
     ) -> Request:
@@ -161,7 +161,7 @@ class HTTPMetadataConsumerAPIDialect(
     # RESPONSE HANDLERS
     # -------------------------------------------------------------------------
     @abstractmethod
-    def handle_consume_upload_meta_response(
+    def handle_take_upload_meta_response(
         self,
         response: Response,
         upload_meta: _UM,
