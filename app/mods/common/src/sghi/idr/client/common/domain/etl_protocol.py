@@ -2,7 +2,6 @@ from collections.abc import Callable
 from typing import Generic, TypeVar
 
 from attrs import define, field
-
 from sghi.idr.client.core.domain import (
     BaseIdentifiableDomainObject,
     BaseNamedDomainObject,

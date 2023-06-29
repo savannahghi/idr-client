@@ -1,21 +1,15 @@
+from __future__ import annotations
+
 from collections.abc import Iterable, Mapping
-from typing import Any, Final, Literal, TypedDict, cast
+from functools import cache
+from typing import TYPE_CHECKING, Any, Final, Literal, TypedDict, cast
 
 import sghi.idr.client.core as app
 from attrs import define, field, frozen
 from requests import Request, Response
 from requests.auth import AuthBase, HTTPBasicAuth
-from requests.models import PreparedRequest
+from sghi.idr.client import core
 from sghi.idr.client.core.lib.config import ImproperlyConfiguredError
-from sghi.idr.client.sql.domain import (
-    SimpleSQLDatabaseDescriptor,
-    SimpleSQLQuery,
-    pd_data_frame_data_source_stream_factory,
-)
-from sqlalchemy.engine.url import URL
-from toolz import pipe
-from toolz.curried import map
-
 from sghi.idr.client.http import (
     HTTPAuthAPIDialect,
     HTTPDataSinkAPIDialect,
@@ -26,8 +20,21 @@ from sghi.idr.client.http import (
     SimpleHTTPDataSinkMetadata,
     if_response_has_status_factory,
 )
+from sghi.idr.client.http.lib.http_transport import HTTPTransport
+from sghi.idr.client.sql.domain import (
+    SimpleSQLDatabaseDescriptor,
+    SimpleSQLQuery,
+    pd_data_frame_data_source_stream_factory,
+)
+from toolz import pipe
+from toolz.curried import map
 
 from ..domain import IDRServerV1APIUploadMetadata, ParquetData
+
+if TYPE_CHECKING:
+    from requests.models import PreparedRequest
+    from sqlalchemy.engine.url import URL
+
 
 # =============================================================================
 # TYPES
@@ -75,10 +82,6 @@ _POST_METHOD: Final[str] = "POST"
 # =============================================================================
 
 
-def _if_un_authenticated_response(response: Response) -> bool:
-    return if_response_has_status_factory(401)(response)
-
-
 def _get_db_instance_url(db_instance_name: str) -> URL:
     if db_instance_name not in app.settings.DATABASE_INSTANCES:
         _err_msg: str = 'No such db instance "{}" configured.'.format(
@@ -86,6 +89,36 @@ def _get_db_instance_url(db_instance_name: str) -> URL:
         )
         raise ImproperlyConfiguredError(message=_err_msg)
     return app.settings.DATABASE_INSTANCES.get(db_instance_name).db_url
+
+
+def _if_un_authenticated_response(response: Response) -> bool:
+    return if_response_has_status_factory(401)(response)
+
+
+def http_transport_factory() -> HTTPTransport:
+    http_transport_settings: Mapping[str, int | float]
+    http_transport_settings = core.settings.get("HTTP_TRANSPORT", {})
+    return HTTPTransport(
+        auth_api_dialect=idr_server_api_factory(),  # pyright: ignore
+        connect_timeout=http_transport_settings.get(  # pyright: ignore
+            "connect_timeout",
+            60,
+        ),
+        read_timeout=http_transport_settings.get(  # pyright: ignore
+            "read_timeout",
+            60,
+        ),
+    )
+
+
+@cache
+def idr_server_api_factory() -> IDRServerV1API:
+    idr_server_settings: Mapping[str, str] = core.settings.IDR_SERVER_SETTINGS
+    return IDRServerV1API(
+        server_url=idr_server_settings["host"],  # pyright: ignore
+        username=idr_server_settings["username"],  # pyright: ignore
+        password=idr_server_settings["password"],  # pyright: ignore
+    )
 
 
 @frozen
@@ -266,20 +299,12 @@ class IDRServerV1API(
         response: Response,
     ) -> Iterable[SimpleHTTPDataSinkMetadata]:
         response.close()
-        # TODO: Revisit this!!!
-        from ..domain.etl_protocol import (
-            _http_transport_factory,  # pyright: ignore
-        )
-        from ..domain.etl_protocol import (  # ; pyright: ignore
-            _idr_server_api_factory,
-        )
-
         return (
             SimpleHTTPDataSinkMetadata(
                 id="fyj-cbs-http-data-sink",  # pyright: ignore
                 name="FyJ CBS HTTP Data Sink",  # pyright: ignore
-                api_dialect_factory=_idr_server_api_factory,  # pyright: ignore
-                transport_factory=_http_transport_factory,  # pyright: ignore
+                api_dialect_factory=idr_server_api_factory,  # pyright: ignore
+                transport_factory=http_transport_factory,  # pyright: ignore
             ),
         )
 

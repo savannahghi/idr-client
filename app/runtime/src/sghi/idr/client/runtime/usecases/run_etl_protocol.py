@@ -5,10 +5,6 @@ from contextlib import ExitStack
 from typing import Any
 
 from attrs import define, field
-from sghi.idr.client.runtime.constants import APP_DISPATCHER_REG_KEY
-from sghi.idr.client.runtime.utils import dispatch
-from toolz import compose, juxt
-
 from sghi.idr.client.core.domain import (
     DataSink,
     DataSinkMetadata,
@@ -21,6 +17,9 @@ from sghi.idr.client.core.domain import (
 from sghi.idr.client.core.exceptions import TransientError
 from sghi.idr.client.core.lib import Retry, if_exception_type_factory
 from sghi.idr.client.core.task import Task
+from sghi.idr.client.runtime.constants import APP_DISPATCHER_REG_KEY
+from sghi.idr.client.runtime.utils import dispatch
+from toolz import compose, juxt
 
 from .etl_workflow import ETLWorkflow
 
