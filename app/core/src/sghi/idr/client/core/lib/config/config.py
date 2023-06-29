@@ -1,10 +1,10 @@
 import logging
 from collections.abc import Mapping, Sequence
 from logging import Logger
-from typing import Any, final
+from typing import Any, Never, final
 
 from ..common_utils import type_fqn
-from .exceptions import MissingSettingError
+from .exceptions import ConfigurationError, MissingSettingError
 from .setting_initializer import SettingInitializer
 
 # =============================================================================
@@ -124,3 +124,26 @@ class Config:
                 _initializer,
             )
         return grouped_initializers
+
+
+@final
+class NotSetup:
+    def __init__(self):
+        ...
+
+    def __getattr__(self, setting: str) -> Any:  # noqa: ANN401
+        self._raise()
+
+    def __setattr__(self, key: str, value: Any) -> None:  # noqa: ANN401
+        self._raise()
+
+    def get(self, setting: str, default: Any = None) -> Any:  # noqa: ANN401
+        self._raise()
+
+    @staticmethod
+    def _raise() -> Never:
+        _err_msg: str = (
+            "Runtime/application not set up. Please call "
+            "'sghi.idr.client.core.setup()' before proceeding."
+        )
+        raise ConfigurationError(message=_err_msg)

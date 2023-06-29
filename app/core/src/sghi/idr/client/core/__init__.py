@@ -6,7 +6,12 @@ useful for the client.
 from collections.abc import Mapping, Sequence
 from typing import Any, Final
 
-from sghi.idr.client.core.lib import AppRegistry, Config, SettingInitializer
+from sghi.idr.client.core.lib import (
+    AppRegistry,
+    Config,
+    NotSetup,
+    SettingInitializer,
+)
 
 registry: Final[AppRegistry] = AppRegistry()
 """
@@ -14,7 +19,7 @@ The application registry. Provides lookup for important resources and services
 within the application.
 """
 
-settings: Final[Config] = None  # type: ignore
+settings: Final[Config] = NotSetup()  # type: ignore
 """
 The application configurations. This value is only available after a
 successful application set up. That is, after ``app.setup()`` completes
@@ -28,6 +33,11 @@ def setup(
     **kwargs,
 ) -> None:
     """Prepare the runtime and ready the application for use.
+
+    .. note::
+        This method is not implemented and invocations will result in an
+        exception being raised. Runtimes/implementing applications should
+        monkey patch this method before first use with a valid implementation.
 
     :param settings: An optional mapping of settings and their values. When not
         provided, the runtime defaults as well as defaults set by the given

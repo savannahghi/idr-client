@@ -1,4 +1,4 @@
-from .config import Config
+from .config import Config, NotSetup
 from .exceptions import (
     ConfigurationError,
     ImproperlyConfiguredError,
@@ -11,5 +11,6 @@ __all__ = [
     "ConfigurationError",
     "ImproperlyConfiguredError",
     "MissingSettingError",
+    "NotSetup",
     "SettingInitializer",
 ]
