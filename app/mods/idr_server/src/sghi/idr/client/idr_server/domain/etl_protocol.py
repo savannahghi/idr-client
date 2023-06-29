@@ -6,8 +6,8 @@ import sghi.idr.client.core as app
 from sghi.idr.client.common.domain import SimpleETLProtocol
 from sghi.idr.client.http import (
     HTTPDataSink,
-    HTTPMetadataSink,
-    HTTPMetadataSource,
+    HTTPMetadataConsumer,
+    HTTPMetadataSupplier,
     HTTPTransport,
     HTTPUploadMetadataFactory,
     SimpleHTTPDataSinkMetadata,
@@ -64,10 +64,10 @@ def _idr_server_api_factory() -> "IDRServerV1API":
 
 
 def _metadata_sinks_supplier() -> (
-    Iterable[HTTPMetadataSink[IDRServerV1APIUploadMetadata]]
+    Iterable[HTTPMetadataConsumer[IDRServerV1APIUploadMetadata]]
 ):
     return (
-        HTTPMetadataSink(
+        HTTPMetadataConsumer(
             name="FyJ IDR Server Metadata Sink",  # pyright: ignore
             api_dialect=_idr_server_api_factory(),  # pyright: ignore
             transport=_http_transport_factory(),  # pyright: ignore
@@ -77,7 +77,7 @@ def _metadata_sinks_supplier() -> (
 
 def _metadata_sources_supplier() -> (
     Iterable[
-        HTTPMetadataSource[
+        HTTPMetadataSupplier[
             SimpleHTTPDataSinkMetadata,
             SimpleSQLDatabaseDescriptor,
             SimpleSQLQuery,
@@ -85,7 +85,7 @@ def _metadata_sources_supplier() -> (
     ]
 ):
     return (
-        HTTPMetadataSource(  # pyright: ignore
+        HTTPMetadataSupplier(  # pyright: ignore
             name="FyJ IDR Server Metadata Source",  # pyright: ignore
             api_dialect=_idr_server_api_factory(),  # pyright: ignore
             transport=_http_transport_factory(),  # pyright: ignore

@@ -10,8 +10,8 @@ from sghi.idr.client.core.lib.config import ImproperlyConfiguredError
 from sghi.idr.client.http import (
     HTTPAuthAPIDialect,
     HTTPDataSinkAPIDialect,
-    HTTPMetadataSinkAPIDialect,
-    HTTPMetadataSourceAPIDialect,
+    HTTPMetadataConsumerAPIDialect,
+    HTTPMetadataSupplierAPIDialect,
     HTTPUploadMetadataFactoryAPIDialect,
     ResponsePredicate,
     SimpleHTTPDataSinkMetadata,
@@ -114,8 +114,8 @@ class _IDRServerAuth(AuthBase):
 class IDRServerV1API(
     HTTPAuthAPIDialect,
     HTTPDataSinkAPIDialect[IDRServerV1APIUploadMetadata, ParquetData],
-    HTTPMetadataSinkAPIDialect[IDRServerV1APIUploadMetadata],
-    HTTPMetadataSourceAPIDialect[
+    HTTPMetadataConsumerAPIDialect[IDRServerV1APIUploadMetadata],
+    HTTPMetadataSupplierAPIDialect[
         SimpleHTTPDataSinkMetadata,
         SimpleSQLDatabaseDescriptor,
         SimpleSQLQuery,
@@ -230,7 +230,7 @@ class IDRServerV1API(
 
     # HTTP METADATA SOURCE API DIALECT IMPLEMENTATION
     # -------------------------------------------------------------------------
-    def provide_data_sink_meta_request_factory(self) -> Request:
+    def get_data_sink_meta_request_factory(self) -> Request:
         return Request(
             headers=self._common_headers,
             method=_GET_METHOD,
@@ -238,7 +238,7 @@ class IDRServerV1API(
             url=f"{self._base_api_url}/",
         )
 
-    def provide_data_source_meta_request_factory(self) -> Request:
+    def get_data_source_meta_request_factory(self) -> Request:
         return Request(
             headers=self._common_headers,
             method=_GET_METHOD,
@@ -247,7 +247,7 @@ class IDRServerV1API(
             ),
         )
 
-    def provide_extract_meta_request_factory(
+    def get_extract_meta_request_factory(
         self,
         data_source_meta: SimpleSQLDatabaseDescriptor,
     ) -> Request:
@@ -260,7 +260,7 @@ class IDRServerV1API(
             ),
         )
 
-    def handle_provide_data_sink_meta_response(
+    def handle_get_data_sink_meta_response(
         self,
         response: Response,
     ) -> Iterable[SimpleHTTPDataSinkMetadata]:
@@ -280,7 +280,7 @@ class IDRServerV1API(
             ),
         )
 
-    def handle_provide_data_source_meta_response(
+    def handle_get_data_source_meta_response(
         self,
         response: Response,
     ) -> Iterable[SimpleSQLDatabaseDescriptor]:
@@ -306,7 +306,7 @@ class IDRServerV1API(
             ),
         )
 
-    def handle_provide_extract_meta_response(
+    def handle_get_extract_meta_response(
         self,
         response: Response,
         data_source_meta: SimpleSQLDatabaseDescriptor,

@@ -7,8 +7,8 @@ from ..interfaces import (
     DataSinkMetadata,
     DataSourceMetadata,
     ExtractMetadata,
-    MetadataSink,
-    MetadataSource,
+    MetadataConsumer,
+    MetadataSupplier,
     UploadMetadata,
     UploadMetadataFactory,
 )
@@ -31,9 +31,9 @@ _UM = TypeVar("_UM", bound=UploadMetadata)
 
 
 @define(slots=False)
-class BaseMetadataSink(
+class BaseMetadataConsumer(
     BaseNamedDomainObject,
-    MetadataSink[_UM],
+    MetadataConsumer[_UM],
     Generic[_UM],
     metaclass=ABCMeta,
 ):
@@ -50,9 +50,9 @@ class BaseMetadataSink(
 
 
 @define(slots=False)
-class BaseMetadataSource(
+class BaseMetadataSupplier(
     BaseNamedDomainObject,
-    MetadataSource[_DS, _DM, _EM],
+    MetadataSupplier[_DS, _DM, _EM],
     Generic[_DS, _DM, _EM],
     metaclass=ABCMeta,
 ):

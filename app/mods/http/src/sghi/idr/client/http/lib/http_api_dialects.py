@@ -138,7 +138,7 @@ class HTTPDataSinkAPIDialect(
         """
 
 
-class HTTPMetadataSinkAPIDialect(
+class HTTPMetadataConsumerAPIDialect(
     HTTPAPIDialect,
     Generic[_UM],
     metaclass=ABCMeta,
@@ -176,7 +176,7 @@ class HTTPMetadataSinkAPIDialect(
         ...
 
 
-class HTTPMetadataSourceAPIDialect(
+class HTTPMetadataSupplierAPIDialect(
     HTTPAPIDialect,
     Generic[_DS, _DM, _EM],
     metaclass=ABCMeta,
@@ -184,7 +184,7 @@ class HTTPMetadataSourceAPIDialect(
     # REQUEST FACTORIES
     # -------------------------------------------------------------------------
     @abstractmethod
-    def provide_data_sink_meta_request_factory(self) -> Request:
+    def get_data_sink_meta_request_factory(self) -> Request:
         """
 
         :return:
@@ -192,7 +192,7 @@ class HTTPMetadataSourceAPIDialect(
         ...
 
     @abstractmethod
-    def provide_data_source_meta_request_factory(self) -> Request:
+    def get_data_source_meta_request_factory(self) -> Request:
         """
 
         :return:
@@ -200,7 +200,7 @@ class HTTPMetadataSourceAPIDialect(
         ...
 
     @abstractmethod
-    def provide_extract_meta_request_factory(
+    def get_extract_meta_request_factory(
         self,
         data_source_meta: _DM,
     ) -> Request:
@@ -216,7 +216,7 @@ class HTTPMetadataSourceAPIDialect(
     # -------------------------------------------------------------------------
 
     @abstractmethod
-    def handle_provide_data_sink_meta_response(
+    def handle_get_data_sink_meta_response(
         self,
         response: Response,
     ) -> Iterable[_DS]:
@@ -227,7 +227,7 @@ class HTTPMetadataSourceAPIDialect(
         """
 
     @abstractmethod
-    def handle_provide_data_source_meta_response(
+    def handle_get_data_source_meta_response(
         self,
         response: Response,
     ) -> Iterable[_DM]:
@@ -239,7 +239,7 @@ class HTTPMetadataSourceAPIDialect(
         ...
 
     @abstractmethod
-    def handle_provide_extract_meta_response(
+    def handle_get_extract_meta_response(
         self,
         response: Response,
         data_source_meta: _DM,

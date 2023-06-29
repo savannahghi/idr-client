@@ -17,7 +17,11 @@ from .operations import (
     RawData,
     UploadMetadata,
 )
-from .terminals import MetadataSink, MetadataSource, UploadMetadataFactory
+from .terminals import (
+    MetadataConsumer,
+    MetadataSupplier,
+    UploadMetadataFactory,
+)
 
 # =============================================================================
 # TYPES
@@ -67,12 +71,12 @@ class ETLProtocol(
 
     @property
     @abstractmethod
-    def metadata_sinks(self) -> Iterable[MetadataSink[_UM]]:
+    def metadata_sinks(self) -> Iterable[MetadataConsumer[_UM]]:
         ...
 
     @property
     @abstractmethod
-    def metadata_sources(self) -> Iterable[MetadataSource[_DS, _DM, _EM]]:
+    def metadata_sources(self) -> Iterable[MetadataSupplier[_DS, _DM, _EM]]:
         ...
 
     @property

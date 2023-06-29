@@ -7,8 +7,8 @@ from .http_api_dialects import (
     HTTPAPIDialect,
     HTTPAuthAPIDialect,
     HTTPDataSinkAPIDialect,
-    HTTPMetadataSinkAPIDialect,
-    HTTPMetadataSourceAPIDialect,
+    HTTPMetadataConsumerAPIDialect,
+    HTTPMetadataSupplierAPIDialect,
     HTTPUploadMetadataFactoryAPIDialect,
 )
 from .http_transport import HTTPTransport
@@ -17,8 +17,8 @@ __all__ = [
     "HTTPAPIDialect",
     "HTTPAuthAPIDialect",
     "HTTPDataSinkAPIDialect",
-    "HTTPMetadataSinkAPIDialect",
-    "HTTPMetadataSourceAPIDialect",
+    "HTTPMetadataConsumerAPIDialect",
+    "HTTPMetadataSupplierAPIDialect",
     "HTTPTransport",
     "HTTPUploadMetadataFactoryAPIDialect",
     "if_request_accepted",

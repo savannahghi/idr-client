@@ -11,7 +11,7 @@ from sghi.idr.client.core.domain import (
     DataSourceStream,
     ExtractMetadata,
     ExtractProcessor,
-    MetadataSink,
+    MetadataConsumer,
     RawData,
     UploadMetadata,
     UploadMetadataFactory,
@@ -51,7 +51,7 @@ def _do_consume(
 
 @Retry(predicate=_if_idr_transient_exception)
 def _do_consume_upload_meta(
-    metadata_sink: MetadataSink,
+    metadata_sink: MetadataConsumer,
     upload_meta: UploadMetadata,
 ) -> None:
     metadata_sink.consume_upload_meta(upload_meta=upload_meta)
@@ -107,7 +107,7 @@ class ETLWorkflow(Task[ExtractMetadata, None]):
         ExtractProcessor[Any, Any, Any],
     ] = field()
     _upload_metadata_factory: UploadMetadataFactory[Any, Any] = field()
-    _metadata_sinks: Iterable[MetadataSink[Any]] = field()
+    _metadata_sinks: Iterable[MetadataConsumer[Any]] = field()
     _data_sinks: Iterable[DataSink[Any, Any, Any]] = field()
 
     def execute(self, an_input: ExtractMetadata) -> None:

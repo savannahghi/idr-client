@@ -18,7 +18,11 @@ from .operations import (
     ExtractProcessor,
     RawData,
 )
-from .terminals import MetadataSink, MetadataSource, UploadMetadataFactory
+from .terminals import (
+    MetadataConsumer,
+    MetadataSupplier,
+    UploadMetadataFactory,
+)
 
 __all__ = [
     "CleanedData",
@@ -36,8 +40,8 @@ __all__ = [
     "IdentifiableDomainObject",
     "IdentifiableMetadataObject",
     "MetadataObject",
-    "MetadataSink",
-    "MetadataSource",
+    "MetadataConsumer",
+    "MetadataSupplier",
     "NamedDomainObject",
     "RawData",
     "UploadMetadata",

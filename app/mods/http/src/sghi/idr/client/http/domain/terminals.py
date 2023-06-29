@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from attrs import define, field
 from sghi.idr.client.core.domain import (
-    BaseMetadataSink,
-    BaseMetadataSource,
+    BaseMetadataConsumer,
+    BaseMetadataSupplier,
     BaseUploadMetadataFactory,
     DataSinkMetadata,
     DataSourceMetadata,
@@ -15,8 +15,8 @@ from sghi.idr.client.core.domain import (
 )
 
 from ..lib import (
-    HTTPMetadataSinkAPIDialect,
-    HTTPMetadataSourceAPIDialect,
+    HTTPMetadataConsumerAPIDialect,
+    HTTPMetadataSupplierAPIDialect,
     HTTPTransport,
     HTTPUploadMetadataFactoryAPIDialect,
     if_request_accepted,
@@ -42,11 +42,11 @@ _UM = TypeVar("_UM", bound=UploadMetadata)
 
 
 @define(slots=True, order=False)
-class HTTPMetadataSink(BaseMetadataSink[_UM], Generic[_UM]):
-    """:class:`MetadataSink` backed by an HTTP server."""
+class HTTPMetadataConsumer(BaseMetadataConsumer[_UM], Generic[_UM]):
+    """:class:`MetadataConsumer` backed by an HTTP server."""
 
     _transport: HTTPTransport = field()
-    _api_dialect: HTTPMetadataSinkAPIDialect[_UM] = field()
+    _api_dialect: HTTPMetadataConsumerAPIDialect[_UM] = field()
     _valid_response_predicate: ResponsePredicate = field(
         default=if_request_accepted,
         kw_only=True,
@@ -58,7 +58,7 @@ class HTTPMetadataSink(BaseMetadataSink[_UM], Generic[_UM]):
         )
 
     @property
-    def api_dialect(self) -> HTTPMetadataSinkAPIDialect[_UM]:
+    def api_dialect(self) -> HTTPMetadataConsumerAPIDialect[_UM]:
         return self._api_dialect
 
     def dispose(self) -> None:
@@ -82,14 +82,14 @@ class HTTPMetadataSink(BaseMetadataSink[_UM], Generic[_UM]):
 
 
 @define(slots=True, order=False)
-class HTTPMetadataSource(
-    BaseMetadataSource[_DS, _DM, _EM],
+class HTTPMetadataSupplier(
+    BaseMetadataSupplier[_DS, _DM, _EM],
     Generic[_DS, _DM, _EM],
 ):
-    """:class:`MetadataSource` backed by an HTTP server."""
+    """:class:`MetadataSupplier` backed by an HTTP server."""
 
     _transport: HTTPTransport = field()
-    _api_dialect: HTTPMetadataSourceAPIDialect[_DS, _DM, _EM] = field()
+    _api_dialect: HTTPMetadataSupplierAPIDialect[_DS, _DM, _EM] = field()
     _valid_response_predicate: ResponsePredicate = field(
         default=if_request_accepted,
         kw_only=True,
@@ -101,7 +101,7 @@ class HTTPMetadataSource(
         )
 
     @property
-    def api_dialect(self) -> HTTPMetadataSourceAPIDialect[_DS, _DM, _EM]:
+    def api_dialect(self) -> HTTPMetadataSupplierAPIDialect[_DS, _DM, _EM]:
         return self._api_dialect
 
     def dispose(self) -> None:
@@ -109,29 +109,25 @@ class HTTPMetadataSource(
         self._transport.dispose()
         self._logger.debug("Disposal complete.")
 
-    def provide_data_sink_meta(self) -> Iterable[_DS]:
+    def get_data_sink_meta(self) -> Iterable[_DS]:
         self._logger.info("Provide data sink metadata.")
-        req: Request = (
-            self._api_dialect.provide_data_sink_meta_request_factory()
-        )
+        req: Request = self._api_dialect.get_data_sink_meta_request_factory()
         res: Response = self._transport.make_request(
             request=req,
             valid_response_predicate=self._valid_response_predicate,
         )
-        return self._api_dialect.handle_provide_data_sink_meta_response(res)
+        return self._api_dialect.handle_get_data_sink_meta_response(res)
 
-    def provide_data_source_meta(self) -> Iterable[_DM]:
+    def get_data_source_meta(self) -> Iterable[_DM]:
         self._logger.info("Provide data source metadata.")
-        req: Request = (
-            self._api_dialect.provide_data_source_meta_request_factory()
-        )
+        req: Request = self._api_dialect.get_data_source_meta_request_factory()
         res: Response = self._transport.make_request(
             request=req,
             valid_response_predicate=self._valid_response_predicate,
         )
-        return self._api_dialect.handle_provide_data_source_meta_response(res)
+        return self._api_dialect.handle_get_data_source_meta_response(res)
 
-    def provide_extract_meta(
+    def get_extract_meta(
         self,
         data_source_meta: _DM,
     ) -> Iterable[_EM]:
@@ -139,14 +135,14 @@ class HTTPMetadataSource(
             'Provide extract metadata for data source "%s".',
             data_source_meta,
         )
-        req: Request = self._api_dialect.provide_extract_meta_request_factory(
+        req: Request = self._api_dialect.get_extract_meta_request_factory(
             data_source_meta=data_source_meta,
         )
         res: Response = self._transport.make_request(
             request=req,
             valid_response_predicate=self._valid_response_predicate,
         )
-        return self._api_dialect.handle_provide_extract_meta_response(
+        return self._api_dialect.handle_get_extract_meta_response(
             response=res,
             data_source_meta=data_source_meta,
         )

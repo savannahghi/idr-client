@@ -26,19 +26,18 @@ _UM = TypeVar("_UM", bound=UploadMetadata)
 # =============================================================================
 
 
-class MetadataSink(
+class MetadataConsumer(
     NamedDomainObject,
     Disposable,
     Generic[_UM],
     metaclass=ABCMeta,
 ):
-    """Upload(s) related metadata consumer.
+    """Upload/Drain related metadata consumer.
 
     An interface representing entities that consume metadata relating to
-    uploaded data.
+    uploaded/drained data.
     """
 
-    # TODO: Think🤔 about where are UploadMetadata ID's going to come from?
     @abstractmethod
     def consume_upload_meta(self, upload_meta: _UM) -> None:
         """
@@ -49,7 +48,7 @@ class MetadataSink(
         ...
 
 
-class MetadataSource(
+class MetadataSupplier(
     NamedDomainObject,
     Disposable,
     Generic[_DS, _DM, _EM],
@@ -63,7 +62,7 @@ class MetadataSource(
     """
 
     @abstractmethod
-    def provide_data_sink_meta(self) -> Iterable[_DS]:
+    def get_data_sink_meta(self) -> Iterable[_DS]:
         """
 
         :return:
@@ -71,7 +70,7 @@ class MetadataSource(
         ...
 
     @abstractmethod
-    def provide_data_source_meta(self) -> Iterable[_DM]:
+    def get_data_source_meta(self) -> Iterable[_DM]:
         """
 
         :return:
@@ -79,7 +78,7 @@ class MetadataSource(
         ...
 
     @abstractmethod
-    def provide_extract_meta(self, data_source_meta: _DM) -> Iterable[_EM]:
+    def get_extract_meta(self, data_source_meta: _DM) -> Iterable[_EM]:
         """
 
         :return:

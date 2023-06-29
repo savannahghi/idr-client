@@ -17,8 +17,8 @@ from .operations import (
     BaseDataSourceStream,
 )
 from .terminals import (
-    BaseMetadataSink,
-    BaseMetadataSource,
+    BaseMetadataConsumer,
+    BaseMetadataSupplier,
     BaseUploadMetadataFactory,
 )
 
@@ -33,8 +33,8 @@ __all__ = [
     "BaseDomainObject",
     "BaseExtractMetadata",
     "BaseIdentifiableDomainObject",
-    "BaseMetadataSink",
-    "BaseMetadataSource",
+    "BaseMetadataConsumer",
+    "BaseMetadataSupplier",
     "BaseNamedDomainObject",
     "BaseUploadMetadata",
     "BaseUploadMetadataFactory",

@@ -12,7 +12,7 @@ from sghi.idr.client.core.domain import (
     DataSourceMetadata,
     ETLProtocol,
     ExtractMetadata,
-    MetadataSource,
+    MetadataSupplier,
 )
 from sghi.idr.client.core.exceptions import TransientError
 from sghi.idr.client.core.lib import Retry, if_exception_type_factory
@@ -36,25 +36,25 @@ _if_idr_transient_exception = if_exception_type_factory(TransientError)
 
 
 @Retry(predicate=_if_idr_transient_exception)
-def _do_provide_data_sink_meta(
-    metadata_source: MetadataSource[Any, Any, Any],
+def _do_get_data_sink_meta(
+    metadata_source: MetadataSupplier[Any, Any, Any],
 ) -> Iterable[DataSinkMetadata]:
-    return metadata_source.provide_data_sink_meta()
+    return metadata_source.get_data_sink_meta()
 
 
 @Retry(predicate=_if_idr_transient_exception)
-def _do_provide_data_source_meta(
-    metadata_source: MetadataSource[Any, Any, Any],
+def _do_get_data_source_meta(
+    metadata_source: MetadataSupplier[Any, Any, Any],
 ) -> Iterable[DataSourceMetadata]:
-    return metadata_source.provide_data_source_meta()
+    return metadata_source.get_data_source_meta()
 
 
 @Retry(predicate=_if_idr_transient_exception)
-def _do_provide_extract_meta(
-    metadata_source: MetadataSource[Any, Any, Any],
+def _do_get_extract_meta(
+    metadata_source: MetadataSupplier[Any, Any, Any],
     data_source_meta: DataSourceMetadata,
 ) -> Iterable[ExtractMetadata]:
-    return metadata_source.provide_extract_meta(data_source_meta)
+    return metadata_source.get_extract_meta(data_source_meta)
 
 
 # =============================================================================
@@ -87,7 +87,7 @@ class RunETLProtocol(Task[None, None]):
         with self._protocol_stack:
             for metadata_source in self._etl_protocol.metadata_sources:
                 self._data_sink_metas.extend(
-                    _do_provide_data_sink_meta(
+                    _do_get_data_sink_meta(
                         metadata_source=metadata_source,
                     ),
                 )
@@ -165,13 +165,13 @@ class RunETLProtocol(Task[None, None]):
 
     @staticmethod
     def _do_get_data_source_and_extract_metas(
-        metadata_source: MetadataSource[Any, Any, Any],
+        metadata_source: MetadataSupplier[Any, Any, Any],
     ) -> Iterable[DataSourceMetadata]:
-        data_source_metas = list(_do_provide_data_source_meta(metadata_source))
+        data_source_metas = list(_do_get_data_source_meta(metadata_source))
         for data_source_meta in data_source_metas:
             data_source_meta.extract_metadata = {
                 extract_meta.id: extract_meta
-                for extract_meta in _do_provide_extract_meta(
+                for extract_meta in _do_get_extract_meta(
                     metadata_source=metadata_source,
                     data_source_meta=data_source_meta,
                 )

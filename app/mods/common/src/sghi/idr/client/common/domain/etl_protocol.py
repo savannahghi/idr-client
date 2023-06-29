@@ -13,8 +13,8 @@ from sghi.idr.client.core.domain import (
     ETLProtocol,
     ExtractMetadata,
     ExtractProcessor,
-    MetadataSink,
-    MetadataSource,
+    MetadataConsumer,
+    MetadataSupplier,
     RawData,
     UploadMetadata,
     UploadMetadataFactory,
@@ -52,8 +52,8 @@ class SimpleETLProtocol(
         [],
         ExtractProcessor[_EM, _RD, _CD],
     ] = field()
-    _metadata_sinks: Iterable[MetadataSink[_UM]] = field()
-    _metadata_sources: Iterable[MetadataSource[_DS, _DM, _EM]] = field()
+    _metadata_sinks: Iterable[MetadataConsumer[_UM]] = field()
+    _metadata_sources: Iterable[MetadataSupplier[_DS, _DM, _EM]] = field()
     _upload_metadata_factory: UploadMetadataFactory[_UM, _EM] = field()
 
     @property
@@ -71,11 +71,11 @@ class SimpleETLProtocol(
         return self._extract_processor_factory
 
     @property
-    def metadata_sinks(self) -> Iterable[MetadataSink[_UM]]:
+    def metadata_sinks(self) -> Iterable[MetadataConsumer[_UM]]:
         return self._metadata_sinks
 
     @property
-    def metadata_sources(self) -> Iterable[MetadataSource[_DS, _DM, _EM]]:
+    def metadata_sources(self) -> Iterable[MetadataSupplier[_DS, _DM, _EM]]:
         return self._metadata_sources
 
     @property
