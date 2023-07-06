@@ -2,8 +2,8 @@
 ETL Protocol Definition.
 """
 from abc import ABCMeta, abstractmethod
-from collections.abc import Callable
-from typing import Generic, TypeVar
+from collections.abc import Callable, Iterable
+from typing import Any, Generic, TypeVar
 
 from .base import IdentifiableDomainObject, NamedDomainObject
 from .operations import (
@@ -82,4 +82,12 @@ class ETLProtocol(
     @property
     @abstractmethod
     def upload_metadata_factory(self) -> UploadMetadataFactory[_UM, _EM]:
+        ...
+
+
+class ETLProtocolSupplier(metaclass=ABCMeta):
+    @abstractmethod
+    def get_protocols(
+        self,
+    ) -> Iterable[ETLProtocol[Any, Any, Any, Any, Any, Any]]:
         ...

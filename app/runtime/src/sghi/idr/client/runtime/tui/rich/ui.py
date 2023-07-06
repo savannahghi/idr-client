@@ -1,7 +1,6 @@
 from attrs import field, frozen
 from rich.console import Console
 from rich.live import Live
-from rich.status import Status
 from sghi.idr.client.runtime.constants import APP_DISPATCHER_REG_KEY
 from sghi.idr.client.runtime.ui import UI
 from sghi.idr.client.runtime.utils import dispatch
@@ -14,27 +13,13 @@ def _app_live_display_factory(console: Console = CONSOLE) -> Live:
     return Live(console=console, refresh_per_second=12.5)
 
 
-def _app_run_status_factory(console: Console = CONSOLE) -> Status:
-    return Status(
-        "[bold]Running ...",
-        console=console,
-        spinner="dots",
-        spinner_style="bright_yellow",
-    )
-
-
 @frozen
 class RichUI(UI):
     """:class:`UI` implementation that uses a :class:`rich.console.Console`
     to render output on the console.
     """
 
-    _app_run_status: Status = field(
-        factory=_app_run_status_factory,
-        init=False,
-    )
     _console: Console = field(default=CONSOLE, init=False)
-    _etl_proto_statuses: dict[str, Status] = field(factory=dict, init=False)
     _etl_proto_uis: dict[str, ETLProtocolUI] = field(factory=dict, init=False)
     _live_display: Live = field(factory=_app_live_display_factory, init=False)
 
@@ -66,6 +51,10 @@ class RichUI(UI):
         app_dispatcher.connect(
             dispatch.PreETLWorkflowRunSignal,
             self.on_etl_workflow_start,
+        )
+        app_dispatcher.connect(
+            dispatch.UnhandledRuntimeErrorSignal,
+            self.on_runtime_error,
         )
 
     def on_app_start(self, signal: dispatch.AppPreStartSignal) -> None:
@@ -123,3 +112,9 @@ class RichUI(UI):
         self._etl_proto_uis[signal.etl_protocol.id].stop_workflow(
             extract_meta=signal.extract_meta,
         )
+
+    def on_runtime_error(
+        self,
+        signal: dispatch.UnhandledRuntimeErrorSignal,
+    ) -> None:
+        self._live_display.stop()

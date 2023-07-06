@@ -1,5 +1,5 @@
-from collections.abc import Callable
-from typing import Generic, TypeVar
+from collections.abc import Callable, Iterable
+from typing import Any, Generic, TypeVar, assert_never
 
 from attrs import define, field
 from sghi.idr.client.core.domain import (
@@ -11,6 +11,7 @@ from sghi.idr.client.core.domain import (
     DataSource,
     DataSourceMetadata,
     ETLProtocol,
+    ETLProtocolSupplier,
     ExtractMetadata,
     ExtractProcessor,
     MetadataConsumer,
@@ -18,6 +19,14 @@ from sghi.idr.client.core.domain import (
     RawData,
     UploadMetadata,
     UploadMetadataFactory,
+)
+from sghi.idr.client.core.lib import ImproperlyConfiguredError, type_fqn
+
+from ..lib import (
+    ETL_PROTOCOL_DEFINITIONS_CONFIG_KEY,
+    ETL_PROTOCOL_FACTORIES_CONFIG_KEY,
+    ETLProtocolFactory,
+    ProtocolDefinition,
 )
 
 # =============================================================================
@@ -31,9 +40,15 @@ _EM = TypeVar("_EM", bound=ExtractMetadata)
 _RD = TypeVar("_RD", bound=RawData)
 _UM = TypeVar("_UM", bound=UploadMetadata)
 
+_EP = ETLProtocol[Any, Any, Any, Any, Any, Any]
+
 
 # =============================================================================
-# CONCRETE ETL PROTOCOL DEFINITION
+# HELPERS
+# =============================================================================
+
+# =============================================================================
+# CONCRETE ETL PROTOCOL DEFINITIONS
 # =============================================================================
 
 
@@ -57,11 +72,13 @@ class SimpleETLProtocol(
     _upload_metadata_factory: UploadMetadataFactory[_UM, _EM] = field()
 
     @property
-    def data_sink_factory(self) -> Callable[[_DS], DataSink]:
+    def data_sink_factory(self) -> Callable[[_DS], DataSink[_DS, _UM, _CD]]:
         return self._data_sink_factory
 
     @property
-    def data_source_factory(self) -> Callable[[_DM], DataSource]:
+    def data_source_factory(
+        self,
+    ) -> Callable[[_DM], DataSource[_DM, _EM, _RD]]:
         return self._data_source_factory
 
     @property
@@ -81,3 +98,109 @@ class SimpleETLProtocol(
     @property
     def upload_metadata_factory(self) -> UploadMetadataFactory[_UM, _EM]:
         return self._upload_metadata_factory
+
+
+# =============================================================================
+# ETL PROTOCOL SUPPLIERS
+# =============================================================================
+
+
+class FromDefinitionsETLProtocolSupplier(ETLProtocolSupplier):
+    """
+    Load :class:`ETLProtocol` instances from ETLProtocol definitions on the
+    config.
+    """
+
+    def get_protocols(self) -> Iterable[_EP]:
+        from sghi.idr.client.core import settings
+
+        proto_definitions: Iterable[ProtocolDefinition]
+        proto_definitions = settings.get(
+            setting=ETL_PROTOCOL_DEFINITIONS_CONFIG_KEY,
+            default=(),
+        )
+        return map(
+            self._proto_definition_to_proto_instance,
+            proto_definitions,
+        )
+
+    @classmethod
+    def _proto_definition_to_proto_instance(
+        cls,
+        protocol_definition: ProtocolDefinition,
+    ) -> _EP:
+        upf_def = protocol_definition["upload_metadata_factory"]
+        upf: UploadMetadataFactory = cls._get_upload_meta_factory_instance(
+            upf_def,
+        )
+        return SimpleETLProtocol(
+            id=protocol_definition["id"],
+            name=protocol_definition["name"],
+            description=protocol_definition.get("description"),
+            data_sink_factory=protocol_definition["data_sink_factory"],
+            data_source_factory=protocol_definition["data_source_factory"],
+            extract_processor_factory=protocol_definition[
+                "extract_processor_factory"
+            ],
+            metadata_consumer=protocol_definition[
+                "metadata_consumer_factory"
+            ](),
+            metadata_supplier=protocol_definition[
+                "metadata_supplier_factory"
+            ](),
+            upload_metadata_factory=upf,
+        )
+
+    @staticmethod
+    def _get_upload_meta_factory_instance(
+        upload_meta_factory: UploadMetadataFactory
+        | Callable[[], UploadMetadataFactory],
+    ) -> UploadMetadataFactory:
+        match upload_meta_factory:
+            case UploadMetadataFactory():
+                return upload_meta_factory
+            case Callable():
+                return upload_meta_factory()
+            case _:
+                assert_never(upload_meta_factory)
+
+
+class FromFactoriesETLProtocolSupplier(ETLProtocolSupplier):
+    """
+    Load :class:`ETLProtocol` instances from ETLProtocol factories on the
+    config.
+    """
+
+    def get_protocols(self) -> Iterable[_EP]:
+        from sghi.idr.client.core import settings
+
+        proto_factories: Iterable[ETLProtocolFactory]
+        proto_factories = settings.get(
+            setting=ETL_PROTOCOL_FACTORIES_CONFIG_KEY,
+            default=(),
+        )
+
+        return map(self._proto_factory_to_instance, proto_factories)
+
+    @staticmethod
+    def _proto_factory_to_instance(proto_factory: ETLProtocolFactory) -> _EP:
+        try:
+            _etl_proto_instance: _EP = proto_factory()
+        except Exception as exp:  # noqa: BLE001
+            _err_msg: str = (
+                "Unable to create an ETLProtocol instance from factory. The "
+                "cause was: '{}'".format(str(exp))
+            )
+            raise RuntimeError(_err_msg) from exp
+
+        if not isinstance(_etl_proto_instance, ETLProtocol):
+            _err_msg: str = (
+                "Invalid ETLProtocol, the factory '{}' returned an instance "
+                "that is not a subclass of "
+                "'app.core.domain.ETLProtocol'.".format(
+                    type_fqn(proto_factory),
+                )
+            )
+            raise ImproperlyConfiguredError(message=_err_msg)
+
+        return _etl_proto_instance

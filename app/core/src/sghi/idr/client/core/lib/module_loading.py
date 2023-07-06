@@ -1,9 +1,7 @@
-# The contents of this module are copied from Django sources.
 import inspect
-import sys
-from importlib import import_module
-from types import ModuleType
-from typing import TypeVar, cast
+from typing import Any, Final, TypeVar, cast
+
+from importlib_metadata import EntryPoint
 
 # =============================================================================
 # TYPES
@@ -13,20 +11,10 @@ _T = TypeVar("_T")
 
 
 # =============================================================================
-# HELPERS
+# CONSTANTS
 # =============================================================================
 
-
-def _cached_import(module_path: str, class_name: str) -> ModuleType:
-    modules = sys.modules
-    if module_path not in modules or (
-        # Module is not fully initialized.
-        getattr(modules[module_path], "__spec__", None) is not None
-        and getattr(modules[module_path].__spec__, "_initializing", False)
-        is True
-    ):  # pragma: no branch
-        import_module(module_path)
-    return getattr(modules[module_path], class_name)
+_UNKNOWN_STR: Final[str] = "UNKNOWN"
 
 
 # =============================================================================
@@ -34,10 +22,15 @@ def _cached_import(module_path: str, class_name: str) -> ModuleType:
 # =============================================================================
 
 
-def import_string(dotted_path: str) -> ModuleType:
+def import_string(dotted_path: str) -> Any:  # noqa: ANN401
     """
     Import a dotted module path and return the attribute/class designated by
     the last name in the path. Raise ``ImportError`` if the import failed.
+
+    The `dotted_path` should conform to the format defined by the Python
+    packaging conventions. See `the packaging docs on entry points
+    <https://packaging.python.org/specifications/entry-points/>`_
+    for more information.
 
     :param dotted_path: A dotted path to an attribute or class.
 
@@ -45,22 +38,16 @@ def import_string(dotted_path: str) -> ModuleType:
 
     :raise ImportError: If the import fails for some reason.
     """
+    entry_point = EntryPoint(
+        name=_UNKNOWN_STR,
+        group=_UNKNOWN_STR,
+        value=dotted_path,
+    )
     try:
-        module_path, class_name = dotted_path.rsplit(".", 1)
-    except ValueError as err:
-        err_msg: str = f'"{dotted_path}" does not look like a module path.'
-        raise ImportError(err_msg, path=dotted_path) from err
-
-    try:
-        return _cached_import(module_path, class_name)
-    except AttributeError as err:
-        err_msg: str = (
-            'Module "{}" does not define a "{}" attribute/class'.format(
-                module_path,
-                class_name,
-            )
-        )
-        raise ImportError(err_msg, name=class_name, path=module_path) from err
+        return entry_point.load()
+    except AttributeError as exp:
+        _err_msg: str = str(exp)
+        raise ImportError(_err_msg) from exp
 
 
 def import_string_as_klass(

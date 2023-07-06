@@ -2,22 +2,16 @@ from collections.abc import Mapping, Sequence
 from typing import Any, cast
 
 import sghi.idr.client.core as app
-from sghi.idr.client.core.domain import ETLProtocol
 from sghi.idr.client.core.lib import (
     Config,
     ImproperlyConfiguredError,
     SettingInitializer,
     import_string_as_klass,
 )
-from toolz import first, pipe
-from toolz.curried import groupby, map, valmap
+from toolz import pipe
+from toolz.curried import map
 
-from .constants import (
-    DEFAULT_CONFIG,
-    ETL_PROTOCOLS_CONFIG_KEY,
-    SETTINGS_INITIALIZERS_CONFIG_KEY,
-)
-from .typings import ETLProtocol_Factory
+from .constants import DEFAULT_CONFIG, SETTINGS_INITIALIZERS_CONFIG_KEY
 
 # =============================================================================
 # HELPERS
@@ -47,38 +41,6 @@ def _dotted_path_to_initializer_instance(
             )
         )
         raise ImproperlyConfiguredError(message=_err_msg) from exp
-
-
-def _etl_protocol_factory_to_instance(
-    _etl_protocol_factory: ETLProtocol_Factory,
-) -> ETLProtocol:
-    _etl_protocol_instance: ETLProtocol = _etl_protocol_factory()
-    if not isinstance(_etl_protocol_instance, ETLProtocol):
-        _err_msg: str = (
-            'Invalid ETLProtocol, the factory "{}.{}" returned an instance '
-            'that is not a subclass of "app.core.domain.ETLProtocol".'.format(
-                # noinspection PyUnresolvedReferences
-                _etl_protocol_factory.__module__,
-                _etl_protocol_factory.__qualname__,
-            )
-        )
-        raise ImproperlyConfiguredError(message=_err_msg)
-
-    return _etl_protocol_instance
-
-
-def _initialize_and_load_etl_protocols(
-    etl_protocol_factories: Sequence[ETLProtocol_Factory],
-) -> None:
-    app.registry.etl_protocols = cast(
-        Mapping[str, ETLProtocol],
-        pipe(
-            etl_protocol_factories,
-            map(_etl_protocol_factory_to_instance),
-            groupby(lambda _ep: _ep.id),
-            valmap(first),
-        ),
-    )
 
 
 def load_settings_initializers(
@@ -133,19 +95,12 @@ def setup(
     )
 
     if not disable_default_initializers:
-        from .settings_initializers import (
-            ETLProtocolInitializer,
-            LoggingInitializer,
-        )
+        from .settings_initializers import LoggingInitializer
 
         initializers.insert(0, LoggingInitializer())
-        initializers.insert(1, ETLProtocolInitializer())
     app.registry.log_level = log_level
     # noinspection
     app.settings = Config(
         settings=settings_dict,
         settings_initializers=initializers,
-    )
-    _initialize_and_load_etl_protocols(
-        app.settings.get(ETL_PROTOCOLS_CONFIG_KEY, []),
     )

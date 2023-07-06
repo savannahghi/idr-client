@@ -39,6 +39,10 @@ name = "sghi-idr-client-common"
 readme = "README.md"
 requires-python = ">=3.10" # Support Python 3.10+.
 
+[project.entry-points."sghi.idr.client.etl_protocol"]
+from_definitions = "sghi.idr.client.common.domain:FromDefinitionsETLProtocolSupplier"
+from_factories = "sghi.idr.client.common.domain:FromFactoriesETLProtocolSupplier"
+
 [project.urls]
 changelog = "https://github.com/savannahghi/idr-client/blob/develop/docs/CHANGELOG.md"
 documentation = "https://github.com/savannahghi/idr-client/blob/develop/README.md"
