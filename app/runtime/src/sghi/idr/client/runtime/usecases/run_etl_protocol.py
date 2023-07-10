@@ -1,7 +1,15 @@
 import builtins
-from collections.abc import Iterable
-from concurrent.futures import Executor, ThreadPoolExecutor
+import logging
+from collections.abc import Iterable, Sequence
+from concurrent.futures import (
+    ALL_COMPLETED,
+    Executor,
+    Future,
+    ThreadPoolExecutor,
+    wait,
+)
 from contextlib import ExitStack
+from logging import Logger
 from typing import Any
 
 from attrs import define, field
@@ -15,7 +23,7 @@ from sghi.idr.client.core.domain import (
     MetadataSupplier,
 )
 from sghi.idr.client.core.exceptions import TransientError
-from sghi.idr.client.core.lib import Retry, if_exception_type_factory
+from sghi.idr.client.core.lib import Retry, if_exception_type_factory, type_fqn
 from sghi.idr.client.core.task import Task
 from sghi.idr.client.runtime.constants import APP_DISPATCHER_REG_KEY
 from sghi.idr.client.runtime.utils import dispatch
@@ -73,6 +81,7 @@ class RunETLProtocol(Task[None, None]):
         ] = []
         self._data_sink_metas: list[DataSinkMetadata] = []
         self._data_source_metas: list[DataSourceMetadata] = []
+        self._logger: Logger = logging.getLogger(type_fqn(self.__class__))
         self._protocol_stack: ExitStack = ExitStack()
         self._executor: Executor = ThreadPoolExecutor(
             thread_name_prefix=self._etl_protocol.id,
@@ -112,6 +121,49 @@ class RunETLProtocol(Task[None, None]):
             ),
         )
 
+    def _run_etl_workflow(
+        self,
+        app_dispatcher: dispatch.Dispatcher,
+        data_source: DataSource[Any, Any, Any],
+        extract_meta: ExtractMetadata,
+    ) -> None:
+        try:
+            app_dispatcher.send(
+                dispatch.PreETLWorkflowRunSignal(
+                    etl_protocol=self._etl_protocol,
+                    extract_meta=extract_meta,
+                ),
+            )
+            ETLWorkflow(
+                data_source=data_source,  # pyright: ignore
+                extract_processor_factory=self._etl_protocol.extract_processor_factory,  # pyright: ignore  # noqa: E501
+                upload_metadata_factory=self._etl_protocol.upload_metadata_factory,  # pyright: ignore  # noqa: E501
+                metadata_consumer=self._etl_protocol.metadata_consumer,  # pyright: ignore  # noqa: E501
+                data_sinks=self._data_sinks,  # pyright: ignore
+            ).execute(extract_meta)
+            app_dispatcher.send(
+                dispatch.PostETLWorkflowRunSignal(
+                    etl_protocol=self._etl_protocol,
+                    extract_meta=extract_meta,
+                ),
+            )
+        except Exception as exp:
+            self._logger.exception(
+                "Error running ETL workflow for extract with id '%s' and "
+                "name '%s'.",
+                extract_meta.id,
+                extract_meta.name,
+            )
+            app_dispatcher.send(
+                dispatch.ETLWorkflowRunErrorSignal(
+                    etl_protocol=self._etl_protocol,
+                    extract_meta=extract_meta,
+                    err_message=str(exp),
+                    exception=exp,
+                ),
+            )
+            raise
+
     def _load_data_sources(self) -> None:
         self._data_sources.extend(
             builtins.map(
@@ -143,26 +195,16 @@ class RunETLProtocol(Task[None, None]):
         app_dispatcher: dispatch.Dispatcher,
     ) -> None:
         for data_source, data_source_meta in self._data_sources:
-            for _, extract_meta in data_source_meta.extract_metadata.items():
-                app_dispatcher.send(
-                    dispatch.PreETLWorkflowRunSignal(
-                        etl_protocol=self._etl_protocol,
-                        extract_meta=extract_meta,
-                    ),
+            workflow_tasks: Sequence[Future[None]] = tuple(
+                self._executor.submit(
+                    self._run_etl_workflow,
+                    app_dispatcher=app_dispatcher,
+                    data_source=data_source,
+                    extract_meta=extract_meta,
                 )
-                ETLWorkflow(
-                    data_source=data_source,  # pyright: ignore
-                    extract_processor_factory=self._etl_protocol.extract_processor_factory,  # pyright: ignore  # noqa: E501
-                    upload_metadata_factory=self._etl_protocol.upload_metadata_factory,  # pyright: ignore  # noqa: E501
-                    metadata_consumer=self._etl_protocol.metadata_consumer,  # pyright: ignore  # noqa: E501
-                    data_sinks=self._data_sinks,  # pyright: ignore
-                ).execute(extract_meta)
-                app_dispatcher.send(
-                    dispatch.PostETLWorkflowRunSignal(
-                        etl_protocol=self._etl_protocol,
-                        extract_meta=extract_meta,
-                    ),
-                )
+                for extract_meta in data_source_meta.extract_metadata.values()
+            )
+            wait(fs=workflow_tasks, return_when=ALL_COMPLETED)
 
     @staticmethod
     def _do_get_data_source_and_extract_metas(

@@ -29,6 +29,18 @@ class ConfigErrorSignal(Signal):
 
 
 @frozen
+class ETLWorkflowRunErrorSignal(Signal):
+    """
+    Signal indicating that an error occurred while running an ETL Workflow.
+    """
+
+    etl_protocol: ETLProtocol[Any, Any, Any, Any, Any, Any] = field()
+    extract_meta: ExtractMetadata
+    err_message: str = field()
+    exception: BaseException | None = field(default=None)
+
+
+@frozen
 class PostConfigSignal(Signal):
     """Signal indicating configuration of the app has ended."""
 

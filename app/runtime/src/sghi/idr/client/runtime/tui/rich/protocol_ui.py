@@ -74,6 +74,15 @@ class ETLProtocolUI:
     def rebuild_ui(self) -> None:
         self._ui = self._build_ui()
 
+    def fail_workflow(self, extract_meta: ExtractMetadata) -> None:
+        task_id: TaskID = self._workflows_tasks[extract_meta.id]
+        self._workflows_progress.update(
+            task_id,
+            completed=100,
+            description=f"[bright_red]{extract_meta.name}",
+            total=100,
+        )
+
     def start_workflow(self, extract_meta: ExtractMetadata) -> None:
         task_id: TaskID = self._workflows_progress.add_task(
             description=f"[bright_yellow]{extract_meta.name}",

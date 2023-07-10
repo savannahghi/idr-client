@@ -96,6 +96,7 @@ class SimpleSQLDatabaseDescriptor(BaseSQLDataSourceMetadata):
     _data_source_stream_factory: DataSourceStreamFactory | None = field(
         default=None,
         kw_only=True,
+        repr=False,
     )
 
     @property
@@ -152,7 +153,7 @@ class SimpleSQLQuery(BaseSQLExtractMetadata):
 
     """
 
-    _raw_sql_query: str = field()
+    _raw_sql_query: str = field(repr=False)
     _yield_per: int | None = field(default=None, kw_only=True)
     # TODO: Ensure that the number is a positive integer when set.
     _logging_token: str | None = field(default=None, kw_only=True)

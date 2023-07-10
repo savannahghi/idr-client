@@ -1,3 +1,4 @@
+import operator
 from typing import TYPE_CHECKING
 
 import sghi.idr.client.core as app
@@ -37,11 +38,11 @@ def _load_etl_protocols() -> None:
     _etl_proto: ETLProtocol
     app.registry.etl_protocols = pipe(
         entry_points(group=ETL_PROTOCOLS_ENTRY_POINT_GROUP_NAME),
-        map(lambda _ep: _ep.load()),
-        map(lambda _eps_factory: _eps_factory()),
-        map(lambda _eps: _eps.get_protocols()),
+        map(operator.methodcaller("load")),
+        map(operator.call),
+        map(operator.methodcaller("get_protocols")),
         concat,
-        groupby(lambda _etl_proto: _etl_proto.id),
+        groupby(operator.attrgetter("id")),
         valmap(first),
     )
 

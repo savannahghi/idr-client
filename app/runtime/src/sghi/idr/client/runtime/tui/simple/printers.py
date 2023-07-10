@@ -7,7 +7,7 @@ from sghi.idr.client.runtime.constants import APP_VERBOSITY_REG_KEY
 
 
 def print_debug(message: str, nl: bool = True) -> None:
-    click.echo(click.style(message, fg="blue"), nl=nl)
+    click.echo(click.style(message, fg="yellow"), nl=nl)
 
 
 def print_info(message: str) -> None:

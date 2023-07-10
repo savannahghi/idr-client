@@ -316,3 +316,4 @@ logs/*
 !idr_client.spec
 secrets/*
 cloud_sql_proxy
+*.prof

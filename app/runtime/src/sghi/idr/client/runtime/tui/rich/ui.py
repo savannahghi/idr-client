@@ -34,6 +34,10 @@ class RichUI(UI):
             dispatch.ConfigErrorSignal,
             self.on_config_error,
         )
+        app_dispatcher.connect(
+            dispatch.ETLWorkflowRunErrorSignal,
+            self.on_etl_workflow_error,
+        )
         app_dispatcher.connect(dispatch.PostConfigSignal, self.on_config_stop)
         app_dispatcher.connect(dispatch.PreConfigSignal, self.on_config_start)
         app_dispatcher.connect(
@@ -96,6 +100,14 @@ class RichUI(UI):
     ) -> None:
         self._etl_proto_uis[signal.etl_protocol.id].complete()
         self._live_display.update(self._etl_proto_uis[signal.etl_protocol.id])
+
+    def on_etl_workflow_error(
+        self,
+        signal: dispatch.ETLWorkflowRunErrorSignal,
+    ) -> None:
+        self._etl_proto_uis[signal.etl_protocol.id].fail_workflow(
+            extract_meta=signal.extract_meta,
+        )
 
     def on_etl_workflow_start(
         self,

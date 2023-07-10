@@ -70,6 +70,7 @@ class BaseDataSourceMetadata(
     _extract_metadata: Mapping[str, ExtractMetadata] = field(
         factory=dict,
         kw_only=True,
+        repr=False,
     )
 
     @property

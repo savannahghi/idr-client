@@ -58,6 +58,9 @@ class HTTPTransport(Disposable):
     _connect_timeout: float = field(default=60, kw_only=True)
     _is_disposed: bool = field(default=False, init=False)
     _read_timeout: float = field(default=60, kw_only=True)
+    _valid_auth_response_predicate: ResponsePredicate = field(
+        default=if_request_accepted, kw_only=True,
+    )
     _session: Session = field(factory=Session, kw_only=True)
 
     def __attrs_post_init__(self) -> None:
@@ -100,6 +103,14 @@ class HTTPTransport(Disposable):
             err_msg: str = "Error: unable to authenticate."
             self._logger.exception(err_msg)
             raise to_appropriate_domain_error(exp, message=err_msg) from exp
+
+        if not self._valid_auth_response_predicate(response):
+            err_msg: str = (
+                "Error: unable to authenticate. Invalid response received from"
+                " the remote server. Server says: '{}'".format(response.text)
+            )
+            self._logger.error(err_msg)
+            raise HTTPTransportTransientError(message=err_msg)
 
         self._auth = self._auth_api_dialect.handle_auth_response(response)
         self._logger.debug("Authentication successful.")

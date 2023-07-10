@@ -24,6 +24,10 @@ class SimpleUI(UI):
             self.on_config_error,
         )
         app_dispatcher.connect(
+            dispatch.ETLWorkflowRunErrorSignal,
+            self.on_etl_workflow_error,
+        )
+        app_dispatcher.connect(
             dispatch.PostETLProtocolRunSignal,
             self.on_etl_protocol_stop,
         )
@@ -50,7 +54,7 @@ class SimpleUI(UI):
 
     @staticmethod
     def on_app_stop(signal: dispatch.AppPreStopSignal) -> None:
-        print_success("Done 😁")
+        print_info("Done 😁")
 
     @staticmethod
     def on_config_error(signal: dispatch.ConfigErrorSignal) -> None:
@@ -63,7 +67,7 @@ class SimpleUI(UI):
     def on_etl_protocol_start(
         signal: dispatch.PreETLProtocolRunSignal,
     ) -> None:
-        print_info(
+        print_debug(
             'Running "{}:{}" protocol ...'.format(
                 signal.etl_protocol.id,
                 signal.etl_protocol.name,
@@ -74,7 +78,7 @@ class SimpleUI(UI):
     def on_etl_protocol_stop(
         signal: dispatch.PostETLProtocolRunSignal,
     ) -> None:
-        print_info("Protocol run successfully ✔️")
+        print_success("Protocol run successfully ✔️")
 
     @staticmethod
     def on_runtime_error(signal: dispatch.UnhandledRuntimeErrorSignal) -> None:
@@ -88,14 +92,28 @@ class SimpleUI(UI):
         signal: dispatch.PreETLWorkflowRunSignal,
     ) -> None:
         print_debug(
-            "- Running ETLWorkflow for extract '{}'".format(
+            "- Running ETLWorkflow for extract '{}' ...".format(
                 signal.extract_meta.name,
             ),
-            nl=False,
+        )
+
+    @staticmethod
+    def on_etl_workflow_error(
+        signal: dispatch.ETLWorkflowRunErrorSignal,
+    ) -> None:
+        print_error(
+            "- Error running ETLWorkflow for extract '{}'.".format(
+                signal.extract_meta.name,
+            ),
+            exception=signal.exception,
         )
 
     @staticmethod
     def on_etl_workflow_stop(
         signal: dispatch.PostETLWorkflowRunSignal,
     ) -> None:
-        print_debug(" ✔️")
+        print_success(
+            "- Completed ETLWorkflow for extract '{}' ✔️.".format(
+                signal.extract_meta.name,
+            ),
+        )
