@@ -4,10 +4,8 @@ from typing import TYPE_CHECKING
 import sghi.idr.client.core as app
 from importlib_metadata import EntryPoint, entry_points
 from sghi.idr.client.runtime.constants import (
-    APP_DISPATCHER_REG_KEY,
     ETL_PROTOCOLS_ENTRY_POINT_GROUP_NAME,
 )
-from sghi.idr.client.runtime.utils import dispatch
 from toolz.curried import groupby, map, valmap
 from toolz.functoolz import pipe
 from toolz.itertoolz import concat, first
@@ -22,12 +20,8 @@ if TYPE_CHECKING:
 
 
 def _execute_protocols() -> None:
-    app_dispatcher: dispatch.Dispatcher
-    app_dispatcher = app.registry.get(APP_DISPATCHER_REG_KEY)
     for etl_protocol in app.registry.etl_protocols.values():
-        app_dispatcher.send(dispatch.PreETLProtocolRunSignal(etl_protocol))
         RunETLProtocol(etl_protocol).execute(None)
-        app_dispatcher.send(dispatch.PostETLProtocolRunSignal(etl_protocol))
 
 
 def _load_etl_protocols() -> None:

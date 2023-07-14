@@ -35,6 +35,10 @@ class RichUI(UI):
             self.on_config_error,
         )
         app_dispatcher.connect(
+            dispatch.ETLProtocolRunErrorSignal,
+            self.on_etl_protocol_error,
+        )
+        app_dispatcher.connect(
             dispatch.ETLWorkflowRunErrorSignal,
             self.on_etl_workflow_error,
         )
@@ -78,15 +82,16 @@ class RichUI(UI):
     def on_config_stop(self, signal: dispatch.PostConfigSignal) -> None:
         ...
 
+    def on_etl_protocol_error(
+        self, signal: dispatch.ETLProtocolRunErrorSignal,
+    ) -> None:
+        self._etl_proto_uis[signal.etl_protocol.id].error_out()
+        self._live_display.update(self._etl_proto_uis[signal.etl_protocol.id])
+
     def on_etl_protocol_start(
         self,
         signal: dispatch.PreETLProtocolRunSignal,
     ) -> None:
-        status_msg: str = "Running '{}' protocol ...".format(
-            signal.etl_protocol.name,
-        )
-        status_msg.upper()
-
         self._etl_proto_uis[signal.etl_protocol.id] = ETLProtocolUI(
             etl_protocol=signal.etl_protocol,  # pyright: ignore
             console=self._console,  # pyright: ignore

@@ -1,6 +1,6 @@
 import builtins
 import logging
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable
 from concurrent.futures import (
     ALL_COMPLETED,
     Executor,
@@ -65,6 +65,20 @@ def _do_get_extract_meta(
     return metadata_supplier.get_extract_meta(data_source_meta)
 
 
+def _get_extract_metas(
+    metadata_supplier: MetadataSupplier[Any, Any, Any],
+    data_source_metas: Iterable[DataSourceMetadata],
+) -> None:
+    for data_source_meta in data_source_metas:
+        data_source_meta.extract_metadata = {
+            extract_meta.id: extract_meta
+            for extract_meta in _do_get_extract_meta(
+                metadata_supplier=metadata_supplier,
+                data_source_meta=data_source_meta,
+            )
+        }
+
+
 # =============================================================================
 # USE CASES
 # =============================================================================
@@ -94,21 +108,50 @@ class RunETLProtocol(Task[None, None]):
         app_dispatcher: dispatch.Dispatcher
         app_dispatcher = app.registry.get(APP_DISPATCHER_REG_KEY)
         with self._protocol_stack:
-            self._data_sink_metas.extend(
-                _do_get_data_sink_meta(
+            # Wrap this under a try, catch. If the execution of one ETL
+            # protocol fails, it should not prevent the rest from executing.
+            try:
+                app_dispatcher.send(
+                    dispatch.PreETLProtocolRunSignal(
+                        etl_protocol=self._etl_protocol,
+                    ),
+                )
+                self._data_sink_metas.extend(
+                    _do_get_data_sink_meta(
+                        metadata_supplier=self._etl_protocol.metadata_supplier,
+                    ),
+                )
+                self._data_source_metas.extend(
+                    _do_get_data_source_meta(
+                        metadata_supplier=self._etl_protocol.metadata_supplier,
+                    ),
+                )
+                _get_extract_metas(
                     metadata_supplier=self._etl_protocol.metadata_supplier,
-                ),
-            )
-            self._data_source_metas.extend(
-                self._do_get_data_source_and_extract_metas(
-                    metadata_source=self._etl_protocol.metadata_supplier,
-                ),
-            )
+                    data_source_metas=self._data_source_metas,
+                )
 
-            self._load_data_sources()
-            self._load_data_sinks()
-
-            self._start_etl_workflows(app_dispatcher)
+                self._load_data_sources()
+                self._load_data_sinks()
+                self._start_etl_workflows(app_dispatcher)
+                app_dispatcher.send(
+                    dispatch.PostETLProtocolRunSignal(
+                        etl_protocol=self._etl_protocol,
+                    ),
+                )
+            except Exception as exp:
+                _err_msg: str = (
+                    "Error running ETL protocol with id '{}' and name '{}'."
+                    .format(self._etl_protocol.id, self._etl_protocol.name)
+                )
+                self._logger.exception(_err_msg)
+                app_dispatcher.send(
+                    dispatch.ETLProtocolRunErrorSignal(
+                        etl_protocol=self._etl_protocol,
+                        err_message=_err_msg,
+                        exception=exp,
+                    ),
+                )
 
     def _load_data_sinks(self) -> None:
         self._data_sinks.extend(
@@ -118,6 +161,20 @@ class RunETLProtocol(Task[None, None]):
                     self._etl_protocol.data_sink_factory,
                 ),
                 self._data_sink_metas,
+            ),
+        )
+
+    def _load_data_sources(self) -> None:
+        self._data_sources.extend(
+            builtins.map(
+                juxt(
+                    compose(
+                        self._protocol_stack.enter_context,
+                        self._etl_protocol.data_source_factory,
+                    ),
+                    lambda _s: _s,
+                ),
+                self._data_source_metas,
             ),
         )
 
@@ -148,12 +205,11 @@ class RunETLProtocol(Task[None, None]):
                 ),
             )
         except Exception as exp:
-            self._logger.exception(
-                "Error running ETL workflow for extract with id '%s' and "
-                "name '%s'.",
-                extract_meta.id,
-                extract_meta.name,
+            _err_msg: str = (
+                "Error running ETL workflow for extract with id '{}' and "
+                "name '{}'.".format(extract_meta.id, extract_meta.name)
             )
+            self._logger.exception(_err_msg)
             app_dispatcher.send(
                 dispatch.ETLWorkflowRunErrorSignal(
                     etl_protocol=self._etl_protocol,
@@ -162,21 +218,9 @@ class RunETLProtocol(Task[None, None]):
                     exception=exp,
                 ),
             )
+            # It safe to reraise the error since this will only cause the
+            # thread running this workflow to fail and not the rest.
             raise
-
-    def _load_data_sources(self) -> None:
-        self._data_sources.extend(
-            builtins.map(
-                juxt(
-                    compose(
-                        self._protocol_stack.enter_context,
-                        self._etl_protocol.data_source_factory,
-                    ),
-                    lambda _s: _s,
-                ),
-                self._data_source_metas,
-            ),
-        )
 
     def _set_up_resources(self) -> None:
         self._protocol_stack.enter_context(
@@ -194,8 +238,10 @@ class RunETLProtocol(Task[None, None]):
         self,
         app_dispatcher: dispatch.Dispatcher,
     ) -> None:
+        # Schedule all workflows for execution on separate threads.
+        workflow_tasks: list[Future[None]] = []
         for data_source, data_source_meta in self._data_sources:
-            workflow_tasks: Sequence[Future[None]] = tuple(
+            workflow_tasks.extend(
                 self._executor.submit(
                     self._run_etl_workflow,
                     app_dispatcher=app_dispatcher,
@@ -204,19 +250,6 @@ class RunETLProtocol(Task[None, None]):
                 )
                 for extract_meta in data_source_meta.extract_metadata.values()
             )
-            wait(fs=workflow_tasks, return_when=ALL_COMPLETED)
 
-    @staticmethod
-    def _do_get_data_source_and_extract_metas(
-        metadata_source: MetadataSupplier[Any, Any, Any],
-    ) -> Iterable[DataSourceMetadata]:
-        data_source_metas = list(_do_get_data_source_meta(metadata_source))
-        for data_source_meta in data_source_metas:
-            data_source_meta.extract_metadata = {
-                extract_meta.id: extract_meta
-                for extract_meta in _do_get_extract_meta(
-                    metadata_supplier=metadata_source,
-                    data_source_meta=data_source_meta,
-                )
-            }
-        return data_source_metas
+        # Wait for all workflows to complete.
+        wait(fs=workflow_tasks, return_when=ALL_COMPLETED)

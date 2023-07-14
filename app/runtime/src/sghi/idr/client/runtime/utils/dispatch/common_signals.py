@@ -29,6 +29,22 @@ class ConfigErrorSignal(Signal):
 
 
 @frozen
+class ETLProtocolRunErrorSignal(Signal):
+    """Signal indicating an error occurred while running an ETL Protocol.
+
+    .. note::
+
+        If the resulting error was caused by one of the `ETLWorkflows`
+        associated with the protocol, the :class:`ETLWorkflowRunErrorSignal`
+        should be used instead.
+    """
+
+    etl_protocol: ETLProtocol[Any, Any, Any, Any, Any, Any] = field()
+    err_message: str = field()
+    exception: BaseException | None = field(default=None)
+
+
+@frozen
 class ETLWorkflowRunErrorSignal(Signal):
     """
     Signal indicating that an error occurred while running an ETL Workflow.

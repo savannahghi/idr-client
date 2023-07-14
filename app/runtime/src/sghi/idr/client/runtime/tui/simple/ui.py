@@ -24,6 +24,10 @@ class SimpleUI(UI):
             self.on_config_error,
         )
         app_dispatcher.connect(
+            dispatch.ETLProtocolRunErrorSignal,
+            self.on_etl_protocol_error,
+        )
+        app_dispatcher.connect(
             dispatch.ETLWorkflowRunErrorSignal,
             self.on_etl_workflow_error,
         )
@@ -58,6 +62,15 @@ class SimpleUI(UI):
 
     @staticmethod
     def on_config_error(signal: dispatch.ConfigErrorSignal) -> None:
+        print_error(
+            error_message=signal.err_message,
+            exception=signal.exception,
+        )
+
+    @staticmethod
+    def on_etl_protocol_error(
+        signal: dispatch.ETLProtocolRunErrorSignal,
+    ) -> None:
         print_error(
             error_message=signal.err_message,
             exception=signal.exception,
@@ -102,7 +115,7 @@ class SimpleUI(UI):
         signal: dispatch.ETLWorkflowRunErrorSignal,
     ) -> None:
         print_error(
-            "- Error running ETLWorkflow for extract '{}'.".format(
+            "- Error running ETLWorkflow for extract '{}' ⚠️".format(
                 signal.extract_meta.name,
             ),
             exception=signal.exception,
@@ -113,7 +126,7 @@ class SimpleUI(UI):
         signal: dispatch.PostETLWorkflowRunSignal,
     ) -> None:
         print_success(
-            "- Completed ETLWorkflow for extract '{}' ✔️.".format(
+            "- Completed ETLWorkflow for extract '{}' ✔️".format(
                 signal.extract_meta.name,
             ),
         )
