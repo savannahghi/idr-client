@@ -57,7 +57,7 @@ class SimpleSQLDatabaseDescriptorFactory(DataSourceMetadataFactory):
             map(lambda _sq: (_sq.id, _sq)),
             dict,
         )
-        obj.extract_metadata = sql_queries
+        obj.draw_metadata = sql_queries
         return sql_queries
 
 
@@ -108,10 +108,10 @@ class SimpleSQLQueryFactory(ExtractMetadataFactory):
         :return: The attachment status.
         """
         attach = True if extracted is None else extracted
-        if attach and obj.id not in obj.data_source_metadata.extract_metadata:
-            sql_queries = dict(obj.data_source_metadata.extract_metadata)
+        if attach and obj.id not in obj.data_source_metadata.draw_metadata:
+            sql_queries = dict(obj.data_source_metadata.draw_metadata)
             sql_queries[obj.id] = obj
-            obj.data_source_metadata.extract_metadata = sql_queries
+            obj.data_source_metadata.draw_metadata = sql_queries
 
         return attach
 

@@ -1,14 +1,14 @@
 from abc import ABCMeta, abstractmethod
-from collections.abc import Iterable, Mapping
-from typing import Any, Generic, TypeVar
+from collections.abc import Iterable
+from typing import Generic, TypeVar
 
 from ...mixins import Disposable
 from .base import NamedDomainObject
 from .metadata import (
     DataSinkMetadata,
     DataSourceMetadata,
-    ExtractMetadata,
-    UploadMetadata,
+    DrainMetadata,
+    DrawMetadata,
 )
 
 # =============================================================================
@@ -18,12 +18,30 @@ from .metadata import (
 
 _DM = TypeVar("_DM", bound=DataSourceMetadata)
 _DS = TypeVar("_DS", bound=DataSinkMetadata)
-_EM = TypeVar("_EM", bound=ExtractMetadata)
-_UM = TypeVar("_UM", bound=UploadMetadata)
+_EM = TypeVar("_EM", bound=DrawMetadata)
+_UM = TypeVar("_UM", bound=DrainMetadata)
 
 # =============================================================================
 # PIPELINE TERMINAL INTERFACES
 # =============================================================================
+
+
+class DrainMetadataFactory(Disposable, Generic[_UM, _EM], metaclass=ABCMeta):
+    """Create new :class:`DrawMetadata` instances on demand.
+
+    This class enables different `ETLProtocol` instances to provide a hook for
+    initializing :class:`DrawMetadata` instances that they work with.
+    """
+
+    @abstractmethod
+    def new_drain_meta(self, draw_meta: _EM) -> _UM:
+        """
+
+        :param draw_meta:
+
+        :return:
+        """
+        ...
 
 
 class MetadataConsumer(
@@ -32,17 +50,17 @@ class MetadataConsumer(
     Generic[_UM],
     metaclass=ABCMeta,
 ):
-    """Upload/Drain related metadata consumer.
+    """Drain related metadata consumer.
 
     An interface representing entities that take/accept metadata relating to
     uploaded/drained data.
     """
 
     @abstractmethod
-    def take_upload_meta(self, upload_meta: _UM) -> None:
+    def take_drain_meta(self, drain_meta: _UM) -> None:
         """
 
-        :param upload_meta:
+        :param drain_meta:
         :return:
         """
         ...
@@ -78,31 +96,8 @@ class MetadataSupplier(
         ...
 
     @abstractmethod
-    def get_extract_meta(self, data_source_meta: _DM) -> Iterable[_EM]:
+    def get_draw_meta(self, data_source_meta: _DM) -> Iterable[_EM]:
         """
-
-        :return:
-        """
-        ...
-
-
-class UploadMetadataFactory(Disposable, Generic[_UM, _EM], metaclass=ABCMeta):
-    """Create new :class:`UploadMetadata` instances on demand.
-
-    This class enables different ETLWorkflow definitions to provide a hook for
-    initializing :class:`UploadMetadata` instances that they work with.
-    """
-
-    @abstractmethod
-    def new_upload_meta(
-        self,
-        extract_meta: _EM,
-        **kwargs: Mapping[str, Any],
-    ) -> _UM:
-        """
-
-        :param extract_meta:
-        :param kwargs:
 
         :return:
         """

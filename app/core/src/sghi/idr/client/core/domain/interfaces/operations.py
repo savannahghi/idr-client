@@ -7,8 +7,8 @@ from .base import NamedDomainObject
 from .metadata import (
     DataSinkMetadata,
     DataSourceMetadata,
-    ExtractMetadata,
-    UploadMetadata,
+    DrainMetadata,
+    DrawMetadata,
 )
 
 # =============================================================================
@@ -18,10 +18,10 @@ from .metadata import (
 _CD = TypeVar("_CD", bound="CleanedData")
 _DM = TypeVar("_DM", bound=DataSourceMetadata)
 _DS = TypeVar("_DS", bound=DataSinkMetadata)
-_EM = TypeVar("_EM", bound=ExtractMetadata)
+_EM = TypeVar("_EM", bound=DrawMetadata)
 _RD = TypeVar("_RD", bound="RawData")
 _T = TypeVar("_T")
-_UM = TypeVar("_UM", bound=UploadMetadata)
+_UM = TypeVar("_UM", bound=DrainMetadata)
 
 
 # =============================================================================
@@ -34,9 +34,9 @@ class Data(Generic[_T], metaclass=ABCMeta):
 
     Specifically, this refers to:
 
-    * The :class:`raw <RawData>` data extracted from a :class:`DataSource`.
+    * The :class:`raw <RawData>` data drawn from a :class:`DataSource`.
     * The :class:`cleaned <CleanedData>` data returned by an
-      :class:`ExtractProcessor`.
+      :class:`DataProcessor`.
 
     This interface defines one read-only property :attr:`content` that returns
     the actual constituent material represented by a given instance.
@@ -103,24 +103,26 @@ class DataSink(
     """
 
     @abstractmethod
-    def start_consumption(
-        self,
-        upload_metadata: _UM,
-    ) -> "DataSinkStream[_UM, _CD]":
-        """Start consumption of :class:`data<CleanedData>`.
+    def start_drain(self, drain_metadata: _UM) -> "DataSinkStream[_UM, _CD]":
+        """Start consumption of :class:`clean data<CleanedData>`.
 
-        :param upload_metadata:
-        :return:
+        :param drain_metadata: Information about the data to be drained to the
+            sink.
+
+        :return: A `DataSinkStream` representing the drain operation.
         """
         ...
 
     @classmethod
     @abstractmethod
     def from_data_sink_meta(cls, data_sink_meta: _DS) -> Self:
-        """
+        """Return `DataSink` instance given a :class:`DataSinkMetadata`.
 
-        :param data_sink_meta:
-        :return:
+        :param data_sink_meta: A `DataSinkMetadata` instance describing a
+            `DataSink`.
+
+        :return: The `DataSink` instance described by the given
+            `DataSinkMetadata` instance.
         """
         ...
 
@@ -142,7 +144,7 @@ class DataSinkStream(Disposable, Generic[_UM, _CD], metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def upload_metadata(self) -> _UM:
+    def drain_metadata(self) -> _UM:
         """
 
         :return:
@@ -150,9 +152,9 @@ class DataSinkStream(Disposable, Generic[_UM, _CD], metaclass=ABCMeta):
         ...
 
     @abstractmethod
-    def consume(self, clean_data: _CD, progress: float) -> None:
+    def drain(self, clean_data: _CD, progress: float) -> None:
         """
-        Consume processed data for storage or further processing upstream.
+        Consume processed data for storage or further processing downstream.
 
         :param clean_data: Data that is already processed and ready for
             consumption downstream.
@@ -170,15 +172,12 @@ class DataSource(
     """An interface representing an entity that contains data of interest."""
 
     @abstractmethod
-    def start_extraction(
-        self,
-        extract_metadata: _EM,
-    ) -> "DataSourceStream[_EM, _RD]":
+    def start_draw(self, draw_metadata: _EM) -> "DataSourceStream[_EM, _RD]":
         """Initiate a draw operation from this data source as defined by the
-        given :class:`extraction metadata<ExtractMetadata>` and return a
-        stream representing this operation.
+        given :class:`draw metadata<ExtractMetadata>` and return a stream
+        representing this operation.
 
-        :param extract_metadata:
+        :param draw_metadata:
         :return:
         """
         ...
@@ -209,7 +208,7 @@ class DataSourceStream(
         return self
 
     def __next__(self) -> tuple[_RD, float]:
-        return self.extract()
+        return self.draw()
 
     @property
     @abstractmethod
@@ -224,19 +223,19 @@ class DataSourceStream(
 
     @property
     @abstractmethod
-    def extract_metadata(self) -> _EM:
+    def draw_metadata(self) -> _EM:
         """
-        Return the :class:`extract metadata <ExtractMetadata>` instance that
+        Return the :class:`draw metadata <ExtractMetadata>` instance that
         describes the data being drawn by this stream.
 
-        :return: The extract metadata instance that describes the data being
+        :return: The draw metadata instance that describes the data being
             drawn.
         """
         ...
 
     @abstractmethod
-    def extract(self) -> tuple[_RD, float]:
-        """Draw data from a :class:`DataSource` and return the data and the
+    def draw(self) -> tuple[_RD, float]:
+        """Extract data from a :class:`DataSource` and return the data and the
         progress as per the current draw.
 
         A negative value for the progress indicates that the stream is unbound,
@@ -246,8 +245,7 @@ class DataSourceStream(
         final draw and thus this stream will be disposed after this draw.
 
         After the final draw, subsequent calls to this method should raise
-        `StopExtraction` to indicate that the end of the extraction has been
-        reached.
+        `StopDraw` to indicate that the end of the extraction has been reached.
 
         .. note::
             Even unbound streams should strive to return a value equal to or
@@ -255,38 +253,33 @@ class DataSourceStream(
 
         :return: The data drawn and progress of the draw.
 
-        :raise StopExtraction: To signal the end of an extraction.
+        :raise StopDraw: To signal the end of a draw.
         """
-        # TODO: Streams are usually unbound, so maybe return the data and a
-        #  boolean to indicate whether that was the last draw or not??? This
-        #  has the benefit of making the logic for determining when a stream
-        #  ends easier.
         ...
 
-    class StopExtraction(StopIteration):
-        """Signal the end of an extraction."""
+    class StopDraw(StopIteration):
+        """Signal the end of a draw.
+
+        All data described by a :class:`DrawMetadata` instance has been drawn.
+        """
 
         ...
 
 
-class ExtractProcessor(Disposable, Generic[_EM, _RD, _CD], metaclass=ABCMeta):
-    """The post-extraction operation(s) to be performed on extracted data.
+class DataProcessor(Disposable, Generic[_EM, _RD, _CD], metaclass=ABCMeta):
+    """The post-extraction operation(s) to be performed on drawn data.
 
     This interface describes the post-extraction operation(s) to be performed
-    on :class:`extracted data <RawData>` in preparation for the
-    drainage/upload of the data to a :class:`data sink <DataSink>`.
+    on :class:`drawn data <RawData>` in preparation for the drainage of the
+    data to a :class:`data sink <DataSink>`.
     """
 
     @abstractmethod
-    def process(
-        self,
-        raw_data: _RD,
-        extract_metadata: _EM,
-    ) -> _CD:
+    def process(self, raw_data: _RD, draw_metadata: _EM) -> _CD:
         """
 
         :param raw_data:
-        :param extract_metadata:
+        :param draw_metadata:
         :return:
         """
         ...

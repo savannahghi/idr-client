@@ -56,40 +56,40 @@ class DataSourceMetadata(
 
     This describes information used by the runtime to identify and/or
     initialize a `DataSource` to draw/extract from. It defines a writable
-    property, :attr:`extract_metadata` that holds a mapping of
-    :class:`ExtractMetadata` instances associated with the aforementioned
+    property, :attr:`draw_metadata` that holds a mapping of
+    :class:`DrawMetadata` instances associated with the aforementioned
     `DataSource`.
     """
 
     @property
     @abstractmethod
-    def extract_metadata(self) -> Mapping[str, "ExtractMetadata"]:
-        """Return a read only `Mapping` of :class:`ExtractMetadata` instances.
+    def draw_metadata(self) -> Mapping[str, "DrawMetadata"]:
+        """Return a read only `Mapping` of :class:`DrawMetadata` instances.
 
-        Specifically, return a read only `Mapping` of the known
-        `ExtractMetadata` instances that should be run against the
-        :class:`DataSource` described by this instance.
+        Specifically, return a read only `Mapping` of the known `DrawMetadata`
+        instances that should be run against the :class:`DataSource` described
+        by this instance.
 
-        :return: A read only `Mapping` of the known `ExtractMetadata` instances
+        :return: A read only `Mapping` of the known `DrawMetadata` instances
             that should be run against the `DataSource` described by this
             instance.
         """
         ...
 
-    @extract_metadata.setter
+    @draw_metadata.setter
     @abstractmethod
-    def extract_metadata(
+    def draw_metadata(
         self,
-        extract_metas: Mapping[str, "ExtractMetadata"],
+        draw_metadata: Mapping[str, "DrawMetadata"],
     ) -> None:
-        """Define a `Mapping` containing :class:`ExtractMetadata` instances.
+        """Define a `Mapping` containing :class:`DrawMetadata` instances.
 
         Specifically, set this property with a read only `Mapping` of the known
-        `ExtractMetadata` instances that should be run against the
+        `DrawMetadata` instances that should be run against the
         :class:`DataSource` described by this instance.
 
-        :param extract_metas: A read only mapping containing the known
-            `ExtraMetadata` instances that should be run against the
+        :param draw_metadata: A read only mapping containing the known
+            `DrawMetadata` instances that should be run against the
             `DataSource` described by this instance.
 
         :return: None
@@ -97,20 +97,22 @@ class DataSourceMetadata(
         ...
 
 
-class ExtractMetadata(
+class DrawMetadata(
     NamedDomainObject,
     IdentifiableDomainObject,
     metaclass=ABCMeta,
 ):
-    """:class:`Metadata<MetadataObject>` describing what to extract.
+    """:class:`Metadata<MetadataObject>` describing what to draw/extract.
 
-    This interface defines metadata describing data to be extracted from a
-    :class:`DataSource`. A single `DataSourceMetadata` can have multiple
-    `ExtractMetadata` instances associated with it.
+    This interface defines metadata describing data to be drawn/extracted from
+    a :class:`DataSource`. Each `DrawMetadata` has an *owning*
+    :class:`DataSourceMetadata` instance that describes the :class:`DataSource`
+    on which the draw should be performed on. Conversely, a single
+    `DataSourceMetadata` can have multiple `DrawMetadata` instances associated
+    with it.
 
-    A read-only property, :attr:`data_source_metadata` is
-    provided to allow access to the `DataSourceMetadata` instance describing
-    the `DataSource` that the extract should be run against.
+    A read-only property, :attr:`data_source_metadata` is provided to allow
+    access to the *owning* `DataSourceMetadata` instance.
     """
 
     @property
@@ -127,40 +129,24 @@ class ExtractMetadata(
         ...
 
 
-class UploadMetadata(IdentifiableMetadataObject, metaclass=ABCMeta):
-    """:class:`Metadata <MetadataObject>` describing an upload operation.
+class DrainMetadata(IdentifiableMetadataObject, metaclass=ABCMeta):
+    """:class:`Metadata <MetadataObject>` describing a drain/upload data.
 
-    This interface describes the details of a drain/upload operation. That is,
-    overall information about the details of a drainage operation to a
-    :class:`DataSink` such as the content type of the data and the
-    :class:`ExtractMetadata` instance that resulted in this
-    :class:`data<CleanedData>`.
+    This interface describes the details of :class:`clean data<CleanedData>`
+    that can be drained/uploaded to a :class:`DataSink`. This includes the
+    :class:`DrawMetadata` instance that describes the source data.
 
-    The `ExtractMetadata` instance that resulted in the data being
-    drained/uploaded can be accessed using the read-only property,
-    :attr:`extract_metadata`. The content type of the data can be accessed
-    using the read-only property, :attr:`content_type`.
+    A read-only property, :attr:`draw_metadata` is provided to allow the access
+    of the `DrawMetadata` instance that led to the said data being drawn from
+    the source.
     """
 
     @property
     @abstractmethod
-    def content_type(self) -> str:
-        """Return a brief identifier of the kind of data being operated on.
+    def draw_metadata(self) -> DrawMetadata:
+        """Return the :class:`DrawMetadata` instance that describes the source
+        data.
 
-        Return a brief identifier of the kind of :class:`data<CleanedData>`
-        being drained to a :class:`DataSink`.
-
-        :return: A brief identifier of the kind of data being operated on.
-        """
-        ...
-
-    @property
-    @abstractmethod
-    def extract_metadata(self) -> ExtractMetadata:
-        """Return the uploads data, source :class:`ExtractMetadata` instance.
-
-        Return the `ExtractMetadata` instance that resulted to this upload.
-
-        :return: The extract metadata instance that resulted to this upload.
+        :return: The draw metadata instance that describes the source data.
         """
         ...

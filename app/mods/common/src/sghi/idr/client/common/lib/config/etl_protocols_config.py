@@ -3,15 +3,15 @@ from functools import cache
 from typing import Any, Final, TypedDict
 
 from sghi.idr.client.core.domain import (
+    DataProcessor,
     DataSink,
     DataSinkMetadata,
     DataSource,
     DataSourceMetadata,
+    DrainMetadataFactory,
     ETLProtocol,
-    ExtractProcessor,
     MetadataConsumer,
     MetadataSupplier,
-    UploadMetadataFactory,
 )
 from sghi.idr.client.core.lib import (
     ImproperlyConfiguredError,
@@ -37,10 +37,10 @@ class _RawProtocolDefinition(_ProtocolDefinitionOptional, total=True):
     name: str
     data_sink_factory: str  # Callable[[DataSinkMetadata], DataSink]
     data_source_factory: str  # Callable[[DataSourceMetadata], DataSource]
-    extract_processor_factory: str  # Callable[[], ExtractProcessor]
+    data_processor_factory: str  # Callable[[], DataProcessor]
+    drain_metadata_factory: str  # DrainMetadataFactory
     metadata_consumer_factory: str  # Callable[[], MetadataConsumer]
     metadata_supplier_factory: str  # Callable[[], MetadataSupplier]
-    upload_metadata_factory: str  # UploadMetadataFactory
 
 
 class ProtocolDefinition(_ProtocolDefinitionOptional, total=True):
@@ -48,13 +48,13 @@ class ProtocolDefinition(_ProtocolDefinitionOptional, total=True):
     name: str
     data_sink_factory: Callable[[DataSinkMetadata], DataSink]
     data_source_factory: Callable[[DataSourceMetadata], DataSource]
-    extract_processor_factory: Callable[[], ExtractProcessor]
+    data_processor_factory: Callable[[], DataProcessor]
+    drain_metadata_factory: DrainMetadataFactory | Callable[
+        [],
+        DrainMetadataFactory,
+    ]
     metadata_consumer_factory: Callable[[], MetadataConsumer]
     metadata_supplier_factory: Callable[[], MetadataSupplier]
-    upload_metadata_factory: UploadMetadataFactory | Callable[
-        [],
-        UploadMetadataFactory,
-    ]
 
 
 # =============================================================================
@@ -126,9 +126,13 @@ class ETLProtocolDefinitionsInitializer(SettingInitializer):
                 raw_protocol_definition["data_source_factory"],
                 item_name="data_source_factory",
             ),
-            "extract_processor_factory": self._load_entry_point(
-                raw_protocol_definition["extract_processor_factory"],
-                item_name="extract_processor_factory",
+            "data_processor_factory": self._load_entry_point(
+                raw_protocol_definition["data_processor_factory"],
+                item_name="data_processor_factory",
+            ),
+            "drain_metadata_factory": self._load_entry_point(
+                raw_protocol_definition["drain_metadata_factory"],
+                item_name="drain_metadata_factory",
             ),
             "metadata_consumer_factory": self._load_entry_point(
                 raw_protocol_definition["metadata_consumer_factory"],
@@ -137,10 +141,6 @@ class ETLProtocolDefinitionsInitializer(SettingInitializer):
             "metadata_supplier_factory": self._load_entry_point(
                 raw_protocol_definition["metadata_supplier_factory"],
                 item_name="metadata_supplier_factory",
-            ),
-            "upload_metadata_factory": self._load_entry_point(
-                raw_protocol_definition["upload_metadata_factory"],
-                item_name="upload_metadata_factory",
             ),
         }
 

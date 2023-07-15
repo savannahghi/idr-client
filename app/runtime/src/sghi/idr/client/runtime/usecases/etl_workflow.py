@@ -5,16 +5,16 @@ from typing import Any
 from attrs import define, field
 from sghi.idr.client.core.domain import (
     CleanedData,
+    DataProcessor,
     DataSink,
     DataSinkStream,
     DataSource,
     DataSourceStream,
-    ExtractMetadata,
-    ExtractProcessor,
+    DrainMetadata,
+    DrainMetadataFactory,
+    DrawMetadata,
     MetadataConsumer,
     RawData,
-    UploadMetadata,
-    UploadMetadataFactory,
 )
 from sghi.idr.client.core.exceptions import TransientError
 from sghi.idr.client.core.lib import Retry, if_exception_type_factory
@@ -34,10 +34,10 @@ _if_idr_transient_exception = if_exception_type_factory(TransientError)
 
 @Retry(predicate=_if_idr_transient_exception)
 def _create_new_upload_meta(
-    upload_meta_factory: UploadMetadataFactory[Any, Any],
-    extract_metadata: ExtractMetadata,
-) -> UploadMetadata:
-    return upload_meta_factory.new_upload_meta(extract_meta=extract_metadata)
+    upload_meta_factory: DrainMetadataFactory[Any, Any],
+    extract_metadata: DrawMetadata,
+) -> DrainMetadata:
+    return upload_meta_factory.new_drain_meta(draw_meta=extract_metadata)
 
 
 @Retry(predicate=_if_idr_transient_exception)
@@ -46,7 +46,7 @@ def _do_consume(
     clean_data: CleanedData[Any],
     progress: float,
 ) -> None:
-    data_sink_stream.consume(clean_data=clean_data, progress=progress)
+    data_sink_stream.drain(clean_data=clean_data, progress=progress)
 
 
 @Retry(predicate=_if_idr_transient_exception)
@@ -58,38 +58,38 @@ def _do_extract(
 
 @Retry(predicate=_if_idr_transient_exception)
 def _do_process(
-    extract_processor: ExtractProcessor[Any, Any, Any],
+    extract_processor: DataProcessor[Any, Any, Any],
     raw_data: RawData[Any],
-    extract_metadata: ExtractMetadata,
+    extract_metadata: DrawMetadata,
 ) -> CleanedData[Any]:
     return extract_processor.process(
         raw_data=raw_data,
-        extract_metadata=extract_metadata,
+        draw_metadata=extract_metadata,
     )
 
 
 @Retry(predicate=_if_idr_transient_exception)
 def _do_start_consumption(
     data_sink: DataSink[Any, Any, Any],
-    upload_meta: UploadMetadata,
+    upload_meta: DrainMetadata,
 ) -> DataSinkStream[Any, Any]:
-    return data_sink.start_consumption(upload_metadata=upload_meta)
+    return data_sink.start_drain(drain_metadata=upload_meta)
 
 
 @Retry(predicate=_if_idr_transient_exception)
 def _do_start_extraction(
     data_source: DataSource[Any, Any, Any],
-    extract_metadata: ExtractMetadata,
+    extract_metadata: DrawMetadata,
 ) -> DataSourceStream[Any, Any]:
-    return data_source.start_extraction(extract_metadata=extract_metadata)
+    return data_source.start_draw(draw_metadata=extract_metadata)
 
 
 @Retry(predicate=_if_idr_transient_exception)
 def _do_take_upload_meta(
     metadata_consumer: MetadataConsumer,
-    upload_meta: UploadMetadata,
+    upload_meta: DrainMetadata,
 ) -> None:
-    metadata_consumer.take_upload_meta(upload_meta=upload_meta)
+    metadata_consumer.take_drain_meta(drain_meta=upload_meta)
 
 
 # =============================================================================
@@ -98,19 +98,19 @@ def _do_take_upload_meta(
 
 
 @define(order=False, eq=False)
-class ETLWorkflow(Task[ExtractMetadata, None]):
+class ETLWorkflow(Task[DrawMetadata, None]):
     """Main runtime concurrency unit."""
 
     _data_source: DataSource[Any, Any, Any] = field()
     _extract_processor_factory: Callable[
         [],
-        ExtractProcessor[Any, Any, Any],
+        DataProcessor[Any, Any, Any],
     ] = field()
-    _upload_metadata_factory: UploadMetadataFactory[Any, Any] = field()
+    _upload_metadata_factory: DrainMetadataFactory[Any, Any] = field()
     _metadata_consumer: MetadataConsumer[Any] = field()
     _data_sinks: Iterable[DataSink[Any, Any, Any]] = field()
 
-    def execute(self, an_input: ExtractMetadata) -> None:
+    def execute(self, an_input: DrawMetadata) -> None:
         with ExitStack() as workflow_stack:
             draw_stream: DataSourceStream[Any, Any]
             draw_stream = workflow_stack.enter_context(
@@ -119,7 +119,7 @@ class ETLWorkflow(Task[ExtractMetadata, None]):
                     extract_metadata=an_input,
                 ),
             )
-            upload_meta: UploadMetadata = _create_new_upload_meta(
+            upload_meta: DrainMetadata = _create_new_upload_meta(
                 upload_meta_factory=self._upload_metadata_factory,
                 extract_metadata=an_input,
             )
@@ -144,7 +144,7 @@ class ETLWorkflow(Task[ExtractMetadata, None]):
     def _run_etl(
         self,
         draw_stream: DataSourceStream[Any, Any],
-        extract_metadata: ExtractMetadata,
+        extract_metadata: DrawMetadata,
         drain_streams: Sequence[DataSinkStream[Any, Any]],
     ) -> None:
         try:
@@ -157,7 +157,7 @@ class ETLWorkflow(Task[ExtractMetadata, None]):
                         extract_metadata=extract_metadata,
                     )
                     self._drain_clean_data(drain_streams, clean_data, progress)
-        except DataSourceStream.StopExtraction:
+        except DataSourceStream.StopDraw:
             return
 
     @staticmethod

@@ -3,25 +3,25 @@ from .etl_protocol import ETLProtocol, ETLProtocolSupplier
 from .metadata import (
     DataSinkMetadata,
     DataSourceMetadata,
-    ExtractMetadata,
+    DrainMetadata,
+    DrawMetadata,
     IdentifiableMetadataObject,
     MetadataObject,
-    UploadMetadata,
 )
 from .operations import (
     CleanedData,
     Data,
+    DataProcessor,
     DataSink,
     DataSinkStream,
     DataSource,
     DataSourceStream,
-    ExtractProcessor,
     RawData,
 )
 from .terminals import (
+    DrainMetadataFactory,
     MetadataConsumer,
     MetadataSupplier,
-    UploadMetadataFactory,
 )
 
 __all__ = [
@@ -36,8 +36,8 @@ __all__ = [
     "DomainObject",
     "ETLProtocol",
     "ETLProtocolSupplier",
-    "ExtractMetadata",
-    "ExtractProcessor",
+    "DrawMetadata",
+    "DataProcessor",
     "IdentifiableDomainObject",
     "IdentifiableMetadataObject",
     "MetadataObject",
@@ -45,6 +45,6 @@ __all__ = [
     "MetadataSupplier",
     "NamedDomainObject",
     "RawData",
-    "UploadMetadata",
-    "UploadMetadataFactory",
+    "DrainMetadata",
+    "DrainMetadataFactory",
 ]

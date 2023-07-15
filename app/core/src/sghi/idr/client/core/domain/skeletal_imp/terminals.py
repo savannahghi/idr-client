@@ -6,11 +6,11 @@ from attrs import define, field
 from ..interfaces import (
     DataSinkMetadata,
     DataSourceMetadata,
-    ExtractMetadata,
+    DrainMetadata,
+    DrainMetadataFactory,
+    DrawMetadata,
     MetadataConsumer,
     MetadataSupplier,
-    UploadMetadata,
-    UploadMetadataFactory,
 )
 from .base import BaseNamedDomainObject
 
@@ -21,8 +21,8 @@ from .base import BaseNamedDomainObject
 
 _DM = TypeVar("_DM", bound=DataSourceMetadata)
 _DS = TypeVar("_DS", bound=DataSinkMetadata)
-_EM = TypeVar("_EM", bound=ExtractMetadata)
-_UM = TypeVar("_UM", bound=UploadMetadata)
+_EM = TypeVar("_EM", bound=DrawMetadata)
+_UM = TypeVar("_UM", bound=DrainMetadata)
 
 
 # =============================================================================
@@ -69,8 +69,8 @@ class BaseMetadataSupplier(
 
 
 @define(slots=False)
-class BaseUploadMetadataFactory(
-    UploadMetadataFactory[_UM, _EM],
+class BaseDrainMetadataFactory(
+    DrainMetadataFactory[_UM, _EM],
     Generic[_UM, _EM],
     metaclass=ABCMeta,
 ):

@@ -1,7 +1,7 @@
 from typing import Any
 
 from attrs import field, frozen
-from sghi.idr.client.core.domain import ETLProtocol, ExtractMetadata
+from sghi.idr.client.core.domain import DrawMetadata, ETLProtocol
 
 from .dispatcher import Signal
 
@@ -51,7 +51,7 @@ class ETLWorkflowRunErrorSignal(Signal):
     """
 
     etl_protocol: ETLProtocol[Any, Any, Any, Any, Any, Any] = field()
-    extract_meta: ExtractMetadata
+    extract_meta: DrawMetadata
     err_message: str = field()
     exception: BaseException | None = field(default=None)
 
@@ -77,7 +77,7 @@ class PostETLWorkflowRunSignal(Signal):
     """
 
     etl_protocol: ETLProtocol[Any, Any, Any, Any, Any, Any] = field()
-    extract_meta: ExtractMetadata
+    extract_meta: DrawMetadata
 
 
 @frozen
@@ -101,7 +101,7 @@ class PreETLWorkflowRunSignal(Signal):
     """
 
     etl_protocol: ETLProtocol[Any, Any, Any, Any, Any, Any] = field()
-    extract_meta: ExtractMetadata
+    extract_meta: DrawMetadata
 
 
 @frozen

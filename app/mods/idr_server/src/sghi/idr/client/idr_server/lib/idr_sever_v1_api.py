@@ -13,9 +13,9 @@ from sghi.idr.client.core.lib.config import ImproperlyConfiguredError
 from sghi.idr.client.http import (
     HTTPAuthAPIDialect,
     HTTPDataSinkAPIDialect,
+    HTTPDrainMetadataFactoryAPIDialect,
     HTTPMetadataConsumerAPIDialect,
     HTTPMetadataSupplierAPIDialect,
-    HTTPUploadMetadataFactoryAPIDialect,
     ResponsePredicate,
     SimpleHTTPDataSinkMetadata,
     if_response_has_status_factory,
@@ -29,7 +29,7 @@ from sghi.idr.client.sql.domain import (
 from toolz import pipe
 from toolz.curried import map
 
-from ..domain import IDRServerV1APIUploadMetadata, ParquetData
+from ..domain import IDRServerV1APIDrainMetadata, ParquetData
 
 if TYPE_CHECKING:
     from requests.models import PreparedRequest
@@ -147,15 +147,15 @@ class _IDRServerAuth(AuthBase):
 @define(slots=True)
 class IDRServerV1API(
     HTTPAuthAPIDialect,
-    HTTPDataSinkAPIDialect[IDRServerV1APIUploadMetadata, ParquetData],
-    HTTPMetadataConsumerAPIDialect[IDRServerV1APIUploadMetadata],
+    HTTPDataSinkAPIDialect[IDRServerV1APIDrainMetadata, ParquetData],
+    HTTPMetadataConsumerAPIDialect[IDRServerV1APIDrainMetadata],
     HTTPMetadataSupplierAPIDialect[
         SimpleHTTPDataSinkMetadata,
         SimpleSQLDatabaseDescriptor,
         SimpleSQLQuery,
     ],
-    HTTPUploadMetadataFactoryAPIDialect[
-        IDRServerV1APIUploadMetadata,
+    HTTPDrainMetadataFactoryAPIDialect[
+        IDRServerV1APIDrainMetadata,
         SimpleSQLQuery,
     ],
 ):
@@ -194,9 +194,9 @@ class IDRServerV1API(
 
     # HTTP DATA SINK API DIALECT IMPLEMENTATION
     # -------------------------------------------------------------------------
-    def consume_request_factory(
+    def drain_request_factory(
         self,
-        upload_meta: IDRServerV1APIUploadMetadata,
+        drain_meta: IDRServerV1APIDrainMetadata,
         clean_data: ParquetData,
         progress: float,
     ) -> Request:
@@ -204,9 +204,9 @@ class IDRServerV1API(
             data={"chunk_index": clean_data.index},
             files={
                 "chunk_content": (
-                    f"{clean_data.index}_{upload_meta.id}",
+                    f"{clean_data.index}_{drain_meta.id}",
                     clean_data.content.getvalue(),
-                    upload_meta.content_type,
+                    clean_data.content_type,
                 ),
             },
             headers=self._common_headers,
@@ -214,14 +214,14 @@ class IDRServerV1API(
             url="{api_url}/sql_data/sql_upload_metadata/"
             "{upload_meta_id}/start_chunk_upload/".format(
                 api_url=self._base_api_url,
-                upload_meta_id=upload_meta.id,
+                upload_meta_id=drain_meta.id,
             ),
         )
 
-    def handle_consume_response(
+    def handle_drain_response(
         self,
         response: Response,
-        upload_meta: IDRServerV1APIUploadMetadata,
+        drain_meta: IDRServerV1APIDrainMetadata,
         clean_data: ParquetData,
         progress: float,
     ) -> None:
@@ -230,9 +230,9 @@ class IDRServerV1API(
 
     # HTTP METADATA SINK API DIALECT IMPLEMENTATION
     # -------------------------------------------------------------------------
-    def take_upload_meta_request_factory(
+    def take_drain_meta_request_factory(
         self,
-        upload_meta: IDRServerV1APIUploadMetadata,
+        drain_meta: IDRServerV1APIDrainMetadata,
     ) -> Request:
         return Request(
             headers={
@@ -240,24 +240,26 @@ class IDRServerV1API(
                 "Content-Type": "application/json",
             },
             json={
-                "chunks": upload_meta.chunks,
-                "org_unit_code": upload_meta.org_unit_code,
-                "org_unit_name": upload_meta.org_unit_name,
-                "content_type": upload_meta.content_type,
-                "extract_metadata": upload_meta.extract_metadata.id,
+                "chunks": drain_meta.chunks,
+                "org_unit_code": drain_meta.org_unit_code,
+                "org_unit_name": drain_meta.org_unit_name,
+                # This is hard-coded content type is bad, but it is required by
+                # this version of the IDR Server API.
+                "content_type": "application/vnd.apache-parquet",
+                "extract_metadata": drain_meta.draw_metadata.id,
             },
             method=_PATCH_METHOD,
             url="{api_url}/sql_data/sql_upload_metadata/"
             "{upload_meta_id}/mark_as_complete/".format(
                 api_url=self._base_api_url,
-                upload_meta_id=upload_meta.id,
+                upload_meta_id=drain_meta.id,
             ),
         )
 
-    def handle_take_upload_meta_response(
+    def handle_take_drain_meta_response(
         self,
         response: Response,
-        upload_meta: IDRServerV1APIUploadMetadata,
+        drain_meta: IDRServerV1APIDrainMetadata,
     ) -> None:
         response.close()
         return
@@ -281,7 +283,7 @@ class IDRServerV1API(
             ),
         )
 
-    def get_extract_meta_request_factory(
+    def get_draw_meta_request_factory(
         self,
         data_source_meta: SimpleSQLDatabaseDescriptor,
     ) -> Request:
@@ -334,7 +336,7 @@ class IDRServerV1API(
             ),
         )
 
-    def handle_get_extract_meta_response(
+    def handle_get_draw_meta_response(
         self,
         response: Response,
         data_source_meta: SimpleSQLDatabaseDescriptor,
@@ -360,10 +362,9 @@ class IDRServerV1API(
 
     # HTTP UPLOAD METADATA API DIALECT IMPLEMENTATION
     # -------------------------------------------------------------------------
-    def new_upload_meta_request_factory(
+    def new_drain_meta_request_factory(
         self,
-        extract_meta: SimpleSQLQuery,
-        **kwargs: Mapping[str, Any],
+        draw_meta: SimpleSQLQuery,
     ) -> Request:
         org_unit_code: str = app.settings.LOCATION_ID
         org_unit_name: str = app.settings.LOCATION_NAME
@@ -379,7 +380,7 @@ class IDRServerV1API(
                 # This is hard-coded content type is bad, but it is required by
                 # this version of the IDR Server API.
                 "content_type": "application/vnd.apache-parquet",
-                "extract_metadata": extract_meta.id,
+                "extract_metadata": draw_meta.id,
             },
             method=_POST_METHOD,
             url="{api_url}/sql_data/sql_upload_metadata/".format(
@@ -387,17 +388,15 @@ class IDRServerV1API(
             ),
         )
 
-    def handle_new_upload_meta_response(
+    def handle_new_drain_meta_response(
         self,
         response: Response,
-        extract_meta: SimpleSQLQuery,
-        **kwargs: Mapping[str, Any],
-    ) -> IDRServerV1APIUploadMetadata:
+        draw_meta: SimpleSQLQuery,
+    ) -> IDRServerV1APIDrainMetadata:
         result: _IDRServerUploadMetaAPIPayload = response.json()
-        return IDRServerV1APIUploadMetadata(
+        return IDRServerV1APIDrainMetadata(
             id=result["id"],  # pyright: ignore
-            content_type=result["content_type"],  # pyright: ignore
-            extract_metadata=extract_meta,  # pyright: ignore
+            draw_metadata=draw_meta,  # pyright: ignore
             chunks=result["chunks_count"],  # pyright: ignore
             org_unit_code=result["org_unit_code"],  # pyright: ignore
             org_unit_name=result["org_unit_name"],  # pyright: ignore

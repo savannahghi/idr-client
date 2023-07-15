@@ -6,10 +6,10 @@ from attrs import define, field
 from ..interfaces import (
     DataSinkMetadata,
     DataSourceMetadata,
-    ExtractMetadata,
+    DrainMetadata,
+    DrawMetadata,
     IdentifiableMetadataObject,
     MetadataObject,
-    UploadMetadata,
 )
 from .base import (
     BaseDomainObject,
@@ -67,33 +67,33 @@ class BaseDataSourceMetadata(
     implementations.
     """
 
-    _extract_metadata: Mapping[str, ExtractMetadata] = field(
+    _draw_metadata: Mapping[str, DrawMetadata] = field(
         factory=dict,
         kw_only=True,
         repr=False,
     )
 
     @property
-    def extract_metadata(self) -> Mapping[str, ExtractMetadata]:
-        return self._extract_metadata
+    def draw_metadata(self) -> Mapping[str, DrawMetadata]:
+        return self._draw_metadata
 
-    @extract_metadata.setter
-    def extract_metadata(
+    @draw_metadata.setter
+    def draw_metadata(
         self,
-        extract_metas: Mapping[str, ExtractMetadata],
+        draw_metadata: Mapping[str, DrawMetadata],
     ) -> None:
-        self._extract_metadata = extract_metas
+        self._draw_metadata = draw_metadata
 
 
 @define(slots=False)
-class BaseExtractMetadata(
+class BaseDrawMetadata(
     BaseNamedDomainObject,
     BaseIdentifiableMetadataObject,
-    ExtractMetadata,
+    DrawMetadata,
     metaclass=ABCMeta,
 ):
     """
-    Base skeletal implementation for most :class:`ExtractMetadata`
+    Base skeletal implementation for most :class:`DrawMetadata`
     implementations.
     """
 
@@ -105,9 +105,9 @@ class BaseExtractMetadata(
 
 
 @define(slots=False)
-class BaseUploadMetadata(
+class BaseDrainMetadata(
     BaseIdentifiableMetadataObject,
-    UploadMetadata,
+    DrainMetadata,
     metaclass=ABCMeta,
 ):
     """
@@ -115,13 +115,8 @@ class BaseUploadMetadata(
     implementations.
     """
 
-    _content_type: str = field()
-    _extract_metadata: ExtractMetadata = field()
+    _draw_metadata: DrawMetadata = field()
 
     @property
-    def content_type(self) -> str:
-        return self._content_type
-
-    @property
-    def extract_metadata(self) -> ExtractMetadata:
-        return self._extract_metadata
+    def draw_metadata(self) -> DrawMetadata:
+        return self._draw_metadata

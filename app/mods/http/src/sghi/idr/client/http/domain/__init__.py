@@ -1,9 +1,9 @@
 from .metadata import BaseHTTPDataSinkMetadata, SimpleHTTPDataSinkMetadata
 from .operations import HTTPDataSink, HTTPDataSinkStream
 from .terminals import (
+    HTTPDrainMetadataFactory,
     HTTPMetadataConsumer,
     HTTPMetadataSupplier,
-    HTTPUploadMetadataFactory,
 )
 
 __all__ = [
@@ -12,6 +12,6 @@ __all__ = [
     "HTTPDataSinkStream",
     "HTTPMetadataConsumer",
     "HTTPMetadataSupplier",
-    "HTTPUploadMetadataFactory",
+    "HTTPDrainMetadataFactory",
     "SimpleHTTPDataSinkMetadata",
 ]

@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
-from collections.abc import Iterable, Mapping
-from typing import Any, Generic, TypeVar
+from collections.abc import Iterable
+from typing import Generic, TypeVar
 
 from requests.auth import AuthBase
 from requests.models import Request, Response
@@ -8,8 +8,8 @@ from sghi.idr.client.core.domain import (
     CleanedData,
     DataSinkMetadata,
     DataSourceMetadata,
-    ExtractMetadata,
-    UploadMetadata,
+    DrainMetadata,
+    DrawMetadata,
 )
 
 from ..typings import ResponsePredicate
@@ -21,8 +21,8 @@ from ..typings import ResponsePredicate
 _CD = TypeVar("_CD", bound=CleanedData)
 _DM = TypeVar("_DM", bound=DataSourceMetadata)
 _DS = TypeVar("_DS", bound=DataSinkMetadata)
-_EM = TypeVar("_EM", bound=ExtractMetadata)
-_UM = TypeVar("_UM", bound=UploadMetadata)
+_EM = TypeVar("_EM", bound=DrawMetadata)
+_UM = TypeVar("_UM", bound=DrainMetadata)
 
 
 # =============================================================================
@@ -101,15 +101,15 @@ class HTTPDataSinkAPIDialect(
     # REQUEST FACTORIES
     # -------------------------------------------------------------------------
     @abstractmethod
-    def consume_request_factory(
+    def drain_request_factory(
         self,
-        upload_meta: _UM,
+        drain_meta: _UM,
         clean_data: _CD,
         progress: float,
     ) -> Request:
         """
 
-        :param upload_meta:
+        :param drain_meta:
         :param clean_data:
         :param progress:
 
@@ -120,16 +120,16 @@ class HTTPDataSinkAPIDialect(
     # RESPONSE HANDLERS
     # -------------------------------------------------------------------------
     @abstractmethod
-    def handle_consume_response(
+    def handle_drain_response(
         self,
         response: Response,
-        upload_meta: _UM,
+        drain_meta: _UM,
         clean_data: _CD,
         progress: float,
     ) -> None:
         """
 
-        :param upload_meta:
+        :param drain_meta:
         :param response:
         :param clean_data:
         :param progress:
@@ -146,13 +146,13 @@ class HTTPMetadataConsumerAPIDialect(
     # REQUEST FACTORIES
     # -------------------------------------------------------------------------
     @abstractmethod
-    def take_upload_meta_request_factory(
+    def take_drain_meta_request_factory(
         self,
-        upload_meta: _UM,
+        drain_meta: _UM,
     ) -> Request:
         """
 
-        :param upload_meta:
+        :param drain_meta:
 
         :return:
         """
@@ -161,15 +161,15 @@ class HTTPMetadataConsumerAPIDialect(
     # RESPONSE HANDLERS
     # -------------------------------------------------------------------------
     @abstractmethod
-    def handle_take_upload_meta_response(
+    def handle_take_drain_meta_response(
         self,
         response: Response,
-        upload_meta: _UM,
+        drain_meta: _UM,
     ) -> None:
         """
 
         :param response:
-        :param upload_meta:
+        :param drain_meta:
 
         :return:
         """
@@ -200,7 +200,7 @@ class HTTPMetadataSupplierAPIDialect(
         ...
 
     @abstractmethod
-    def get_extract_meta_request_factory(
+    def get_draw_meta_request_factory(
         self,
         data_source_meta: _DM,
     ) -> Request:
@@ -239,7 +239,7 @@ class HTTPMetadataSupplierAPIDialect(
         ...
 
     @abstractmethod
-    def handle_get_extract_meta_response(
+    def handle_get_draw_meta_response(
         self,
         response: Response,
         data_source_meta: _DM,
@@ -254,7 +254,7 @@ class HTTPMetadataSupplierAPIDialect(
         ...
 
 
-class HTTPUploadMetadataFactoryAPIDialect(
+class HTTPDrainMetadataFactoryAPIDialect(
     HTTPAPIDialect,
     Generic[_UM, _EM],
     metaclass=ABCMeta,
@@ -262,15 +262,10 @@ class HTTPUploadMetadataFactoryAPIDialect(
     # REQUEST FACTORIES
     # -------------------------------------------------------------------------
     @abstractmethod
-    def new_upload_meta_request_factory(
-        self,
-        extract_meta: _EM,
-        **kwargs: Mapping[str, Any],
-    ) -> Request:
+    def new_drain_meta_request_factory(self, draw_meta: _EM) -> Request:
         """
 
-        :param extract_meta:
-        :param kwargs:
+        :param draw_meta:
         :return:
         """
         ...
@@ -278,17 +273,15 @@ class HTTPUploadMetadataFactoryAPIDialect(
     # RESPONSE HANDLERS
     # -------------------------------------------------------------------------
     @abstractmethod
-    def handle_new_upload_meta_response(
+    def handle_new_drain_meta_response(
         self,
         response: Response,
-        extract_meta: _EM,
-        **kwargs: Mapping[str, Any],
+        draw_meta: _EM,
     ) -> _UM:
         """
 
         :param response:
-        :param extract_meta:
-        :param kwargs:
+        :param draw_meta:
         :return:
         """
         ...

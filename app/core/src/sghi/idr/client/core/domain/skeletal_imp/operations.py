@@ -12,9 +12,9 @@ from ..interfaces import (
     DataSource,
     DataSourceMetadata,
     DataSourceStream,
-    ExtractMetadata,
+    DrainMetadata,
+    DrawMetadata,
     RawData,
-    UploadMetadata,
 )
 from .base import BaseNamedDomainObject
 
@@ -25,10 +25,10 @@ from .base import BaseNamedDomainObject
 _CD = TypeVar("_CD", bound=CleanedData)
 _DM = TypeVar("_DM", bound=DataSourceMetadata)
 _DS = TypeVar("_DS", bound=DataSinkMetadata)
-_EM = TypeVar("_EM", bound=ExtractMetadata)
+_EM = TypeVar("_EM", bound=DrawMetadata)
 _RD = TypeVar("_RD", bound=RawData)
 _T = TypeVar("_T")
-_UM = TypeVar("_UM", bound=UploadMetadata)
+_UM = TypeVar("_UM", bound=DrainMetadata)
 
 
 # =============================================================================
@@ -84,7 +84,7 @@ class BaseDataSinkStream(
     """
 
     _data_sink: DataSink[Any, _UM, _CD] = field()
-    _upload_metadata: _UM = field()
+    _drain_metadata: _UM = field()
     _is_disposed: bool = field(default=False, init=False)
 
     @property
@@ -96,8 +96,8 @@ class BaseDataSinkStream(
         return self._is_disposed
 
     @property
-    def upload_metadata(self) -> _UM:
-        return self._upload_metadata
+    def drain_metadata(self) -> _UM:
+        return self._drain_metadata
 
 
 @define(slots=False)
@@ -130,7 +130,7 @@ class BaseDataSourceStream(
     """
 
     _data_source: DataSource[Any, _EM, _RD] = field()
-    _extract_metadata: _EM = field()
+    _draw_metadata: _EM = field()
     _is_disposed: bool = field(default=False, init=False)
 
     @property
@@ -138,8 +138,8 @@ class BaseDataSourceStream(
         return self._data_source
 
     @property
-    def extract_metadata(self) -> _EM:
-        return self._extract_metadata
+    def draw_metadata(self) -> _EM:
+        return self._draw_metadata
 
     @property
     def is_disposed(self) -> bool:

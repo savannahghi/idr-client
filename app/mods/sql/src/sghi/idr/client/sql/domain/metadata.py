@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 from attrs import define, field
 from sghi.idr.client.core.domain import (
     BaseDataSourceMetadata,
-    BaseExtractMetadata,
+    BaseDrawMetadata,
     DataSourceStream,
     RawData,
 )
@@ -62,7 +62,7 @@ class BaseSQLDataSourceMetadata(BaseDataSourceMetadata, metaclass=ABCMeta):
 
 
 @define(slots=False)
-class BaseSQLExtractMetadata(BaseExtractMetadata, metaclass=ABCMeta):
+class BaseSQLExtractMetadata(BaseDrawMetadata, metaclass=ABCMeta):
     """Base `ExtractMetadata` for drawing data from SQL data sources.
 
     Defines properties that describe a draw operation from an SQL data source.

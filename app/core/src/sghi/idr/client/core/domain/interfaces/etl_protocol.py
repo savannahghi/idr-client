@@ -8,19 +8,19 @@ from typing import Any, Generic, TypeVar
 from .base import IdentifiableDomainObject, NamedDomainObject
 from .operations import (
     CleanedData,
+    DataProcessor,
     DataSink,
     DataSinkMetadata,
     DataSource,
     DataSourceMetadata,
-    ExtractMetadata,
-    ExtractProcessor,
+    DrainMetadata,
+    DrawMetadata,
     RawData,
-    UploadMetadata,
 )
 from .terminals import (
+    DrainMetadataFactory,
     MetadataConsumer,
     MetadataSupplier,
-    UploadMetadataFactory,
 )
 
 # =============================================================================
@@ -30,9 +30,9 @@ from .terminals import (
 _CD = TypeVar("_CD", bound=CleanedData)
 _DM = TypeVar("_DM", bound=DataSourceMetadata)
 _DS = TypeVar("_DS", bound=DataSinkMetadata)
-_EM = TypeVar("_EM", bound=ExtractMetadata)
+_EM = TypeVar("_EM", bound=DrawMetadata)
 _RD = TypeVar("_RD", bound=RawData)
-_UM = TypeVar("_UM", bound=UploadMetadata)
+_UM = TypeVar("_UM", bound=DrainMetadata)
 
 
 # =============================================================================
@@ -64,9 +64,9 @@ class ETLProtocol(
 
     @property
     @abstractmethod
-    def extract_processor_factory(
+    def data_processor_factory(
         self,
-    ) -> Callable[[], ExtractProcessor[_EM, _RD, _CD]]:
+    ) -> Callable[[], DataProcessor[_EM, _RD, _CD]]:
         ...
 
     @property
@@ -81,7 +81,7 @@ class ETLProtocol(
 
     @property
     @abstractmethod
-    def upload_metadata_factory(self) -> UploadMetadataFactory[_UM, _EM]:
+    def upload_metadata_factory(self) -> DrainMetadataFactory[_UM, _EM]:
         ...
 
 

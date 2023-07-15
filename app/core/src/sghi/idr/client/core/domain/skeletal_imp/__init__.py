@@ -6,8 +6,8 @@ from .base import (
 from .metadata import (
     BaseDataSinkMetadata,
     BaseDataSourceMetadata,
-    BaseExtractMetadata,
-    BaseUploadMetadata,
+    BaseDrainMetadata,
+    BaseDrawMetadata,
 )
 from .operations import (
     BaseData,
@@ -17,9 +17,9 @@ from .operations import (
     BaseDataSourceStream,
 )
 from .terminals import (
+    BaseDrainMetadataFactory,
     BaseMetadataConsumer,
     BaseMetadataSupplier,
-    BaseUploadMetadataFactory,
 )
 
 __all__ = [
@@ -31,11 +31,11 @@ __all__ = [
     "BaseDataSourceMetadata",
     "BaseDataSourceStream",
     "BaseDomainObject",
-    "BaseExtractMetadata",
+    "BaseDrawMetadata",
     "BaseIdentifiableDomainObject",
     "BaseMetadataConsumer",
     "BaseMetadataSupplier",
     "BaseNamedDomainObject",
-    "BaseUploadMetadata",
-    "BaseUploadMetadataFactory",
+    "BaseDrainMetadata",
+    "BaseDrainMetadataFactory",
 ]

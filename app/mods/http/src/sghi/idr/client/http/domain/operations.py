@@ -8,10 +8,11 @@ from sghi.idr.client.core.domain import (
     BaseDataSink,
     BaseDataSinkStream,
     CleanedData,
-    ExtractMetadata,
+    DrainMetadata,
+    DrawMetadata,
     RawData,
-    UploadMetadata,
 )
+from sghi.idr.client.core.lib import type_fqn
 
 from ..lib import HTTPDataSinkAPIDialect, HTTPTransport, if_request_accepted
 from ..typings import HTTPTransportFactory, ResponsePredicate
@@ -27,10 +28,10 @@ if TYPE_CHECKING:
 
 _CD = TypeVar("_CD", bound=CleanedData)
 _DS = TypeVar("_DS", bound=BaseHTTPDataSinkMetadata)
-_EM = TypeVar("_EM", bound=ExtractMetadata)
+_EM = TypeVar("_EM", bound=DrawMetadata)
 _RD = TypeVar("_RD", bound=RawData)
 _T = TypeVar("_T")
-_UM = TypeVar("_UM", bound=UploadMetadata)
+_UM = TypeVar("_UM", bound=DrainMetadata)
 
 
 # =============================================================================
@@ -53,9 +54,7 @@ class HTTPDataSink(BaseDataSink[_DS, _UM, _CD], Generic[_DS, _UM, _CD]):
     )
 
     def __attrs_post_init__(self) -> None:
-        self._logger: Logger = logging.getLogger(
-            f"{self.__class__.__module__}.{self.__class__.__qualname__}",
-        )
+        self._logger: Logger = logging.getLogger(type_fqn(self.__class__))
 
     @property
     def api_dialect_factory(
@@ -71,17 +70,14 @@ class HTTPDataSink(BaseDataSink[_DS, _UM, _CD], Generic[_DS, _UM, _CD]):
         self._is_disposed = True
         self._logger.debug("Disposal complete.")
 
-    def start_consumption(
+    def start_drain(
         self,
-        upload_metadata: _UM,
+        drain_metadata: _UM,
     ) -> "HTTPDataSinkStream[_UM, _CD]":
-        self._logger.info(
-            'Start consumption for upload metadata "%s".',
-            upload_metadata,
-        )
+        self._logger.info('Start drain for metadata "%s".', drain_metadata)
         return HTTPDataSinkStream(
             self,
-            upload_metadata,
+            drain_metadata,
             self._transport_factory(),
             self._api_dialect_factory(),
             valid_response_predicate=self._valid_response_predicate,  # pyright: ignore  # noqa: E501
@@ -110,9 +106,7 @@ class HTTPDataSinkStream(BaseDataSinkStream[_UM, _CD], Generic[_UM, _CD]):
     )
 
     def __attrs_post_init__(self) -> None:
-        self._logger: Logger = logging.getLogger(
-            f"{self.__class__.__module__}.{self.__class__.__qualname__}",
-        )
+        self._logger: Logger = logging.getLogger(type_fqn(self.__class__))
 
     @property
     def api_dialect(self) -> HTTPDataSinkAPIDialect[_UM, _CD]:
@@ -122,14 +116,10 @@ class HTTPDataSinkStream(BaseDataSinkStream[_UM, _CD], Generic[_UM, _CD]):
     def transport(self) -> HTTPTransport:
         return self._transport
 
-    def consume(
-        self,
-        clean_data: _CD,
-        progress: float,
-    ) -> None:
-        self._logger.info("Consume cleaned data, progress = %d.", progress)
-        req: Request = self._api_dialect.consume_request_factory(
-            upload_meta=self.upload_metadata,
+    def drain(self, clean_data: _CD, progress: float) -> None:
+        self._logger.info("Drain cleaned data, progress = %d.", progress)
+        req: Request = self._api_dialect.drain_request_factory(
+            drain_meta=self.drain_metadata,
             clean_data=clean_data,
             progress=progress,
         )
@@ -137,9 +127,9 @@ class HTTPDataSinkStream(BaseDataSinkStream[_UM, _CD], Generic[_UM, _CD]):
             request=req,
             valid_response_predicate=self._valid_response_predicate,
         )
-        return self._api_dialect.handle_consume_response(
+        return self._api_dialect.handle_drain_response(
             response=res,
-            upload_meta=self.upload_metadata,
+            drain_meta=self.drain_metadata,
             clean_data=clean_data,
             progress=progress,
         )

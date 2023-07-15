@@ -3,7 +3,7 @@ import logging
 from logging import Logger
 
 from attrs import define, field
-from sghi.idr.client.core.domain import BaseData, CleanedData, ExtractProcessor
+from sghi.idr.client.core.domain import BaseData, CleanedData, DataProcessor
 from sghi.idr.client.sql.domain import PDDataFrame, SimpleSQLQuery
 
 
@@ -19,8 +19,8 @@ class ParquetData(BaseData[io.BytesIO], CleanedData[io.BytesIO]):
 
 
 @define(slots=True, order=False)
-class IDRServerExtractProcessor(
-    ExtractProcessor[SimpleSQLQuery, PDDataFrame, ParquetData],
+class IDRServerDataProcessor(
+    DataProcessor[SimpleSQLQuery, PDDataFrame, ParquetData],
 ):
     _is_disposed: bool = field(default=False, init=False)
     _parquet_bytes: io.BytesIO = field(factory=io.BytesIO, init=False)
@@ -33,12 +33,12 @@ class IDRServerExtractProcessor(
     def process(
         self,
         raw_data: PDDataFrame,
-        extract_metadata: SimpleSQLQuery,
+        draw_metadata: SimpleSQLQuery,
     ) -> ParquetData:
         self._logger.info(
             'Process raw data with index %d, for extract metadata "%s".',
             raw_data.index,
-            extract_metadata.name,
+            draw_metadata.name,
         )
         raw_data.content.to_parquet(
             path=self._parquet_bytes,

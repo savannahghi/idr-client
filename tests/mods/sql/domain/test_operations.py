@@ -198,19 +198,19 @@ class TestSimpleSQLDatabase(TestCase):
         stream1: DataSourceStream[
             SimpleSQLQuery,
             SQLRawData,
-        ] = db1.start_extraction(query1)
+        ] = db1.start_draw(query1)
         stream2: DataSourceStream[
             SimpleSQLQuery,
             SQLRawData,
-        ] = db1.start_extraction(query2)
+        ] = db1.start_draw(query2)
         stream3: DataSourceStream[
             SimpleSQLQuery,
             PDDataFrame,
-        ] = db2.start_extraction(query1)
+        ] = db2.start_draw(query1)
         stream4: DataSourceStream[
             SimpleSQLQuery,
             PDDataFrame,
-        ] = db2.start_extraction(query2)
+        ] = db2.start_draw(query2)
 
         assert stream1 is not None
         assert isinstance(stream1, SimpleSQLDataSourceStream)
@@ -268,7 +268,7 @@ class TestSimpleSQLDataSourceStream(TestCase):
         stream: DataSourceStream[
             SimpleSQLQuery,
             SQLRawData,
-        ] = self.db.start_extraction(self.query1)
+        ] = self.db.start_draw(self.query1)
 
         assert stream.data_source is self.db
         assert not stream.is_disposed
@@ -309,14 +309,14 @@ class TestSimpleSQLDataSourceStream(TestCase):
 
         stream1: SimpleSQLDataSourceStream
         stream2: SimpleSQLDataSourceStream
-        with self.db.start_extraction(self.query1) as stream1:
+        with self.db.start_draw(self.query1) as stream1:
             for data, progress in stream1:
                 assert self.query1.yield_per is not None
                 assert len(data.content) <= self.query1.yield_per
                 assert progress == -1
                 stream1_extractions_count += 1
 
-        with self.db.start_extraction(self.query2) as stream2:
+        with self.db.start_draw(self.query2) as stream2:
             for data, progress in stream2:
                 assert self.query2.yield_per is not None
                 assert len(data.content) <= self.query2.yield_per

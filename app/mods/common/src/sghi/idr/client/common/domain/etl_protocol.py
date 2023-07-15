@@ -6,19 +6,19 @@ from sghi.idr.client.core.domain import (
     BaseIdentifiableDomainObject,
     BaseNamedDomainObject,
     CleanedData,
+    DataProcessor,
     DataSink,
     DataSinkMetadata,
     DataSource,
     DataSourceMetadata,
+    DrainMetadata,
+    DrainMetadataFactory,
+    DrawMetadata,
     ETLProtocol,
     ETLProtocolSupplier,
-    ExtractMetadata,
-    ExtractProcessor,
     MetadataConsumer,
     MetadataSupplier,
     RawData,
-    UploadMetadata,
-    UploadMetadataFactory,
 )
 from sghi.idr.client.core.lib import ImproperlyConfiguredError, type_fqn
 
@@ -36,9 +36,9 @@ from ..lib import (
 _CD = TypeVar("_CD", bound=CleanedData)
 _DM = TypeVar("_DM", bound=DataSourceMetadata)
 _DS = TypeVar("_DS", bound=DataSinkMetadata)
-_EM = TypeVar("_EM", bound=ExtractMetadata)
+_EM = TypeVar("_EM", bound=DrawMetadata)
 _RD = TypeVar("_RD", bound=RawData)
-_UM = TypeVar("_UM", bound=UploadMetadata)
+_UM = TypeVar("_UM", bound=DrainMetadata)
 
 _EP = ETLProtocol[Any, Any, Any, Any, Any, Any]
 
@@ -63,13 +63,13 @@ class SimpleETLProtocol(
 
     _data_sink_factory: Callable[[_DS], DataSink] = field()
     _data_source_factory: Callable[[_DM], DataSource] = field()
-    _extract_processor_factory: Callable[
+    _data_processor_factory: Callable[
         [],
-        ExtractProcessor[_EM, _RD, _CD],
+        DataProcessor[_EM, _RD, _CD],
     ] = field()
+    _drain_metadata_factory: DrainMetadataFactory[_UM, _EM] = field()
     _metadata_consumer: MetadataConsumer[_UM] = field()
     _metadata_supplier: MetadataSupplier[_DS, _DM, _EM] = field()
-    _upload_metadata_factory: UploadMetadataFactory[_UM, _EM] = field()
 
     @property
     def data_sink_factory(self) -> Callable[[_DS], DataSink[_DS, _UM, _CD]]:
@@ -82,10 +82,10 @@ class SimpleETLProtocol(
         return self._data_source_factory
 
     @property
-    def extract_processor_factory(
+    def data_processor_factory(
         self,
-    ) -> Callable[[], ExtractProcessor[_EM, _RD, _CD]]:
-        return self._extract_processor_factory
+    ) -> Callable[[], DataProcessor[_EM, _RD, _CD]]:
+        return self._data_processor_factory
 
     @property
     def metadata_consumer(self) -> MetadataConsumer[_UM]:
@@ -96,8 +96,8 @@ class SimpleETLProtocol(
         return self._metadata_supplier
 
     @property
-    def upload_metadata_factory(self) -> UploadMetadataFactory[_UM, _EM]:
-        return self._upload_metadata_factory
+    def upload_metadata_factory(self) -> DrainMetadataFactory[_UM, _EM]:
+        return self._drain_metadata_factory
 
 
 # =============================================================================
@@ -129,9 +129,9 @@ class FromDefinitionsETLProtocolSupplier(ETLProtocolSupplier):
         cls,
         protocol_definition: ProtocolDefinition,
     ) -> _EP:
-        upf_def = protocol_definition["upload_metadata_factory"]
-        upf: UploadMetadataFactory = cls._get_upload_meta_factory_instance(
-            upf_def,
+        dmf_def = protocol_definition["drain_metadata_factory"]
+        dmf: DrainMetadataFactory = cls._get_data_meta_factory_instance(
+            dmf_def,
         )
         return SimpleETLProtocol(
             id=protocol_definition["id"],
@@ -139,8 +139,8 @@ class FromDefinitionsETLProtocolSupplier(ETLProtocolSupplier):
             description=protocol_definition.get("description"),
             data_sink_factory=protocol_definition["data_sink_factory"],
             data_source_factory=protocol_definition["data_source_factory"],
-            extract_processor_factory=protocol_definition[
-                "extract_processor_factory"
+            data_processor_factory=protocol_definition[
+                "data_processor_factory"
             ],
             metadata_consumer=protocol_definition[
                 "metadata_consumer_factory"
@@ -148,21 +148,20 @@ class FromDefinitionsETLProtocolSupplier(ETLProtocolSupplier):
             metadata_supplier=protocol_definition[
                 "metadata_supplier_factory"
             ](),
-            upload_metadata_factory=upf,
+            drain_metadata_factory=dmf,
         )
 
     @staticmethod
-    def _get_upload_meta_factory_instance(
-        upload_meta_factory: UploadMetadataFactory
-        | Callable[[], UploadMetadataFactory],
-    ) -> UploadMetadataFactory:
-        match upload_meta_factory:
-            case UploadMetadataFactory():
-                return upload_meta_factory
+    def _get_data_meta_factory_instance(
+        dmf_def: DrainMetadataFactory | Callable[[], DrainMetadataFactory],
+    ) -> DrainMetadataFactory:
+        match dmf_def:
+            case DrainMetadataFactory():
+                return dmf_def
             case Callable():
-                return upload_meta_factory()
+                return dmf_def()
             case _:
-                assert_never(upload_meta_factory)
+                assert_never(dmf_def)
 
 
 class FromFactoriesETLProtocolSupplier(ETLProtocolSupplier):
