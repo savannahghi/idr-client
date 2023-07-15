@@ -2,14 +2,14 @@ from sghi.idr.client.core.exceptions import IDRClientError, TransientError
 
 
 class HTTPTransportError(IDRClientError):
-    """Unknown error occurred while performing a HTTP Transport operation."""
+    """Unknown error occurred while performing an HTTP Transport operation."""
 
     ...
 
 
 class HTTPTransportTransientError(HTTPTransportError, TransientError):
     """
-    Recoverable error occurred while performing a HTTP Transport operation.
+    Recoverable error occurred while performing an HTTP Transport operation.
     """
 
     ...

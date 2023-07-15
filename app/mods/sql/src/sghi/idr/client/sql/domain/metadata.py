@@ -101,12 +101,9 @@ class SimpleSQLDatabaseDescriptor(BaseSQLDataSourceMetadata):
 
     @property
     def data_source_stream_factory(self) -> DataSourceStreamFactory:
-        from .operations import pd_data_frame_data_source_stream_factory
+        from .operations import SimpleSQLDataSourceStream
 
-        return (
-            self._data_source_stream_factory
-            or pd_data_frame_data_source_stream_factory
-        )
+        return self._data_source_stream_factory or SimpleSQLDataSourceStream.of
 
     @property
     def database_url(self) -> str | URL:

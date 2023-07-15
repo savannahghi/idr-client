@@ -15,7 +15,9 @@ from sghi.idr.client.core.domain import (
 )
 from sghi.idr.client.core.lib import type_fqn
 from sqlalchemy import Connection, CursorResult, Engine, Row, create_engine
+from sqlalchemy.exc import SQLAlchemyError
 
+from ..lib import to_appropriate_domain_error
 from ..typings import ReadIsolationLevels
 from .metadata import (
     BaseSQLDataSourceMetadata,
@@ -49,37 +51,6 @@ DEFAULT_MAX_EXTRACTION_ROWS: Final[int] = 50_000
 
 
 # =============================================================================
-# HELPERS
-# =============================================================================
-
-
-def pd_data_frame_data_source_stream_factory(
-    sql_data_source: "BaseSQLDataSource[Any, SimpleSQLQuery, PDDataFrame]",
-    extract_metadata: SimpleSQLQuery,
-) -> "PDDataFrameDataSourceStream":
-    # TODO: Add a check to ensure that the `sql_data_source` given is not
-    #  disposed.
-    return PDDataFrameDataSourceStream(
-        sql_data_source,
-        extract_metadata,
-        sql_data_source.engine.connect(),
-    )
-
-
-def simple_data_source_stream_factory(
-    sql_data_source: "BaseSQLDataSource[Any, SimpleSQLQuery, SQLRawData]",
-    extract_metadata: SimpleSQLQuery,
-) -> "SimpleSQLDataSourceStream":
-    # TODO: Add a check to ensure that the `sql_data_source` given is not
-    #  disposed.
-    return SimpleSQLDataSourceStream(
-        sql_data_source,
-        extract_metadata,
-        sql_data_source.engine.connect(),
-    )
-
-
-# =============================================================================
 # BASE OPERATIONS CLASSES
 # =============================================================================
 
@@ -92,14 +63,11 @@ class BaseSQLDataSource(
 ):
     """An SQL Database."""
 
+    _engine: Engine = field()
     _data_source_stream_factory: Callable[
         ["BaseSQLDataSource[Any, _EM, _RD]", _EM],
         DataSourceStream[_EM, _RD],
-    ] = field(
-        default=simple_data_source_stream_factory,
-        kw_only=True,
-    )
-    _engine: Engine = field()
+    ] = field()
 
     def __attrs_post_init__(self) -> None:
         self._logger: Logger = logging.getLogger(type_fqn(self.__class__))
@@ -209,7 +177,7 @@ class SimpleSQLDatabase(
         data_source_stream_factory: Callable[
             ["SimpleSQLDatabase[Any]", SimpleSQLQuery],
             DataSourceStream[SimpleSQLQuery, Any],
-        ] = simple_data_source_stream_factory,
+        ] | None = None,
     ) -> Self:
         return cls(
             name=name,  # pyright: ignore
@@ -275,11 +243,33 @@ class PDDataFrameDataSourceStream(
                 self.draw_metadata.name,
             )
             raise DataSourceStream.StopDraw from None
+        except SQLAlchemyError as exp:
+            _err_msg: str = "Error while drawing from sql source."
+            self._logger.exception(_err_msg)
+            raise to_appropriate_domain_error(exp, message=_err_msg) from exp
 
     def dispose(self) -> None:
         self._is_disposed = True
         self._connection.close()
         self._logger.debug("Disposal complete.")
+
+    @classmethod
+    def of(
+        cls,
+        sql_data_source: BaseSQLDataSource[Any, SimpleSQLQuery, PDDataFrame],
+        draw_metadata: SimpleSQLQuery,
+    ) -> Self:
+        try:
+            return cls(
+                data_source=sql_data_source,  # pyright: ignore
+                draw_metadata=draw_metadata,  # pyright: ignore
+                connection=sql_data_source.engine.connect(),  # pyright: ignore
+            )
+        except SQLAlchemyError as exp:
+            _err_msg: str = (
+                "Unable to initialize 'PDDataFrameDataSourceStream'."
+            )
+            raise to_appropriate_domain_error(exp, message=_err_msg) from exp
 
 
 @define(order=False, slots=True)
@@ -334,9 +324,29 @@ class SimpleSQLDataSourceStream(
                 self.draw_metadata.name,
             )
             raise DataSourceStream.StopDraw from None
+        except SQLAlchemyError as exp:
+            _err_msg: str = "Error while drawing from sql source."
+            self._logger.exception(_err_msg)
+            raise to_appropriate_domain_error(exp, message=_err_msg) from exp
 
     def dispose(self) -> None:
         self._is_disposed = True
         self._extraction_result.close()
         self._connection.close()
         self._logger.debug("Disposal complete.")
+
+    @classmethod
+    def of(
+        cls,
+        sql_data_source: BaseSQLDataSource[Any, SimpleSQLQuery, PDDataFrame],
+        draw_metadata: SimpleSQLQuery,
+    ) -> Self:
+        try:
+            return cls(
+                data_source=sql_data_source,  # pyright: ignore
+                draw_metadata=draw_metadata,  # pyright: ignore
+                connection=sql_data_source.engine.connect(),  # pyright: ignore
+            )
+        except SQLAlchemyError as exp:
+            _err_msg: str = "Unable to initialize 'SimpleSQLDataSourceStream'."
+            raise to_appropriate_domain_error(exp, message=_err_msg) from exp

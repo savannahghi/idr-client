@@ -76,10 +76,10 @@ ETL_PROTOCOL_FACTORIES_CONFIG_KEY: Final[str] = "ETL_PROTOCOL_FACTORIES"
 @cache
 def _get_required_proto_definition_fields() -> set[str]:
     all_fields: set[str] = set(
-        typed_dict_keys(_RawProtocolDefinition).keys(),
+        typed_dict_keys(_RawProtocolDefinition).keys(),  # type: ignore
     )
     optional_fields: set[str] = set(
-        typed_dict_keys(_ProtocolDefinitionOptional).keys(),
+        typed_dict_keys(_ProtocolDefinitionOptional).keys(),  # type: ignore
     )
     return all_fields.difference(optional_fields)
 

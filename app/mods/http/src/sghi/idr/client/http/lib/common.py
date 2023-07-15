@@ -1,3 +1,5 @@
+from collections.abc import Sequence
+
 from requests.exceptions import (
     ConnectionError,
     RequestException,
@@ -8,6 +10,22 @@ from requests.models import Response
 
 from ..exceptions import HTTPTransportError, HTTPTransportTransientError
 from ..typings import ResponsePredicate
+
+# =============================================================================
+# CONSTANTS
+# =============================================================================
+
+KNOWN_REQUESTS_TRANSIENT_BASE_ERRORS: Sequence[type[BaseException]] = (
+    ConnectionError,
+    RequestException,
+    Timeout,
+    TooManyRedirects,
+)
+
+
+# =============================================================================
+# UTILITIES
+# =============================================================================
 
 
 def if_response_has_status_factory(
@@ -63,23 +81,26 @@ def if_request_accepted(response: Response) -> bool:
 
 
 def to_appropriate_domain_error(
-    exp: RequestException,
+    exp: BaseException,
     message: str | None = None,
+    known_transient_errors: tuple[type[BaseException]] = KNOWN_REQUESTS_TRANSIENT_BASE_ERRORS,  # noqa: E501
 ) -> HTTPTransportError:
-    """Map a :exp:`RequestException` to the appropriate domain error.
+    """Map an exception to the appropriate domain error.
 
-    Given a `RequestException`, either map the error to an
+    Given an exception, either map the error to an
     :exp:`HTTPTransportTransientError` if the error is retryable, or else
     map it to a :exp:`HTTPTransportError`.
 
-    :param exp: A `RequestException` to be mapped to the appropriate domain
-        specific error.
+    :param exp: An exception to be mapped to the appropriate domain specific
+        error.
     :param message: An optional error message to pass to the returned
         exception.
+    :param known_transient_errors: A tuple of exception types that are safe to
+        retry.
 
     :return: An appropriate domain specific error based on the given
-        `RequestException`.
+        exception.
     """
-    if isinstance(exp, ConnectionError | Timeout | TooManyRedirects):
+    if isinstance(exp, known_transient_errors):
         return HTTPTransportTransientError(message=message)
     return HTTPTransportError(message=message)

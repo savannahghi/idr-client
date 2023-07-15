@@ -134,21 +134,21 @@ class FromDefinitionsETLProtocolSupplier(ETLProtocolSupplier):
             dmf_def,
         )
         return SimpleETLProtocol(
-            id=protocol_definition["id"],
-            name=protocol_definition["name"],
-            description=protocol_definition.get("description"),
-            data_sink_factory=protocol_definition["data_sink_factory"],
-            data_source_factory=protocol_definition["data_source_factory"],
-            data_processor_factory=protocol_definition[
+            id=protocol_definition["id"],  # pyright: ignore
+            name=protocol_definition["name"],  # pyright: ignore
+            description=protocol_definition.get("description"),  # pyright: ignore  # noqa: E501
+            data_sink_factory=protocol_definition["data_sink_factory"],  # pyright: ignore  # noqa: E501
+            data_source_factory=protocol_definition["data_source_factory"],  # pyright: ignore  # noqa: E501
+            data_processor_factory=protocol_definition[  # pyright: ignore
                 "data_processor_factory"
             ],
-            metadata_consumer=protocol_definition[
+            metadata_consumer=protocol_definition[  # pyright: ignore
                 "metadata_consumer_factory"
             ](),
-            metadata_supplier=protocol_definition[
+            metadata_supplier=protocol_definition[  # pyright: ignore
                 "metadata_supplier_factory"
             ](),
-            drain_metadata_factory=dmf,
+            drain_metadata_factory=dmf,  # pyright: ignore
         )
 
     @staticmethod
@@ -161,7 +161,7 @@ class FromDefinitionsETLProtocolSupplier(ETLProtocolSupplier):
             case Callable():
                 return dmf_def()
             case _:
-                assert_never(dmf_def)
+                assert_never(dmf_def)  # pyright: ignore
 
 
 class FromFactoriesETLProtocolSupplier(ETLProtocolSupplier):

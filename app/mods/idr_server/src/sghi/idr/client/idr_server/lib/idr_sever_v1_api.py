@@ -22,9 +22,9 @@ from sghi.idr.client.http import (
 )
 from sghi.idr.client.http.lib.http_transport import HTTPTransport
 from sghi.idr.client.sql.domain import (
+    PDDataFrameDataSourceStream,
     SimpleSQLDatabaseDescriptor,
     SimpleSQLQuery,
-    pd_data_frame_data_source_stream_factory,
 )
 from toolz import pipe
 from toolz.curried import map
@@ -328,7 +328,7 @@ class IDRServerV1API(
                             _result["database_name"],
                         ),
                         "isolation_level": "REPEATABLE READ",
-                        "data_source_stream_factory": pd_data_frame_data_source_stream_factory,  # noqa: E501
+                        "data_source_stream_factory": PDDataFrameDataSourceStream.of,  # noqa: E501
                     },
                 ),
                 map(lambda _kwargs: SimpleSQLDatabaseDescriptor(**_kwargs)),

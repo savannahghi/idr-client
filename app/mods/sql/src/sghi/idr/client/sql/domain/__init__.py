@@ -12,8 +12,6 @@ from .operations import (
     SimpleSQLDatabase,
     SimpleSQLDataSourceStream,
     SQLRawData,
-    pd_data_frame_data_source_stream_factory,
-    simple_data_source_stream_factory,
 )
 
 __all__ = [
@@ -28,6 +26,4 @@ __all__ = [
     "SimpleSQLDatabaseDescriptor",
     "SimpleSQLDataSourceStream",
     "SimpleSQLQuery",
-    "pd_data_frame_data_source_stream_factory",
-    "simple_data_source_stream_factory",
 ]
