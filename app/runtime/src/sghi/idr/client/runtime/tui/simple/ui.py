@@ -106,7 +106,7 @@ class SimpleUI(UI):
     ) -> None:
         print_debug(
             "- Running ETLWorkflow for extract '{}' ...".format(
-                signal.extract_meta.name,
+                signal.draw_meta.name,
             ),
         )
 
@@ -116,7 +116,7 @@ class SimpleUI(UI):
     ) -> None:
         print_error(
             "- Error running ETLWorkflow for extract '{}' ⚠️".format(
-                signal.extract_meta.name,
+                signal.draw_meta.name,
             ),
             exception=signal.exception,
         )
@@ -127,6 +127,6 @@ class SimpleUI(UI):
     ) -> None:
         print_success(
             "- Completed ETLWorkflow for extract '{}' ✔️".format(
-                signal.extract_meta.name,
+                signal.draw_meta.name,
             ),
         )

@@ -54,12 +54,14 @@ class ETLProtocol(
 
     @property
     @abstractmethod
-    def data_sink_factory(self) -> Callable[[_DS], DataSink]:
+    def data_sink_factory(self) -> Callable[[_DS], DataSink[_DS, _UM, _CD]]:
         ...
 
     @property
     @abstractmethod
-    def data_source_factory(self) -> Callable[[_DM], DataSource]:
+    def data_source_factory(
+        self,
+    ) -> Callable[[_DM], DataSource[_DM, _EM, _RD]]:
         ...
 
     @property

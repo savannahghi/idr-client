@@ -111,7 +111,7 @@ class RichUI(UI):
         signal: dispatch.ETLWorkflowRunErrorSignal,
     ) -> None:
         self._etl_proto_uis[signal.etl_protocol.id].fail_workflow(
-            extract_meta=signal.extract_meta,
+            extract_meta=signal.draw_meta,
         )
 
     def on_etl_workflow_start(
@@ -119,7 +119,7 @@ class RichUI(UI):
         signal: dispatch.PreETLWorkflowRunSignal,
     ) -> None:
         self._etl_proto_uis[signal.etl_protocol.id].start_workflow(
-            extract_meta=signal.extract_meta,
+            extract_meta=signal.draw_meta,
         )
 
     def on_etl_workflow_stop(
@@ -127,7 +127,7 @@ class RichUI(UI):
         signal: dispatch.PostETLWorkflowRunSignal,
     ) -> None:
         self._etl_proto_uis[signal.etl_protocol.id].stop_workflow(
-            extract_meta=signal.extract_meta,
+            extract_meta=signal.draw_meta,
         )
 
     def on_runtime_error(

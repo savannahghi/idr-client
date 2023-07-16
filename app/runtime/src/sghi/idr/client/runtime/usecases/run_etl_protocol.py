@@ -58,21 +58,21 @@ def _do_get_data_source_meta(
 
 
 @Retry(predicate=_if_idr_transient_exception)
-def _do_get_extract_meta(
+def _do_get_draw_meta(
     metadata_supplier: MetadataSupplier[Any, Any, Any],
     data_source_meta: DataSourceMetadata,
 ) -> Iterable[DrawMetadata]:
     return metadata_supplier.get_draw_meta(data_source_meta)
 
 
-def _get_extract_metas(
+def _get_draw_metas(
     metadata_supplier: MetadataSupplier[Any, Any, Any],
     data_source_metas: Iterable[DataSourceMetadata],
 ) -> None:
     for data_source_meta in data_source_metas:
         data_source_meta.draw_metadata = {
-            extract_meta.id: extract_meta
-            for extract_meta in _do_get_extract_meta(
+            draw_meta.id: draw_meta
+            for draw_meta in _do_get_draw_meta(
                 metadata_supplier=metadata_supplier,
                 data_source_meta=data_source_meta,
             )
@@ -126,7 +126,7 @@ class RunETLProtocol(Task[None, None]):
                         metadata_supplier=self._etl_protocol.metadata_supplier,
                     ),
                 )
-                _get_extract_metas(
+                _get_draw_metas(
                     metadata_supplier=self._etl_protocol.metadata_supplier,
                     data_source_metas=self._data_source_metas,
                 )
@@ -182,38 +182,38 @@ class RunETLProtocol(Task[None, None]):
         self,
         app_dispatcher: dispatch.Dispatcher,
         data_source: DataSource[Any, Any, Any],
-        extract_meta: DrawMetadata,
+        draw_meta: DrawMetadata,
     ) -> None:
         try:
             app_dispatcher.send(
                 dispatch.PreETLWorkflowRunSignal(
                     etl_protocol=self._etl_protocol,
-                    extract_meta=extract_meta,
+                    draw_meta=draw_meta,
                 ),
             )
             ETLWorkflow(
                 data_source=data_source,  # pyright: ignore
-                extract_processor_factory=self._etl_protocol.data_processor_factory,  # pyright: ignore  # noqa: E501
-                upload_metadata_factory=self._etl_protocol.upload_metadata_factory,  # pyright: ignore  # noqa: E501
+                data_processor_factory=self._etl_protocol.data_processor_factory,  # pyright: ignore  # noqa: E501
+                drain_metadata_factory=self._etl_protocol.upload_metadata_factory,  # pyright: ignore  # noqa: E501
                 metadata_consumer=self._etl_protocol.metadata_consumer,  # pyright: ignore  # noqa: E501
                 data_sinks=self._data_sinks,  # pyright: ignore
-            ).execute(extract_meta)
+            ).execute(draw_meta)
             app_dispatcher.send(
                 dispatch.PostETLWorkflowRunSignal(
                     etl_protocol=self._etl_protocol,
-                    extract_meta=extract_meta,
+                    draw_meta=draw_meta,
                 ),
             )
         except Exception as exp:
             _err_msg: str = (
-                "Error running ETL workflow for extract with id '{}' and "
-                "name '{}'.".format(extract_meta.id, extract_meta.name)
+                "Error running ETL workflow for draw metadata with id '{}' "
+                "and name '{}'.".format(draw_meta.id, draw_meta.name)
             )
             self._logger.exception(_err_msg)
             app_dispatcher.send(
                 dispatch.ETLWorkflowRunErrorSignal(
                     etl_protocol=self._etl_protocol,
-                    extract_meta=extract_meta,
+                    draw_meta=draw_meta,
                     err_message=str(exp),
                     exception=exp,
                 ),
@@ -246,9 +246,9 @@ class RunETLProtocol(Task[None, None]):
                     self._run_etl_workflow,
                     app_dispatcher=app_dispatcher,
                     data_source=data_source,
-                    extract_meta=extract_meta,
+                    draw_meta=draw_meta,
                 )
-                for extract_meta in data_source_meta.draw_metadata.values()
+                for draw_meta in data_source_meta.draw_metadata.values()
             )
 
         # Wait for all workflows to complete.

@@ -51,7 +51,7 @@ class ETLWorkflowRunErrorSignal(Signal):
     """
 
     etl_protocol: ETLProtocol[Any, Any, Any, Any, Any, Any] = field()
-    extract_meta: DrawMetadata
+    draw_meta: DrawMetadata
     err_message: str = field()
     exception: BaseException | None = field(default=None)
 
@@ -73,11 +73,11 @@ class PostETLProtocolRunSignal(Signal):
 @frozen
 class PostETLWorkflowRunSignal(Signal):
     """
-    Signal indicating that an ETL Workflow for a given extract has completed.
+    Signal indicating that an ETL Workflow for a given draw has completed.
     """
 
     etl_protocol: ETLProtocol[Any, Any, Any, Any, Any, Any] = field()
-    extract_meta: DrawMetadata
+    draw_meta: DrawMetadata
 
 
 @frozen
@@ -97,11 +97,11 @@ class PreETLProtocolRunSignal(Signal):
 @frozen
 class PreETLWorkflowRunSignal(Signal):
     """
-    Signal indicating that an ETL Workflow for a given extract is about to run.
+    Signal indicating that an ETL Workflow for a given draw is about to run.
     """
 
     etl_protocol: ETLProtocol[Any, Any, Any, Any, Any, Any] = field()
-    extract_meta: DrawMetadata
+    draw_meta: DrawMetadata
 
 
 @frozen

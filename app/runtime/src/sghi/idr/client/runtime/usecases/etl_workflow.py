@@ -33,15 +33,15 @@ _if_idr_transient_exception = if_exception_type_factory(TransientError)
 
 
 @Retry(predicate=_if_idr_transient_exception)
-def _create_new_upload_meta(
-    upload_meta_factory: DrainMetadataFactory[Any, Any],
-    extract_metadata: DrawMetadata,
+def _create_new_drain_meta(
+    drain_meta_factory: DrainMetadataFactory[Any, Any],
+    draw_meta: DrawMetadata,
 ) -> DrainMetadata:
-    return upload_meta_factory.new_drain_meta(draw_meta=extract_metadata)
+    return drain_meta_factory.new_drain_meta(draw_meta=draw_meta)
 
 
 @Retry(predicate=_if_idr_transient_exception)
-def _do_consume(
+def _do_drain(
     data_sink_stream: DataSinkStream[Any, Any],
     clean_data: CleanedData[Any],
     progress: float,
@@ -50,7 +50,7 @@ def _do_consume(
 
 
 @Retry(predicate=_if_idr_transient_exception)
-def _do_extract(
+def _do_draw(
     data_source_stream: DataSourceStream[Any, Any],
 ) -> tuple[RawData[Any], float]:
     return next(data_source_stream)
@@ -58,38 +58,38 @@ def _do_extract(
 
 @Retry(predicate=_if_idr_transient_exception)
 def _do_process(
-    extract_processor: DataProcessor[Any, Any, Any],
+    data_processor: DataProcessor[Any, Any, Any],
     raw_data: RawData[Any],
-    extract_metadata: DrawMetadata,
+    draw_metadata: DrawMetadata,
 ) -> CleanedData[Any]:
-    return extract_processor.process(
+    return data_processor.process(
         raw_data=raw_data,
-        draw_metadata=extract_metadata,
+        draw_metadata=draw_metadata,
     )
 
 
 @Retry(predicate=_if_idr_transient_exception)
-def _do_start_consumption(
+def _do_start_drain(
     data_sink: DataSink[Any, Any, Any],
-    upload_meta: DrainMetadata,
+    drain_meta: DrainMetadata,
 ) -> DataSinkStream[Any, Any]:
-    return data_sink.start_drain(drain_metadata=upload_meta)
+    return data_sink.start_drain(drain_metadata=drain_meta)
 
 
 @Retry(predicate=_if_idr_transient_exception)
-def _do_start_extraction(
+def _do_start_draw(
     data_source: DataSource[Any, Any, Any],
-    extract_metadata: DrawMetadata,
+    draw_meta: DrawMetadata,
 ) -> DataSourceStream[Any, Any]:
-    return data_source.start_draw(draw_metadata=extract_metadata)
+    return data_source.start_draw(draw_metadata=draw_meta)
 
 
 @Retry(predicate=_if_idr_transient_exception)
 def _do_take_upload_meta(
     metadata_consumer: MetadataConsumer,
-    upload_meta: DrainMetadata,
+    drain_meta: DrainMetadata,
 ) -> None:
-    metadata_consumer.take_drain_meta(drain_meta=upload_meta)
+    metadata_consumer.take_drain_meta(drain_meta=drain_meta)
 
 
 # =============================================================================
@@ -102,11 +102,11 @@ class ETLWorkflow(Task[DrawMetadata, None]):
     """Main runtime concurrency unit."""
 
     _data_source: DataSource[Any, Any, Any] = field()
-    _extract_processor_factory: Callable[
+    _data_processor_factory: Callable[
         [],
         DataProcessor[Any, Any, Any],
     ] = field()
-    _upload_metadata_factory: DrainMetadataFactory[Any, Any] = field()
+    _drain_metadata_factory: DrainMetadataFactory[Any, Any] = field()
     _metadata_consumer: MetadataConsumer[Any] = field()
     _data_sinks: Iterable[DataSink[Any, Any, Any]] = field()
 
@@ -114,47 +114,47 @@ class ETLWorkflow(Task[DrawMetadata, None]):
         with ExitStack() as workflow_stack:
             draw_stream: DataSourceStream[Any, Any]
             draw_stream = workflow_stack.enter_context(
-                _do_start_extraction(
+                _do_start_draw(
                     data_source=self._data_source,
-                    extract_metadata=an_input,
+                    draw_meta=an_input,
                 ),
             )
-            upload_meta: DrainMetadata = _create_new_upload_meta(
-                upload_meta_factory=self._upload_metadata_factory,
-                extract_metadata=an_input,
+            drain_meta: DrainMetadata = _create_new_drain_meta(
+                drain_meta_factory=self._drain_metadata_factory,
+                draw_meta=an_input,
             )
 
             drain_streams: Sequence[DataSinkStream[Any, Any]]
             drain_streams = [
                 workflow_stack.enter_context(
-                    _do_start_consumption(_data_sink, upload_meta),
+                    _do_start_drain(_data_sink, drain_meta),
                 )
                 for _data_sink in self._data_sinks
             ]
             self._run_etl(
                 draw_stream=draw_stream,
-                extract_metadata=an_input,
+                draw_metadata=an_input,
                 drain_streams=drain_streams,
             )
             _do_take_upload_meta(
                 metadata_consumer=self._metadata_consumer,
-                upload_meta=upload_meta,
+                drain_meta=drain_meta,
             )
 
     def _run_etl(
         self,
         draw_stream: DataSourceStream[Any, Any],
-        extract_metadata: DrawMetadata,
+        draw_metadata: DrawMetadata,
         drain_streams: Sequence[DataSinkStream[Any, Any]],
     ) -> None:
         try:
             while True:
-                raw_data, progress = _do_extract(draw_stream)
-                with self._extract_processor_factory() as extract_processor:
+                raw_data, progress = _do_draw(draw_stream)
+                with self._data_processor_factory() as data_processor:
                     clean_data: CleanedData[Any] = _do_process(
-                        extract_processor=extract_processor,
+                        data_processor=data_processor,
                         raw_data=raw_data,
-                        extract_metadata=extract_metadata,
+                        draw_metadata=draw_metadata,
                     )
                     self._drain_clean_data(drain_streams, clean_data, progress)
         except DataSourceStream.StopDraw:
@@ -167,7 +167,7 @@ class ETLWorkflow(Task[DrawMetadata, None]):
         progress: float,
     ) -> None:
         for drain_stream in drain_streams:
-            _do_consume(
+            _do_drain(
                 data_sink_stream=drain_stream,
                 clean_data=clean_data,
                 progress=progress,
