@@ -10,12 +10,14 @@ from .metadata import (
     DrainMetadata,
     DrawMetadata,
 )
+from .operations import CleanedData, DataSink
 
 # =============================================================================
 # TYPES
 # =============================================================================
 
 
+_CD = TypeVar("_CD", bound=CleanedData)
 _DM = TypeVar("_DM", bound=DataSourceMetadata)
 _DS = TypeVar("_DS", bound=DataSinkMetadata)
 _EM = TypeVar("_EM", bound=DrawMetadata)
@@ -24,6 +26,35 @@ _UM = TypeVar("_UM", bound=DrainMetadata)
 # =============================================================================
 # PIPELINE TERMINAL INTERFACES
 # =============================================================================
+
+
+class DataSinkSelector(Generic[_DS, _DM, _CD, _UM], metaclass=ABCMeta):
+    """Pick the :class:`data sinks<DataSink>` to drain :class:`CleanedData` to.
+
+    This allows an `ETLProtocol` to route data to specific data sinks.
+    """
+
+    @abstractmethod
+    def select(
+        self,
+        data_sinks: Iterable[DataSink[_DS, _DM, _CD]],
+        drain_meta: _UM,
+        clean_data: _CD,
+    ) -> Iterable[DataSink[_DS, _DM, _CD]]:
+        """Pick the target :class:`data sinks<DataSink>` to drain the given
+        data.
+
+        A selector can return an empty iterable to indicate that the data
+        shouldn't be drained to any data sink.
+
+        :param data_sinks: All available data sinks.
+        :param drain_meta: The drain metadata associated with the data being
+            drained.
+        :param clean_data: The data being drained.
+
+        :return: The data sinks to drain the given data to.
+        """
+        ...
 
 
 class DrainMetadataFactory(Disposable, Generic[_UM, _EM], metaclass=ABCMeta):

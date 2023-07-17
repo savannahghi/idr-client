@@ -18,6 +18,7 @@ from .operations import (
     RawData,
 )
 from .terminals import (
+    DataSinkSelector,
     DrainMetadataFactory,
     MetadataConsumer,
     MetadataSupplier,
@@ -59,6 +60,11 @@ class ETLProtocol(
 
     @property
     @abstractmethod
+    def data_sink_selector(self) -> DataSinkSelector[_DS, _DM, _CD, _UM]:
+        ...
+
+    @property
+    @abstractmethod
     def data_source_factory(
         self,
     ) -> Callable[[_DM], DataSource[_DM, _EM, _RD]]:
@@ -73,17 +79,17 @@ class ETLProtocol(
 
     @property
     @abstractmethod
+    def drain_metadata_factory(self) -> DrainMetadataFactory[_UM, _EM]:
+        ...
+
+    @property
+    @abstractmethod
     def metadata_consumer(self) -> MetadataConsumer[_UM]:
         ...
 
     @property
     @abstractmethod
     def metadata_supplier(self) -> MetadataSupplier[_DS, _DM, _EM]:
-        ...
-
-    @property
-    @abstractmethod
-    def upload_metadata_factory(self) -> DrainMetadataFactory[_UM, _EM]:
         ...
 
 

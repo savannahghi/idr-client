@@ -1,4 +1,5 @@
-from collections.abc import Callable, Iterable, Sequence
+import operator
+from collections.abc import Callable, Iterable
 from contextlib import ExitStack
 from typing import Any
 
@@ -7,6 +8,7 @@ from sghi.idr.client.core.domain import (
     CleanedData,
     DataProcessor,
     DataSink,
+    DataSinkSelector,
     DataSinkStream,
     DataSource,
     DataSourceStream,
@@ -19,6 +21,8 @@ from sghi.idr.client.core.domain import (
 from sghi.idr.client.core.exceptions import TransientError
 from sghi.idr.client.core.lib import Retry, if_exception_type_factory
 from sghi.idr.client.core.mixins import Task
+from toolz import pipe
+from toolz.curried import map
 
 # =============================================================================
 # CONSTANTS
@@ -107,8 +111,12 @@ class ETLWorkflow(Task[DrawMetadata, None]):
         DataProcessor[Any, Any, Any],
     ] = field()
     _drain_metadata_factory: DrainMetadataFactory[Any, Any] = field()
-    _metadata_consumer: MetadataConsumer[Any] = field()
     _data_sinks: Iterable[DataSink[Any, Any, Any]] = field()
+    _data_sink_selector: DataSinkSelector[Any, Any, Any, Any] = field()
+    _metadata_consumer: MetadataConsumer[Any] = field()
+    _drain_streams: dict[str, DataSinkStream[Any, Any]] = field(
+        factory=dict, init=False,
+    )
 
     def execute(self, an_input: DrawMetadata) -> None:
         with ExitStack() as workflow_stack:
@@ -124,17 +132,22 @@ class ETLWorkflow(Task[DrawMetadata, None]):
                 draw_meta=an_input,
             )
 
-            drain_streams: Sequence[DataSinkStream[Any, Any]]
-            drain_streams = [
-                workflow_stack.enter_context(
-                    _do_start_drain(_data_sink, drain_meta),
-                )
-                for _data_sink in self._data_sinks
-            ]
+            self._drain_streams.update(
+                {
+                    # TODO: Name is not unique. Change this to a unique key.
+                    #  Consider adding DataSinkMetadata as a required property
+                    #  of a DataSink. This way, the ID of the DataSinkMetadata
+                    #  can be used as unique key.
+                    _data_sink.name: workflow_stack.enter_context(
+                        _do_start_drain(_data_sink, drain_meta),
+                    )
+                    for _data_sink in self._data_sinks
+                },
+            )
             self._run_etl(
                 draw_stream=draw_stream,
                 draw_metadata=an_input,
-                drain_streams=drain_streams,
+                drain_meta=drain_meta,
             )
             _do_take_upload_meta(
                 metadata_consumer=self._metadata_consumer,
@@ -145,7 +158,7 @@ class ETLWorkflow(Task[DrawMetadata, None]):
         self,
         draw_stream: DataSourceStream[Any, Any],
         draw_metadata: DrawMetadata,
-        drain_streams: Sequence[DataSinkStream[Any, Any]],
+        drain_meta: DrainMetadata,
     ) -> None:
         try:
             while True:
@@ -155,6 +168,19 @@ class ETLWorkflow(Task[DrawMetadata, None]):
                         data_processor=data_processor,
                         raw_data=raw_data,
                         draw_metadata=draw_metadata,
+                    )
+                    data_sinks: Iterable[DataSink[Any, Any, Any]]
+                    data_sinks = self._data_sink_selector.select(
+                        data_sinks=self._data_sinks,
+                        drain_meta=drain_meta,
+                        clean_data=clean_data,
+                    )
+                    drain_streams: Iterable[DataSinkStream[Any, Any]]
+                    drain_streams = pipe(
+                        data_sinks,
+                        # TODO: Use a unique key instead of name.
+                        map(operator.attrgetter("name")),
+                        map(self._drain_streams.get),
                     )
                     self._drain_clean_data(drain_streams, clean_data, progress)
         except DataSourceStream.StopDraw:

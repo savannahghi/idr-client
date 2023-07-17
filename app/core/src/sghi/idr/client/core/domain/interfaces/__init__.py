@@ -19,6 +19,7 @@ from .operations import (
     RawData,
 )
 from .terminals import (
+    DataSinkSelector,
     DrainMetadataFactory,
     MetadataConsumer,
     MetadataSupplier,
@@ -29,6 +30,7 @@ __all__ = [
     "Data",
     "DataSink",
     "DataSinkMetadata",
+    "DataSinkSelector",
     "DataSinkStream",
     "DataSource",
     "DataSourceStream",

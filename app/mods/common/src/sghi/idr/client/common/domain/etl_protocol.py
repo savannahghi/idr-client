@@ -9,6 +9,7 @@ from sghi.idr.client.core.domain import (
     DataProcessor,
     DataSink,
     DataSinkMetadata,
+    DataSinkSelector,
     DataSource,
     DataSourceMetadata,
     DrainMetadata,
@@ -28,6 +29,7 @@ from ..lib import (
     ETLProtocolFactory,
     ProtocolDefinition,
 )
+from .terminals import SelectAllDataSinkSelector
 
 # =============================================================================
 # TYPES
@@ -70,10 +72,17 @@ class SimpleETLProtocol(
     _drain_metadata_factory: DrainMetadataFactory[_UM, _EM] = field()
     _metadata_consumer: MetadataConsumer[_UM] = field()
     _metadata_supplier: MetadataSupplier[_DS, _DM, _EM] = field()
+    _data_sink_selector: DataSinkSelector[_DS, _DM, _CD, _UM] = field(
+        factory=SelectAllDataSinkSelector, kw_only=True,
+    )
 
     @property
     def data_sink_factory(self) -> Callable[[_DS], DataSink[_DS, _UM, _CD]]:
         return self._data_sink_factory
+
+    @property
+    def data_sink_selector(self) -> DataSinkSelector[_DS, _DM, _CD, _UM]:
+        return self._data_sink_selector
 
     @property
     def data_source_factory(
@@ -96,7 +105,7 @@ class SimpleETLProtocol(
         return self._metadata_supplier
 
     @property
-    def upload_metadata_factory(self) -> DrainMetadataFactory[_UM, _EM]:
+    def drain_metadata_factory(self) -> DrainMetadataFactory[_UM, _EM]:
         return self._drain_metadata_factory
 
 

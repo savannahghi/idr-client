@@ -194,9 +194,10 @@ class RunETLProtocol(Task[None, None]):
             ETLWorkflow(
                 data_source=data_source,  # pyright: ignore
                 data_processor_factory=self._etl_protocol.data_processor_factory,  # pyright: ignore  # noqa: E501
-                drain_metadata_factory=self._etl_protocol.upload_metadata_factory,  # pyright: ignore  # noqa: E501
-                metadata_consumer=self._etl_protocol.metadata_consumer,  # pyright: ignore  # noqa: E501
+                drain_metadata_factory=self._etl_protocol.drain_metadata_factory,  # pyright: ignore  # noqa: E501
+                data_sink_selector=self._etl_protocol.data_sink_selector,  # pyright: ignore  # noqa: E501
                 data_sinks=self._data_sinks,  # pyright: ignore
+                metadata_consumer=self._etl_protocol.metadata_consumer,  # pyright: ignore  # noqa: E501
             ).execute(draw_meta)
             app_dispatcher.send(
                 dispatch.PostETLWorkflowRunSignal(
@@ -230,7 +231,7 @@ class RunETLProtocol(Task[None, None]):
             self._etl_protocol.metadata_consumer,
         )
         self._protocol_stack.enter_context(
-            self._etl_protocol.upload_metadata_factory,
+            self._etl_protocol.drain_metadata_factory,
         )
         self._protocol_stack.enter_context(self._executor)
 
