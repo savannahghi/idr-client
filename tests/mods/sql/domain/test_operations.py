@@ -94,7 +94,7 @@ class TestSimpleSQLDatabase(TestCase):
             ),
         )
         db: SimpleSQLDatabase[SQLRawData]
-        db = SimpleSQLDatabase.from_data_source_meta(
+        db = SimpleSQLDatabase.of_data_source_meta(
             data_source_meta=db_descriptor,
         )
 

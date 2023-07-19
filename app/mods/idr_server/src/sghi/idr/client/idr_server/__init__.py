@@ -47,8 +47,8 @@ def fyj_cbs_etl_protocol_factory() -> FYJCBSETLProtocol:
         id="fyj-cbs",  # pyright: ignore
         name="FyJ CBS ETL Protocol",  # pyright: ignore
         description="Fahari ya Jamii, CBS ETL Protocol",  # pyright: ignore
-        data_sink_factory=HTTPDataSink.from_data_sink_meta,  # pyright: ignore
-        data_source_factory=SimpleSQLDatabase.from_data_source_meta,  # pyright: ignore  # noqa: E501
+        data_sink_factory=HTTPDataSink.of_data_sink_meta,  # pyright: ignore
+        data_source_factory=SimpleSQLDatabase.of_data_source_meta,  # pyright: ignore  # noqa: E501
         data_processor_factory=IDRServerDataProcessor,  # pyright: ignore
         drain_metadata_factory=fyj_cbs_drain_meta_factory(),  # pyright: ignore
         metadata_consumer=fyj_cbs_metadata_consumer_factory(),  # pyright: ignore  # noqa: E501

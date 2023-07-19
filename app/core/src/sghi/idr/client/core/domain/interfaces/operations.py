@@ -115,7 +115,7 @@ class DataSink(
 
     @classmethod
     @abstractmethod
-    def from_data_sink_meta(cls, data_sink_meta: _DS) -> Self:
+    def of_data_sink_meta(cls, data_sink_meta: _DS) -> Self:
         """Return `DataSink` instance given a :class:`DataSinkMetadata`.
 
         :param data_sink_meta: A `DataSinkMetadata` instance describing a
@@ -184,7 +184,7 @@ class DataSource(
 
     @classmethod
     @abstractmethod
-    def from_data_source_meta(cls, data_source_meta: _DM) -> Self:
+    def of_data_source_meta(cls, data_source_meta: _DM) -> Self:
         """
 
         :param data_source_meta:

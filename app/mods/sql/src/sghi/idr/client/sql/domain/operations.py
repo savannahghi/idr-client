@@ -153,7 +153,7 @@ class SimpleSQLDatabase(
     """
 
     @classmethod
-    def from_data_source_meta(
+    def of_data_source_meta(
         cls,
         data_source_meta: SimpleSQLDatabaseDescriptor,
     ) -> Self:
