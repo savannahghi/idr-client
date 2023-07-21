@@ -27,7 +27,7 @@ def _dotted_path_to_initializer_instance(
             _initializer_dotted_path,
             SettingInitializer,
         )
-        return initializer_klass()  # type: ignore
+        return initializer_klass()
     except ImportError as exp:
         _err_msg: str = '"{}" does not seem to be a valid path.'.format(
             _initializer_dotted_path,

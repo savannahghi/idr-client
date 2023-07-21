@@ -102,6 +102,16 @@ class DataSink(
     calling the :meth:`start_consumption` method of a `DataSink` instance.
     """
 
+    @property
+    @abstractmethod
+    def data_sink_meta(self) -> _DS:
+        """:class:`DataSinkMetadata` instance that describes this `DataSink`.
+
+        :return: The `DataSinkMetadata` instance used to initialize this
+            `DataSink`.
+        """
+        ...
+
     @abstractmethod
     def start_drain(self, drain_metadata: _UM) -> "DataSinkStream[_UM, _CD]":
         """Start consumption of :class:`clean data<CleanedData>`.
@@ -170,6 +180,16 @@ class DataSource(
     metaclass=ABCMeta,
 ):
     """An interface representing an entity that contains data of interest."""
+
+    @property
+    @abstractmethod
+    def data_source_meta(self) -> _DM:
+        """:class:`DataSourceMetadata` instance describing this `DataSource`.
+
+        :return: The `DataSourceMetadata` instance that describes this
+            `DataSource`.
+        """
+        ...
 
     @abstractmethod
     def start_draw(self, draw_metadata: _EM) -> "DataSourceStream[_EM, _RD]":

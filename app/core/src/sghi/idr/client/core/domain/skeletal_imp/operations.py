@@ -65,7 +65,12 @@ class BaseDataSink(
     Base skeletal implementation for most :class:`DataSink` implementations.
     """
 
+    _data_sink_meta: _DS = field()
     _is_disposed: bool = field(default=False, init=False)
+
+    @property
+    def data_sink_meta(self) -> _DS:
+        return self._data_sink_meta
 
     @property
     def is_disposed(self) -> bool:
@@ -111,7 +116,12 @@ class BaseDataSource(
     Base skeletal implementation for most :class:`DataSource` implementations.
     """
 
+    _data_source_meta: _DM = field()
     _is_disposed: bool = field(default=False, init=False)
+
+    @property
+    def data_source_meta(self) -> _DM:
+        return self._data_source_meta
 
     @property
     def is_disposed(self) -> bool:

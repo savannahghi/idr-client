@@ -1,7 +1,7 @@
 import operator
 from collections.abc import Callable, Iterable
 from contextlib import ExitStack
-from typing import Any
+from typing import Any, cast
 
 from attrs import define, field
 from sghi.idr.client.core.domain import (
@@ -134,11 +134,7 @@ class ETLWorkflow(Task[DrawMetadata, None]):
 
             self._drain_streams.update(
                 {
-                    # TODO: Name is not unique. Change this to a unique key.
-                    #  Consider adding DataSinkMetadata as a required property
-                    #  of a DataSink. This way, the ID of the DataSinkMetadata
-                    #  can be used as unique key.
-                    _data_sink.name: workflow_stack.enter_context(
+                    _data_sink.data_sink_meta.id: workflow_stack.enter_context(
                         _do_start_drain(_data_sink, drain_meta),
                     )
                     for _data_sink in self._data_sinks
@@ -175,12 +171,14 @@ class ETLWorkflow(Task[DrawMetadata, None]):
                         drain_meta=drain_meta,
                         clean_data=clean_data,
                     )
-                    drain_streams: Iterable[DataSinkStream[Any, Any]]
-                    drain_streams = pipe(
-                        data_sinks,
-                        # TODO: Use a unique key instead of name.
-                        map(operator.attrgetter("name")),
-                        map(self._drain_streams.get),
+                    drain_streams: Iterable[DataSinkStream[Any, Any]] = cast(
+                        Iterable[DataSinkStream[Any, Any]],
+                        pipe(
+                            data_sinks,
+                            # TODO: Use a unique key instead of name.
+                            map(operator.attrgetter("data_sink_meta.id")),
+                            map(self._drain_streams.get),
+                        ),
                     )
                     self._drain_clean_data(drain_streams, clean_data, progress)
         except DataSourceStream.StopDraw:

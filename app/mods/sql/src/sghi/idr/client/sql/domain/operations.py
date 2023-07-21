@@ -1,4 +1,5 @@
 import logging
+import uuid
 from abc import ABCMeta
 from collections.abc import Callable, Iterator, Sequence
 from logging import Logger
@@ -160,6 +161,7 @@ class SimpleSQLDatabase(
         return cls(
             name=data_source_meta.name,  # pyright: ignore
             description=data_source_meta.description,  # pyright: ignore
+            data_source_meta=data_source_meta,  # pyright: ignore
             engine=create_engine(  # pyright: ignore
                 data_source_meta.database_url,
                 logging_name=data_source_meta.logging_name,
@@ -179,16 +181,16 @@ class SimpleSQLDatabase(
             DataSourceStream[SimpleSQLQuery, Any],
         ] | None = None,
     ) -> Self:
-        return cls(
+        dss_factory = data_source_stream_factory
+        data_source_meta = SimpleSQLDatabaseDescriptor(
+            id=str(uuid.uuid4()),  # pyright: ignore
             name=name,  # pyright: ignore
             description=description,  # pyright: ignore
-            engine=create_engine(  # pyright: ignore
-                "sqlite+pysqlite:///:memory:",
-                logging_name=name,
-                isolation_level=isolation_level,
-            ),
-            data_source_stream_factory=data_source_stream_factory,  # pyright: ignore  # noqa
+            database_url="sqlite+pysqlite:///:memory:",  # pyright: ignore
+            data_source_stream_factory=dss_factory,  # pyright: ignore
+            isolation_level=isolation_level,  # pyright: ignore
         )
+        return cls.of_data_source_meta(data_source_meta)
 
 
 @define(order=False, slots=True)

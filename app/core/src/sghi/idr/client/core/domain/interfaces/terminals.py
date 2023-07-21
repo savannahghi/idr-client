@@ -37,10 +37,10 @@ class DataSinkSelector(Generic[_DS, _DM, _CD, _UM], metaclass=ABCMeta):
     @abstractmethod
     def select(
         self,
-        data_sinks: Iterable[DataSink[_DS, _DM, _CD]],
+        data_sinks: Iterable[DataSink[_DS, _UM, _CD]],
         drain_meta: _UM,
         clean_data: _CD,
-    ) -> Iterable[DataSink[_DS, _DM, _CD]]:
+    ) -> Iterable[DataSink[_DS, _UM, _CD]]:
         """Pick the target :class:`data sinks<DataSink>` to drain the given
         data.
 

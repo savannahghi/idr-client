@@ -27,7 +27,7 @@ from sghi.idr.client.core.lib import Retry, if_exception_type_factory, type_fqn
 from sghi.idr.client.core.task import Task
 from sghi.idr.client.runtime.constants import APP_DISPATCHER_REG_KEY
 from sghi.idr.client.runtime.utils import dispatch
-from toolz import compose, juxt
+from toolz import compose
 
 from .etl_workflow import ETLWorkflow
 
@@ -90,9 +90,7 @@ class RunETLProtocol(Task[None, None]):
 
     def __attrs_post_init__(self) -> None:
         self._data_sinks: list[DataSink[Any, Any, Any]] = []
-        self._data_sources: list[
-            tuple[DataSource[Any, Any, Any], DataSourceMetadata]
-        ] = []
+        self._data_sources: list[DataSource[Any, Any, Any]] = []
         self._data_sink_metas: list[DataSinkMetadata] = []
         self._data_source_metas: list[DataSourceMetadata] = []
         self._logger: Logger = logging.getLogger(type_fqn(self.__class__))
@@ -167,12 +165,9 @@ class RunETLProtocol(Task[None, None]):
     def _load_data_sources(self) -> None:
         self._data_sources.extend(
             builtins.map(
-                juxt(
-                    compose(
-                        self._protocol_stack.enter_context,
-                        self._etl_protocol.data_source_factory,
-                    ),
-                    lambda _s: _s,
+                compose(
+                    self._protocol_stack.enter_context,
+                    self._etl_protocol.data_source_factory,
                 ),
                 self._data_source_metas,
             ),
@@ -241,15 +236,15 @@ class RunETLProtocol(Task[None, None]):
     ) -> None:
         # Schedule all workflows for execution on separate threads.
         workflow_tasks: list[Future[None]] = []
-        for data_source, data_source_meta in self._data_sources:
+        for source in self._data_sources:
             workflow_tasks.extend(
                 self._executor.submit(
                     self._run_etl_workflow,
                     app_dispatcher=app_dispatcher,
-                    data_source=data_source,
+                    data_source=source,
                     draw_meta=draw_meta,
                 )
-                for draw_meta in data_source_meta.draw_metadata.values()
+                for draw_meta in source.data_source_meta.draw_metadata.values()
             )
 
         # Wait for all workflows to complete.

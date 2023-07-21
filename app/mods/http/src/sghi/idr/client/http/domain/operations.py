@@ -88,6 +88,7 @@ class HTTPDataSink(BaseDataSink[_DS, _UM, _CD], Generic[_DS, _UM, _CD]):
         return cls(
             name=data_sink_meta.name,  # pyright: ignore
             description=data_sink_meta.description,  # pyright: ignore
+            data_sink_meta=data_sink_meta,  # pyright: ignore
             transport_factory=data_sink_meta.transport_factory,  # pyright: ignore  # noqa: E501
             api_dialect_factory=data_sink_meta.api_dialect_factory,  # pyright: ignore  # noqa: E501
             valid_response_predicate=data_sink_meta.valid_response_predicate,  # pyright: ignore  # noqa: E501

@@ -28,7 +28,9 @@ KNOWN_SQL_ALCHEMY_TRANSIENT_BASE_ERRORS: Sequence[type[BaseException]] = (
 def to_appropriate_domain_error(
     exp: BaseException,
     message: str | None = None,
-    known_transient_errors: tuple[type[BaseException]] = KNOWN_SQL_ALCHEMY_TRANSIENT_BASE_ERRORS,  # noqa: E501
+    known_transient_errors: tuple[
+        type[BaseException], ...,
+    ] = KNOWN_SQL_ALCHEMY_TRANSIENT_BASE_ERRORS,
 ) -> SQLError:
     """Map an exception to the appropriate domain error.
 
