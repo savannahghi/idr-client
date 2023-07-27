@@ -1,5 +1,6 @@
+import uuid
 from collections.abc import Callable, Iterable
-from typing import Any, Generic, TypeVar, assert_never
+from typing import Any, Generic, Self, TypeVar, assert_never
 
 from attrs import define, field
 from sghi.idr.client.core.domain import (
@@ -29,7 +30,12 @@ from ..lib import (
     ETLProtocolFactory,
     ProtocolDefinition,
 )
-from .terminals import SelectAllDataSinkSelector
+from .operations import NoOpDataProcessor, NullDataSink
+from .terminals import (
+    NullMetadataConsumer,
+    SelectAllDataSinkSelector,
+    SimpleDrainMetadataFactory,
+)
 
 # =============================================================================
 # TYPES
@@ -63,8 +69,8 @@ class SimpleETLProtocol(
 ):
     """A simple implementation of an :class:`ETLProtocol`."""
 
-    _data_sink_factory: Callable[[_DS], DataSink] = field()
-    _data_source_factory: Callable[[_DM], DataSource] = field()
+    _data_sink_factory: Callable[[_DS], DataSink[_DS, _UM, _CD]] = field()
+    _data_source_factory: Callable[[_DM], DataSource[_DM, _EM, _RD]] = field()
     _data_processor_factory: Callable[
         [],
         DataProcessor[_EM, _RD, _CD],
@@ -108,6 +114,65 @@ class SimpleETLProtocol(
     def drain_metadata_factory(self) -> DrainMetadataFactory[_UM, _EM]:
         return self._drain_metadata_factory
 
+    @classmethod
+    def of(
+        cls,
+        id: str,  # noqa: A002
+        name: str,
+        data_source_factory: Callable[[_DM], DataSource[_DM, _EM, _RD]],
+        metadata_supplier: MetadataSupplier[_DS, _DM, _EM],
+        description: str | None = None,
+        data_sink_factory: Callable[
+            [_DS], DataSink[_DS, _UM, _CD],
+        ] | None = None,
+        data_processor_factory: Callable[
+            [], DataProcessor[_EM, _RD, _CD],
+        ] | None = None,
+        drain_metadata_factory: DrainMetadataFactory[_UM, _EM] | None = None,
+        metadata_consumer: MetadataConsumer[_UM] | None = None,
+        data_sink_selector: DataSinkSelector[_DS, _DM, _CD, _UM] | None = None,
+    ) -> Self:
+        """Construct a new :class:`ETLProtocol` with the given properties."""
+        return cls(
+            id=id,  # pyright: ignore
+            name=name,  # pyright: ignore
+            description=description,  # pyright: ignore
+            data_sink_factory=(  # pyright: ignore
+                data_sink_factory or NullDataSink.of_data_sink_meta
+            ),
+            data_source_factory=data_source_factory,  # pyright: ignore
+            data_processor_factory=(  # pyright: ignore
+                data_processor_factory or NoOpDataProcessor
+            ),
+            drain_metadata_factory=(  # pyright: ignore
+                drain_metadata_factory or SimpleDrainMetadataFactory()
+            ),
+            metadata_consumer=(  # pyright: ignore
+                metadata_consumer or NullMetadataConsumer.of()
+            ),
+            metadata_supplier=metadata_supplier,  # pyright: ignore
+            data_sink_selector=(  # pyright: ignore
+                data_sink_selector or SelectAllDataSinkSelector()
+            ),
+        )
+
+    @classmethod
+    def of_minimal(
+        cls,
+        name: str,
+        data_source_factory: Callable[[_DM], DataSource[_DM, _EM, _RD]],
+        metadata_supplier: MetadataSupplier[_DS, _DM, _EM],
+        id: str | None = None,  # noqa: A002
+        description: str | None = None,
+    ) -> Self:
+        return cls.of(
+            id=id or str(uuid.uuid4()),
+            name=name,
+            description=description,
+            data_source_factory=data_source_factory,
+            metadata_supplier=metadata_supplier,
+        )
+
 
 # =============================================================================
 # ETL PROTOCOL SUPPLIERS
@@ -142,22 +207,22 @@ class FromDefinitionsETLProtocolSupplier(ETLProtocolSupplier):
         dmf: DrainMetadataFactory = cls._get_data_meta_factory_instance(
             dmf_def,
         )
-        return SimpleETLProtocol(
-            id=protocol_definition["id"],  # pyright: ignore
-            name=protocol_definition["name"],  # pyright: ignore
-            description=protocol_definition.get("description"),  # pyright: ignore  # noqa: E501
-            data_sink_factory=protocol_definition["data_sink_factory"],  # pyright: ignore  # noqa: E501
-            data_source_factory=protocol_definition["data_source_factory"],  # pyright: ignore  # noqa: E501
-            data_processor_factory=protocol_definition[  # pyright: ignore
+        return SimpleETLProtocol.of(
+            id=protocol_definition["id"],
+            name=protocol_definition["name"],
+            description=protocol_definition.get("description"),
+            data_sink_factory=protocol_definition["data_sink_factory"],
+            data_source_factory=protocol_definition["data_source_factory"],
+            data_processor_factory=protocol_definition[
                 "data_processor_factory"
             ],
-            metadata_consumer=protocol_definition[  # pyright: ignore
+            metadata_consumer=protocol_definition[
                 "metadata_consumer_factory"
             ](),
-            metadata_supplier=protocol_definition[  # pyright: ignore
+            metadata_supplier=protocol_definition[
                 "metadata_supplier_factory"
             ](),
-            drain_metadata_factory=dmf,  # pyright: ignore
+            drain_metadata_factory=dmf,
         )
 
     @staticmethod
@@ -205,7 +270,7 @@ class FromFactoriesETLProtocolSupplier(ETLProtocolSupplier):
             _err_msg: str = (
                 "Invalid ETLProtocol, the factory '{}' returned an instance "
                 "that is not a subclass of "
-                "'app.core.domain.ETLProtocol'.".format(
+                "'sghi.idr.client.core.domain.ETLProtocol'.".format(
                     type_fqn(proto_factory),
                 )
             )

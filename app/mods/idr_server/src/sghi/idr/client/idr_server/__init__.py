@@ -43,16 +43,16 @@ FYJCBSETLProtocol = SimpleETLProtocol[
 
 
 def fyj_cbs_etl_protocol_factory() -> FYJCBSETLProtocol:
-    return SimpleETLProtocol(
-        id="fyj-cbs",  # pyright: ignore
-        name="FyJ CBS ETL Protocol",  # pyright: ignore
-        description="Fahari ya Jamii, CBS ETL Protocol",  # pyright: ignore
-        data_sink_factory=HTTPDataSink.of_data_sink_meta,  # pyright: ignore
-        data_source_factory=SimpleSQLDatabase.of_data_source_meta,  # pyright: ignore  # noqa: E501
-        data_processor_factory=IDRServerDataProcessor,  # pyright: ignore
-        drain_metadata_factory=fyj_cbs_drain_meta_factory(),  # pyright: ignore
-        metadata_consumer=fyj_cbs_metadata_consumer_factory(),  # pyright: ignore  # noqa: E501
-        metadata_supplier=fyj_cbs_metadata_supplier_factory(),  # pyright: ignore  # noqa: E501
+    return SimpleETLProtocol.of(
+        id="fyj-cbs",
+        name="FyJ CBS ETL Protocol",
+        description="Fahari ya Jamii, CBS ETL Protocol",
+        data_sink_factory=HTTPDataSink.of_data_sink_meta,
+        data_source_factory=SimpleSQLDatabase.of_data_source_meta,
+        data_processor_factory=IDRServerDataProcessor,
+        drain_metadata_factory=fyj_cbs_drain_meta_factory(),
+        metadata_consumer=fyj_cbs_metadata_consumer_factory(),
+        metadata_supplier=fyj_cbs_metadata_supplier_factory(),
     )
 
 

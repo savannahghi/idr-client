@@ -6,6 +6,7 @@ from attrs import define, field
 from ..interfaces import (
     CleanedData,
     Data,
+    DataProcessor,
     DataSink,
     DataSinkMetadata,
     DataSinkStream,
@@ -52,6 +53,23 @@ class BaseData(Data[_T], Generic[_T], metaclass=ABCMeta):
     @property
     def index(self) -> int:
         return self._index
+
+
+@define(slots=False)
+class BaseDataProcessor(
+    DataProcessor[_EM, _RD, _CD],
+    Generic[_EM, _RD, _CD],
+    metaclass=ABCMeta,
+):
+    """
+    Base skeletal implementation for most :class:`DataProcessor` derivatives.
+    """
+
+    _is_disposed: bool = field(default=False, init=False)
+
+    @property
+    def is_disposed(self) -> bool:
+        return self._is_disposed
 
 
 @define(slots=False)

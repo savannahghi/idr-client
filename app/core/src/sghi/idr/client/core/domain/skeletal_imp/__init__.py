@@ -11,6 +11,7 @@ from .metadata import (
 )
 from .operations import (
     BaseData,
+    BaseDataProcessor,
     BaseDataSink,
     BaseDataSinkStream,
     BaseDataSource,
@@ -24,6 +25,7 @@ from .terminals import (
 
 __all__ = [
     "BaseData",
+    "BaseDataProcessor",
     "BaseDataSink",
     "BaseDataSinkMetadata",
     "BaseDataSinkStream",
