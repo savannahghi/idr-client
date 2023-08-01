@@ -210,7 +210,6 @@ def main(
 
     _set_ui(preferred_ui=ui).start()
 
-    app_dispatcher.send(dispatch.PreConfigSignal())
     _configure_runtime(
         app_dispatcher=app_dispatcher,
         config=config,
@@ -218,7 +217,6 @@ def main(
         log_level=log_level,
         verbosity=verbosity,
     )
-    app_dispatcher.send(dispatch.PostConfigSignal())
 
     try:
         # Delay this import as late as possible to avoid cyclic imports,

@@ -11,7 +11,11 @@ from sghi.idr.client.core.lib import (
 from toolz import pipe
 from toolz.curried import map
 
-from .constants import DEFAULT_CONFIG, SETTINGS_INITIALIZERS_CONFIG_KEY
+from .constants import (
+    APP_DISPATCHER_REG_KEY,
+    DEFAULT_CONFIG,
+    SETTINGS_INITIALIZERS_CONFIG_KEY,
+)
 
 # =============================================================================
 # HELPERS
@@ -85,6 +89,19 @@ def setup(
 
     :return: None.
     """
+    from sghi.idr.client.runtime.utils import dispatch
+
+    # Set the application dispatch if not already set. This will allow the
+    # runtime to be used as a library easily by requiring only the `setup`
+    # funtion to be called. That is, this function should be adequate for
+    # initializing the runtime.
+    app_dispatcher: dispatch.Dispatcher
+    app_dispatcher = app.registry.get(APP_DISPATCHER_REG_KEY)
+    if app_dispatcher is None:
+        app_dispatcher: dispatch.Dispatcher = dispatch.Dispatcher()
+        app.registry.set(APP_DISPATCHER_REG_KEY, app_dispatcher)
+    app_dispatcher.send(dispatch.PreConfigSignal())
+
     settings_dict: dict[str, Any] = dict(DEFAULT_CONFIG)
     settings_dict.update(settings or {})
     initializers: list[SettingInitializer] = list(settings_initializers or [])
@@ -99,8 +116,10 @@ def setup(
 
         initializers.insert(0, LoggingInitializer())
     app.registry.log_level = log_level
-    # noinspection
-    app.settings = Config(
+
+    config: Config = Config(
         settings=settings_dict,
         settings_initializers=initializers,
     )
+    setattr(app, "settings", config)  # noqa: B010
+    app_dispatcher.send(dispatch.PostConfigSignal())
