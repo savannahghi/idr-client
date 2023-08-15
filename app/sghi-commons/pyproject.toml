@@ -1,0 +1,251 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [
+    "setuptools~=68.0.0",
+    "setuptools_scm[toml]~=7.1.0"
+]
+
+[project]
+authors = [
+    {name = "Savannah Informatics Global Health Institute"}
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: Freeware",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: POSIX",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Utilities",
+    "Typing :: Typed"
+]
+dependencies = []
+description = "A collection of utilities used throughout SGHI's Python projects."
+dynamic = ["version"]
+keywords = ["sghi", "common", "commons", "util", "utils"]
+license = {file = "LICENSE"}
+maintainers = [
+    {name = "Kennedy Kori", email = "kennedykori47@gmail.com"},
+    {name = "Salad Guyo", email = "saladguyo60@gmail.com"}
+]
+name = "sghi-commons"
+readme = "README.md"
+requires-python = ">=3.10" # Support Python 3.10+.
+
+[project.urls]
+changelog = "https://github.com/savannahghi/sghi-python-utils/blob/develop/docs/CHANGELOG.md"
+documentation = "https://github.com/savannahghi/sghi-python-utils/blob/develop/README.md"
+homepage = "https://github.com/savannahghi/sghi-python-utils"
+repository = "https://github.com/savannahghi/sghi-python-utils.git"
+
+[tool.black]
+line-length = 79
+target-version = ["py310"]
+
+[tool.coverage.html]
+directory = "coverage"
+
+[tool.coverage.report]
+exclude_lines = [
+    # Have to re-enable the standard pragma"
+    "pragma: no branch",
+    "pragma: nocover",
+    "pragma: no cover",
+
+    # Don't complain if tests don't hit defensive assertion code:
+    "raise AssertionError",
+    "raise NotImplementedError",
+
+    # Don't complain about abstract methods, they aren't run:
+    '@(abc\.)?abstractmethod'
+]
+show_missing = true
+
+[tool.coverage.run]
+branch = true
+omit = [".tox/*", "docs/*", "tests/*"]
+source = ["app"]
+
+[tool.isort]
+extend_skip = "docs"
+extend_skip_glob = ["*/migrations/*", "*/static/CACHE/*"]
+known_first_party = ["sghi", "tests"]
+line_length = 79
+multi_line_output = 3
+profile = "black"
+
+[tool.pyright]
+analyzeUnannotatedFunctions = true
+enableTypeIgnoreComments = true
+reportConstantRedefinition = "error"
+reportDeprecated = "warning"
+reportDuplicateImport = "error"
+reportGeneralTypeIssues = "error"
+reportIncompatibleMethodOverride = "error"
+reportIncompatibleVariableOverride = "error"
+reportMissingSuperCall = "warning"
+reportMissingTypeStubs = "information"
+reportOverlappingOverload = "warning"
+reportPrivateUsage = "error"
+reportPropertyTypeMismatch = "error"
+reportUnnecessaryTypeIgnoreComment = "error"
+reportUnusedClass = "warning"
+reportUnusedFunction = "warning"
+reportUnusedImport = "error"
+reportUnusedVariable = "warning"
+reportWildcardImportFromLibrary = "warning"
+strictDictionaryInference = true
+strictListInference = true
+strictParameterNoneValue = true
+strictSetInference = true
+typeCheckingMode = "basic"
+
+[tool.pytest.ini_options]
+addopts = "--cov=sghi --cov-fail-under=100 --cov-report=html --cov-report=term-missing -n auto --junitxml='junitxml_report/report.xml' -v --durations=10 --cache-clear"
+console_output_style = "progress"
+log_cli = 1
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"
+log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)"
+log_cli_level = "ERROR"
+python_files = ["*test.py", "test_*.py"]
+norecursedirs = "node_modules venv build env bin .cache .tox"
+
+[tool.ruff]
+exclude = [
+    ".eggs",
+    ".git",
+    ".mypy_cache",
+    ".nox",
+    ".pytype",
+    ".ruff_cache",
+    ".tox",
+    ".venv",
+    "__pycache__",
+    "__pypackages__",
+    "_build",
+    "build",
+    "dist",
+    "docs",
+    "node_modules",
+    "venv",
+]
+ignore = [
+    "ANN002",
+    "ANN003",
+    "ANN101",
+    "ANN102",
+    "ANN204",
+    "S101"
+]
+line-length = 79
+select = [
+    "A",   # flake8-builtins
+    "ANN", # flake8-annotations
+    "B",   # flake8-bugbear
+    "BLE", # flake8-blind-except
+    "C4",  # flake8-comprehensions
+    "C90", # mccabe
+    "COM", # flake8-commas
+    # "D",   # pydocstyle
+    "E",   # pycodestyle Error
+    "EM",  # flake8-errmsg
+    "ERA", # eradicate
+    "F",   # pyflakes
+    "G",   # flake8-logging-format
+    "I",   # isort
+    "ISC", # flake8-implicit-str-concat
+    "N",   # pep8 Naming
+    "PD",  # pandas-vet
+    "PT",  # flake8-pytest-style
+    "PYI", # flake8-pyi
+    "Q",   # flake8-quotes
+    "RET", # flake8-return
+    "RUF", # Ruff-specific rules
+    "S",   # flake8-bandit
+    "SIM", # flake8-simplify
+    "T10", # flake8-debugger
+    "T20", # flake8-print
+    "TCH", # flake8-type-checking
+    "UP",  # pyupgrade
+    "W",   # pycodestyle Warning
+    "YTT", # flake8-2020
+]
+src = ["app", "tests"]
+target-version = "py310"
+
+[tool.ruff.flake8-quotes]
+inline-quotes = "double"
+docstring-quotes = "double"
+
+[tool.ruff.isort]
+known-first-party = ["app", "tests"]
+
+[tool.ruff.mccabe]
+max-complexity = 10
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+namespaces = true
+where = ["src"]
+
+[tool.setuptools_scm]
+root = "../../"
+
+[tool.tox]
+legacy_tox_ini = """
+    [tox]
+    env_list = {py310, py311}, coveralls, package
+    isolated_build = true
+    no_package = true
+    requires =
+        tox>4
+    skip_missing_interpreters = true
+
+
+    [gh-actions]
+    python =
+        3.10: py310
+        3.11: py311, coveralls
+
+
+    [testenv]
+    commands =
+        pyright .
+        ruff .
+        coverage erase
+        pytest --cov=idr-client -n auto --durations=100 {posargs}
+        coverage html
+    deps =
+        -r{toxinidir}{/}requirements{/}test.txt
+    description = test and lint the project
+    download = true
+    set_env =
+        PYTHONPATH = {toxinidir}
+
+
+    ;If running outside Github, ensure that the the `COVERALLS_REPO_TOKEN`
+    ;environment variable is set.
+    [testenv:coveralls]
+    commands =
+        coveralls --service=github
+    description = submit coverage results to coverall.io
+    pass_env =
+        COVERALLS_REPO_TOKEN
+        GITHUB_*
+
+
+    [testenv:package]
+    allowlist_externals = {envdir}{/}idr_client
+    commands =
+        pyinstaller idr_client.spec
+        staticx dist/idr_client_temp {envdir}{/}idr_client
+        {envdir}{/}idr_client --version
+    deps =
+        -r{toxinidir}{/}requirements{/}build.txt
+    description = build an executable binary of the project
+"""

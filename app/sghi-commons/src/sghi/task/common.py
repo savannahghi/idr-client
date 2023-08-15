@@ -1,0 +1,84 @@
+from __future__ import annotations
+
+from collections.abc import Callable, Sequence
+from functools import reduce
+from typing import Any, Generic, TypeVar, cast
+
+from ..utils import ensure_not_none, ensure_not_none_nor_empty
+from .task import Task
+
+# =============================================================================
+# TYPES
+# =============================================================================
+
+
+_IN = TypeVar("_IN")
+_RT = TypeVar("_RT")
+
+
+# =============================================================================
+# ITEM PROCESSORS
+# =============================================================================
+
+
+class Chainable(
+    Task[Callable[[_IN], _RT], "Chainable[_RT, Any]"],
+    Generic[_IN, _RT],
+):
+    __slots__ = ("_value",)
+
+    def __init__(self, value: _IN):
+        super().__init__()
+        self._value: _IN = value
+
+    @property
+    def value(self) -> _IN:
+        return self._value
+
+    def execute(
+        self,
+        an_input: Callable[[_IN], _RT],
+    ) -> Chainable[_RT, Any]:
+        bind: Callable[[_IN], _RT]
+        bind = ensure_not_none(an_input, "'an_input' cannot be None.")
+        return Chainable(bind(self._value))
+
+
+class Consumer(Task[_IN, _IN], Generic[_IN]):
+
+    __slots__ = ("_consume",)
+
+    def __init__(self, consume: Callable[[_IN], None]):
+        super().__init__()
+        ensure_not_none(consume, "consume cannot be None.")
+        self._consume: Callable[[_IN], None] = consume
+
+    def execute(self, an_input: _IN) -> _IN:
+        self._consume(an_input)
+        return an_input
+
+
+class Pipeline(Task[_IN, _RT], Generic[_IN, _RT]):
+
+    __slots__ = ("_tasks",)
+
+    def __init__(self, *tasks: Task[Any, Any]):
+        super().__init__()
+        ensure_not_none_nor_empty(tasks, "tasks cannot be None or empty.")
+        self._tasks: Sequence[Task[Any, Any]] = tuple(tasks)
+
+    @property
+    def tasks(self) -> Sequence[Task[Any, Any]]:
+        return self._tasks
+
+    def execute(self, an_input: _IN) -> _RT:
+        _acc: Any
+        _tsk: Task[Any, Any]
+        return cast(
+            _RT,
+            reduce(
+                lambda _acc, _tsk: _tsk.execute(_acc),
+                self.tasks[1:],
+                self.tasks[0].execute(an_input),
+            ),
+        )
