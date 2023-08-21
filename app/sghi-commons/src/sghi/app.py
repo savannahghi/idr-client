@@ -20,13 +20,17 @@ from typing import Any, Final
 
 from .config import Config, SettingInitializer
 from .dispatch import Dispatcher
+from .registry import Registry
 
 # =============================================================================
 # GLOBAL APPLICATION/TOOL CONSTANTS
 # =============================================================================
 
 dispatcher: Final[Dispatcher] = Dispatcher.of()
-"""The application dispatcher."""
+"""The main application dispatcher."""
+
+registry: Final[Registry] = Registry.of()
+"""The main application registry."""
 
 conf: Final[Config] = Config.of_awaiting_setup()
 """The application configurations.

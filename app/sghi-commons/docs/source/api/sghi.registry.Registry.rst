@@ -1,9 +1,9 @@
-﻿sghi.dispatch.Dispatcher
-========================
+﻿sghi.registry.Registry
+======================
 
-.. currentmodule:: sghi.dispatch
+.. currentmodule:: sghi.registry
 
-.. autoclass:: Dispatcher
+.. autoclass:: Registry
    :members:
    :special-members: __contains__, __delitem__, __enter__, __exit__, __call__, __getattr__, __setattr__, __getitem__, __setitem__
    :show-inheritance:
@@ -20,16 +20,22 @@
 
    .. autosummary::
 
-      ~Dispatcher.__init__
-      ~Dispatcher.connect
-      ~Dispatcher.disconnect
-      ~Dispatcher.of
-      ~Dispatcher.send
+      ~Registry.__init__
+      ~Registry.get
+      ~Registry.of
+      ~Registry.pop
+      ~Registry.setdefault
 
 
 
 
 
+
+   .. rubric:: Attributes
+
+   .. autosummary::
+
+      ~Registry.dispatcher
 
 
 

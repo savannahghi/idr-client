@@ -11,6 +11,7 @@
       :toctree:
 
       dispatcher
+      registry
       conf
 
 
