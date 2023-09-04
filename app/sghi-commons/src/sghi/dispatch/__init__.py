@@ -72,6 +72,12 @@ class Dispatcher(metaclass=ABCMeta):
     ``Signal`` dispatchers are responsible for connecting and disconnecting
     :class:`receivers<Receiver>` to be notified when a signal is triggered, as
     well as sending signals to the registered receivers.
+
+    .. tip::
+
+        Unless otherwise indicated, at runtime, there should be an instance of
+        this class at :attr:`sghi.app.dispatcher` ment to hold the main
+        ``Dispatcher`` for the executing application/tool.
     """
 
     __slots__ = ()

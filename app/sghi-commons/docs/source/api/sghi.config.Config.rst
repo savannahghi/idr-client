@@ -1,7 +1,7 @@
-sghi.config.config.Config
-=========================
+sghi.config.Config
+==================
 
-.. currentmodule:: sghi.config.config
+.. currentmodule:: sghi.config
 
 .. autoclass:: Config
    :members:

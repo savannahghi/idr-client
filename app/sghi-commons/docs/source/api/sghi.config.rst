@@ -13,21 +13,26 @@
 
 
 
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: class.rst
+
+      Config
+      SettingInitializer
 
 
 
 
 
+   .. rubric:: Exceptions
 
+   .. autosummary::
+      :toctree:
+      :template: exception.rst
 
-
-.. rubric:: Modules
-
-.. autosummary::
-   :toctree:
-   :template: module.rst
-   :recursive:
-
-   sghi.config.config
-   sghi.config.exceptions
-   sghi.config.setting_initializer
+      ConfigurationError
+      ImproperlyConfiguredError
+      NoSuchSettingError
+      NotSetupError

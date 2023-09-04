@@ -1,7 +1,7 @@
-sghi.config.exceptions.ConfigurationError
-=========================================
+sghi.config.ConfigurationError
+==============================
 
-.. currentmodule:: sghi.config.exceptions
+.. currentmodule:: sghi.config
 
 .. autoexception:: ConfigurationError
    :members:

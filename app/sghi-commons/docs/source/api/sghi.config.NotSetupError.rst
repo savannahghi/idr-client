@@ -1,7 +1,7 @@
-sghi.config.exceptions.NotSetupError
-====================================
+sghi.config.NotSetupError
+=========================
 
-.. currentmodule:: sghi.config.exceptions
+.. currentmodule:: sghi.config
 
 .. autoexception:: NotSetupError
    :members:

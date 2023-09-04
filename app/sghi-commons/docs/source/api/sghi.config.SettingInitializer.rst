@@ -1,7 +1,7 @@
-sghi.config.setting\_initializer.SettingInitializer
-===================================================
+sghi.config.SettingInitializer
+==============================
 
-.. currentmodule:: sghi.config.setting_initializer
+.. currentmodule:: sghi.config
 
 .. autoclass:: SettingInitializer
    :members:

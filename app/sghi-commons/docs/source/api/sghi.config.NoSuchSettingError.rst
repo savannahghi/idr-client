@@ -1,7 +1,7 @@
-sghi.config.exceptions.NoSuchSettingError
-=========================================
+sghi.config.NoSuchSettingError
+==============================
 
-.. currentmodule:: sghi.config.exceptions
+.. currentmodule:: sghi.config
 
 .. autoexception:: NoSuchSettingError
    :members:

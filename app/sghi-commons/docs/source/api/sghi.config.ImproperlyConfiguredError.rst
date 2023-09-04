@@ -1,7 +1,7 @@
-sghi.config.exceptions.ImproperlyConfiguredError
-================================================
+sghi.config.ImproperlyConfiguredError
+=====================================
 
-.. currentmodule:: sghi.config.exceptions
+.. currentmodule:: sghi.config
 
 .. autoexception:: ImproperlyConfiguredError
    :members:

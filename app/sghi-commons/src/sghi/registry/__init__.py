@@ -88,6 +88,12 @@ class Registry(metaclass=ABCMeta):
     signals and react accordingly.
 
     For a list of supported signals, see the :attr:`dispatcher` property.
+
+    .. tip::
+
+        Unless otherwise indicated, at runtime, there should be an instance of
+        this class at :attr:`sghi.app.registry` ment to hold the main
+        ``Registry`` for the executing application/tool.
     """
 
     __slots__ = ()
