@@ -1,5 +1,10 @@
+"""Base exceptions for SGHI projects."""
+
+
 class SGHIError(Exception):
-    """Base exception for most exceptions raised within SGHI projects."""
+    """
+    Base exception for most non-builtin exceptions raised within SGHI projects.
+    """
 
     def __init__(self, message: str | None = None, *args):
         """Initialize an ``SGHIError`` with the given parameters.

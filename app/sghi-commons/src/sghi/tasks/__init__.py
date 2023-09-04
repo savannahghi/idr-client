@@ -1,5 +1,5 @@
 """
-Task interface definition together with its common implementations.
+``Task`` interface definition together with its common implementations.
 """
 from __future__ import annotations
 

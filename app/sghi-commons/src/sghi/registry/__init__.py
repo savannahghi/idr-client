@@ -1,3 +1,6 @@
+"""
+``Registry`` interface definition, implementing classes and helpers.
+"""
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
@@ -51,6 +54,7 @@ class NoSuchRegistryItemError(SGHIError, LookupError):
 # SIGNALS
 # =============================================================================
 
+
 @dataclass(frozen=True, slots=True)
 class SetRegistryItemSignal(Signal):
     """Signal indicating the setting of an item in the :class:`Registry`.
@@ -69,6 +73,7 @@ class RemoveRegistryItemSignal(Signal):
     This signal is emitted when an item is removed from the ``Registry``.
     """
     item_key: str = field()
+
 
 # =============================================================================
 # REGISTRY INTERFACE
@@ -256,6 +261,7 @@ class Registry(metaclass=ABCMeta):
 # REGISTRY IMPLEMENTATIONS
 # =============================================================================
 
+
 class _RegistryImp(Registry):
     """An implementation of the Registry interface."""
 
@@ -317,6 +323,7 @@ class _RegistryImp(Registry):
         except LookupError:
             self[key] = value
             return value
+
 
 # =============================================================================
 # MODULE EXPORTS
