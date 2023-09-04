@@ -1,9 +1,7 @@
 """
-Multiple-producer-multiple-consumer signal-dispatching heavily inspired by
-`PyDispatcher <py_dispatcher_>`_ and
-:doc:`Django dispatch<django:topics/signals>`
-
-.. _py_dispatcher: https://grass.osgeo.org/grass83/manuals/libpython/pydispatch.html
+Multiple-producer-multiple-accept signal-dispatching *heavily* inspired by
+`PyDispatcher <https://grass.osgeo.org/grass83/manuals/libpython/pydispatch.html>`_
+and :doc:`Django dispatch<django:topics/signals>`
 """
 from __future__ import annotations
 
@@ -12,7 +10,14 @@ import weakref
 from abc import ABCMeta, abstractmethod
 from logging import Logger
 from threading import RLock
-from typing import TYPE_CHECKING, Generic, Protocol, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Generic,
+    Protocol,
+    TypeGuard,
+    TypeVar,
+    runtime_checkable,
+)
 
 from ..utils import ensure_not_none, type_fqn
 
@@ -24,17 +29,18 @@ if TYPE_CHECKING:
 # TYPES
 # =============================================================================
 
-_S = TypeVar("_S", bound="Signal")
+_ST_contra = TypeVar("_ST_contra", bound="Signal", contravariant=True)
 
 
-class Receiver(Protocol[_S]):
+@runtime_checkable
+class Receiver(Protocol[_ST_contra]):
     """A callable object that receives and processes :class:`signals<Signal>`.
 
     A ``Receiver`` should accept o ``Signal`` as its sole argument and return
     ``None``.
     """
 
-    def __call__(self, signal: _S) -> None:
+    def __call__(self, signal: _ST_contra) -> None:
         """Receive and process a :class:`Signal`.
 
         :param signal: The signal being received and processed.
@@ -73,8 +79,8 @@ class Dispatcher(metaclass=ABCMeta):
     @abstractmethod
     def connect(
         self,
-        signal_type: type[_S],
-        receiver: Receiver[_S],
+        signal_type: type[_ST_contra],
+        receiver: Receiver[_ST_contra],
         weak: bool = True,
     ) -> None:
         """
@@ -92,8 +98,8 @@ class Dispatcher(metaclass=ABCMeta):
     @abstractmethod
     def disconnect(
         self,
-        signal_type: type[_S],
-        receiver: Receiver[_S],
+        signal_type: type[_ST_contra],
+        receiver: Receiver[_ST_contra],
     ) -> None:
         """
         Detach a :class:`Receiver` function from a specific :class:`Signal`
@@ -147,7 +153,7 @@ class Dispatcher(metaclass=ABCMeta):
 # DECORATORS
 # =============================================================================
 
-class connect(Generic[_S]):  # noqa :N801
+class connect(Generic[_ST_contra]):  # noqa :N801
     """
     A decorator for registering :class:`receivers<Receiver>` to be notified
     when :class:`signals<Signal>` occur.
@@ -162,7 +168,7 @@ class connect(Generic[_S]):  # noqa :N801
 
     def __init__(
         self,
-        signal_type: type[_S],
+        signal_type: type[_ST_contra],
         /,
         dispatcher: Dispatcher | None = None,
         weak: bool = True,
@@ -178,13 +184,13 @@ class connect(Generic[_S]):  # noqa :N801
         super().__init__()
         from sghi.app import dispatcher as app_dispatcher
 
-        self._signal_type: type[_S] = ensure_not_none(
+        self._signal_type: type[_ST_contra] = ensure_not_none(
             signal_type, "'signal_type' MUST not be None.",
         )
         self._dispatcher: Dispatcher = dispatcher or app_dispatcher
         self._weak: bool = weak
 
-    def __call__(self, f: Receiver[_S]) -> Receiver[_S]:
+    def __call__(self, f: Receiver[_ST_contra]) -> Receiver[_ST_contra]:
         """
         Attach a :class:`receiver<Receiver>` function to a :class:`Dispatcher`.
 
@@ -219,12 +225,12 @@ class _DispatcherImp(Dispatcher):
 
     def connect(
         self,
-        signal_type: type[_S],
-        receiver: Receiver[_S],
+        signal_type: type[_ST_contra],
+        receiver: Receiver[_ST_contra],
         weak: bool = True,
     ) -> None:
         self._logger.debug("Connect receiver, '%s'.", type_fqn(receiver))
-        _receiver: Receiver[_S] | weakref.ReferenceType[Receiver[_S]]
+        _receiver: Receiver[_ST_contra] | weakref.ReferenceType[Receiver[_ST_contra]]  # noqa: E501
         _receiver = receiver
         if weak:
             ref = weakref.ref
@@ -241,8 +247,8 @@ class _DispatcherImp(Dispatcher):
 
     def disconnect(
         self,
-        signal_type: type[_S],
-        receiver: Receiver[_S],
+        signal_type: type[_ST_contra],
+        receiver: Receiver[_ST_contra],
     ) -> None:
         self._logger.debug("Disconnect receiver, '%s'.", type_fqn(receiver))
         with self._lock:
@@ -250,35 +256,36 @@ class _DispatcherImp(Dispatcher):
             self._receivers.get(signal_type, set()).discard(receiver)
 
     def send(self, signal: Signal, robust: bool = True) -> None:
-        with self._lock:
-            for receiver in self._live_receivers(type(signal)):
-                try:
-                    receiver(signal)
-                except Exception:
-                    if not robust:
-                        raise
-                    self._logger.exception(
-                        "Error executing receiver '%s'.", type_fqn(receiver),
-                    )
+        for receiver in self._live_receivers(type(signal)):
+            try:
+                receiver(signal)
+            except Exception:
+                if not robust:
+                    raise
+                self._logger.exception(
+                    "Error executing receiver '%s'.", type_fqn(receiver),
+                )
 
     def _clear_dead_receivers(self) -> None:
         with self._lock:
             if not self._has_dead_receivers:
                 return
-            for _st, _receivers in self._receivers.items():
-                self._receivers[_st] = set(
+            for _signal_type, _receivers in self._receivers.items():
+                self._receivers[_signal_type] = set(
                     filter(self._is_life_receiver, _receivers),
                 )
             self._has_dead_receivers = False
 
-    def _live_receivers(self, signal_type: type[_S]) -> Iterable[Receiver[_S]]:
+    def _live_receivers(
+        self,
+        signal_type: type[_ST_contra],
+    ) -> Iterable[Receiver[_ST_contra]]:
         with self._lock:
             self._clear_dead_receivers()
-            receivers: set[Receiver[_S] | weakref.ReferenceType[Receiver[_S]]]
+            receivers: set[Receiver[_ST_contra] | weakref.ReferenceType[Receiver[_ST_contra]]]  # noqa: E501
             receivers = self._receivers.get(signal_type, set())
-            return filter(  # type: ignore
-                lambda _r: _r is not None,
-                map(self._dereference_as_necessary, receivers),
+            return filter(
+                self._is_live, map(self._dereference_as_necessary, receivers),
             )
 
     def _mark_dead_receiver_present(self) -> None:
@@ -287,8 +294,8 @@ class _DispatcherImp(Dispatcher):
 
     @staticmethod
     def _dereference_as_necessary(
-        receiver: Receiver[_S] | weakref.ReferenceType[Receiver[_S]],
-    ) -> Receiver[_S] | None:
+        receiver: Receiver[_ST_contra] | weakref.ReferenceType[Receiver[_ST_contra]],  # noqa: E501
+    ) -> Receiver[_ST_contra] | None:
         # Dereference, if weak reference
         return (
             receiver()
@@ -297,10 +304,20 @@ class _DispatcherImp(Dispatcher):
         )
 
     @staticmethod
+    def _is_live(
+        receiver: Receiver[_ST_contra] | None,
+    ) -> TypeGuard[Receiver[_ST_contra]]:
+        return receiver is not None
+
+    @staticmethod
     def _is_life_receiver(receiver: Receiver | weakref.ReferenceType) -> bool:
         return not (
             isinstance(receiver, weakref.ReferenceType) and receiver() is None,
         )
+
+# =============================================================================
+# MODULE EXPORTS
+# =============================================================================
 
 
 __all__ = [

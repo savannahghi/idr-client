@@ -1,9 +1,9 @@
-﻿sghi.task.task.TaskWithOptionalInput
-====================================
+sghi.tasks.Consume
+==================
 
-.. currentmodule:: sghi.task.task
+.. currentmodule:: sghi.tasks
 
-.. autoclass:: TaskWithOptionalInput
+.. autoclass:: Consume
    :members:
    :special-members: __contains__, __delitem__, __enter__, __exit__, __call__, __getattr__, __setattr__, __getitem__, __setitem__
    :show-inheritance:
@@ -20,8 +20,10 @@
 
    .. autosummary::
 
-      ~TaskWithOptionalInput.__init__
-      ~TaskWithOptionalInput.execute
+      ~Consume.__init__
+      ~Consume.and_then
+      ~Consume.execute
+      ~Consume.of_callable
 
 
 

@@ -1,4 +1,4 @@
-﻿sghi.registry.RemoveRegistryItemSignal
+sghi.registry.RemoveRegistryItemSignal
 ======================================
 
 .. currentmodule:: sghi.registry

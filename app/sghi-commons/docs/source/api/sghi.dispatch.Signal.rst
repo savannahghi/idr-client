@@ -1,4 +1,4 @@
-﻿sghi.dispatch.Signal
+sghi.dispatch.Signal
 ====================
 
 .. currentmodule:: sghi.dispatch

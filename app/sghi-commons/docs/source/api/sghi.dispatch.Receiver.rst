@@ -1,4 +1,4 @@
-﻿sghi.dispatch.Receiver
+sghi.dispatch.Receiver
 ======================
 
 .. currentmodule:: sghi.dispatch

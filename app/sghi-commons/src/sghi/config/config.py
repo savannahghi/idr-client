@@ -5,7 +5,7 @@ from abc import ABCMeta, abstractmethod
 from logging import Logger
 from typing import TYPE_CHECKING, Any, Never, final
 
-from ..task import Pipeline
+from ..tasks import Pipe
 from ..utils import type_fqn
 from .exceptions import NoSuchSettingError, NotSetupError
 
@@ -237,7 +237,7 @@ class _ConfigImp(Config):
         """
         for _setting, _initializers in self._initializers.items():
             raw_setting_val: Any = self._settings.get(_setting)
-            initializer_pipeline: Pipeline = Pipeline(*_initializers)
+            initializer_pipeline: Pipe = Pipe(*_initializers)
             setting_val: Any = initializer_pipeline(raw_setting_val)
             if self._logger.isEnabledFor(logging.DEBUG):
                 self._logger.debug(

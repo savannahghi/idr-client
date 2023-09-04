@@ -1,9 +1,9 @@
-sghi.disposable.disposable.Disposable
-=====================================
+sghi.tasks.Task
+===============
 
-.. currentmodule:: sghi.disposable.disposable
+.. currentmodule:: sghi.tasks
 
-.. autoclass:: Disposable
+.. autoclass:: Task
    :members:
    :special-members: __contains__, __delitem__, __enter__, __exit__, __call__, __getattr__, __setattr__, __getitem__, __setitem__
    :show-inheritance:
@@ -20,19 +20,14 @@ sghi.disposable.disposable.Disposable
 
    .. autosummary::
 
-      ~Disposable.__init__
-      ~Disposable.dispose
+      ~Task.__init__
+      ~Task.execute
+      ~Task.of_callable
 
 
 
 
 
-
-   .. rubric:: Attributes
-
-   .. autosummary::
-
-      ~Disposable.is_disposed
 
 
 

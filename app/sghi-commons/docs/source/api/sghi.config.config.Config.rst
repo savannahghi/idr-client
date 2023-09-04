@@ -1,4 +1,4 @@
-﻿sghi.config.config.Config
+sghi.config.config.Config
 =========================
 
 .. currentmodule:: sghi.config.config

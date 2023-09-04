@@ -1,4 +1,4 @@
-﻿sghi.registry.Registry
+sghi.registry.Registry
 ======================
 
 .. currentmodule:: sghi.registry

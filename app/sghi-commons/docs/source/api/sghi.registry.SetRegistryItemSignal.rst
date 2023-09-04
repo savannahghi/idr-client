@@ -1,4 +1,4 @@
-﻿sghi.registry.SetRegistryItemSignal
+sghi.registry.SetRegistryItemSignal
 ===================================
 
 .. currentmodule:: sghi.registry

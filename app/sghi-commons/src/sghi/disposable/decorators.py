@@ -22,8 +22,8 @@ _R = TypeVar("_R")
 
 class not_disposed:  # noqa :N801
     """
-    Decorator that checks if a :class:`~.disposable.Disposable` item has
-    already been disposed.
+    Decorator that ensures a :class:`~.disposable.Disposable` item has not
+    been disposed.
 
     If the item is disposed, i.e.
     the :attr:`~.disposable.Disposable.is_disposed` property returns ``True``,
@@ -32,9 +32,9 @@ class not_disposed:  # noqa :N801
 
     .. important::
 
-        This decorator *should* be used on methods bound to an instance of
-        the ``Disposable`` interface. It requires that the first parameter of
-        the decorated method, i.e. ``self``, be an instance of ``Disposable``.
+        This decorator *MUST* be used on methods bound to an instance of the
+        ``Disposable`` interface. It requires that the first parameter of the
+        decorated method, i.e. ``self``, be an instance of ``Disposable``.
     """
 
     __slots__ = ("_exc_factory",)

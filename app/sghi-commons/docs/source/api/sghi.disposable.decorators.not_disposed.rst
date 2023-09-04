@@ -1,4 +1,4 @@
-﻿sghi.disposable.decorators.not\_disposed
+sghi.disposable.decorators.not\_disposed
 ========================================
 
 .. currentmodule:: sghi.disposable.decorators

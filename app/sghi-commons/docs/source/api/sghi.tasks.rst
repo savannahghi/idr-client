@@ -1,7 +1,7 @@
-sghi.task.concurrent
-====================
+﻿sghi.tasks
+==========
 
-.. automodule:: sghi.task.concurrent
+.. automodule:: sghi.tasks
 
 
 
@@ -26,7 +26,15 @@ sghi.task.concurrent
       :toctree:
       :template: class.rst
 
+      Chain
       ConcurrentExecutor
+      Consume
+      Pipe
+      Task
+      chain
+      consume
+      execute_concurrently
+      pipe
 
 
 

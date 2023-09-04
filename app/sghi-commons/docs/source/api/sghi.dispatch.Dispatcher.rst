@@ -1,4 +1,4 @@
-﻿sghi.dispatch.Dispatcher
+sghi.dispatch.Dispatcher
 ========================
 
 .. currentmodule:: sghi.dispatch

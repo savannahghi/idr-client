@@ -1,9 +1,9 @@
-﻿sghi.task.common.Chainable
-==========================
+sghi.tasks.consume
+==================
 
-.. currentmodule:: sghi.task.common
+.. currentmodule:: sghi.tasks
 
-.. autoclass:: Chainable
+.. autoclass:: consume
    :members:
    :special-members: __contains__, __delitem__, __enter__, __exit__, __call__, __getattr__, __setattr__, __getitem__, __setitem__
    :show-inheritance:
@@ -20,19 +20,15 @@
 
    .. autosummary::
 
-      ~Chainable.__init__
-      ~Chainable.execute
+      ~consume.__init__
+      ~consume.and_then
+      ~consume.execute
+      ~consume.of_callable
 
 
 
 
 
-
-   .. rubric:: Attributes
-
-   .. autosummary::
-
-      ~Chainable.value
 
 
 

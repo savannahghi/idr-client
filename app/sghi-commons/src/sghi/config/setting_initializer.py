@@ -1,12 +1,12 @@
 from abc import ABCMeta, abstractmethod
 from typing import Any
 
-from ..task import Task
+from ..tasks import Task
 
 
 class SettingInitializer(Task[Any, Any], metaclass=ABCMeta):
     """
-    This interface represents a task used to perform some initialization
+    This interface represents a tasks used to perform some initialization
     action based on the value of a setting. This can include *(but is not
     limited to)* validating a given config value, setting up additional
     components, set default values for settings, etc.

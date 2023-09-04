@@ -16,9 +16,9 @@ class ImproperlyConfiguredError(ConfigurationError):
 
 
 class NoSuchSettingError(ConfigurationError, LookupError):
-    """Non-existing setting access error."""
+    """Non-existent setting access error."""
 
-    def __init__(self, setting: str, message: str | None = None):
+    def __init__(self, setting: str, message: str | None = None) -> None:
         """Initialize a ``NoSuchSettingError`` with the given properties.
 
         :param setting: The missing setting.
@@ -27,7 +27,7 @@ class NoSuchSettingError(ConfigurationError, LookupError):
         """
         self._setting: str = setting
         self._message: str = (
-            message or 'Setting "%s" does not exist.' % self._setting
+            message or "Setting '%s' does not exist." % self._setting
         )
         ConfigurationError.__init__(self, message=self._message)
 

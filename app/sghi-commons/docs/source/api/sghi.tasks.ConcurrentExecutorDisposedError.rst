@@ -1,7 +1,7 @@
-sghi.task.concurrent.ConcurrentExecutorDisposedError
-====================================================
+sghi.tasks.ConcurrentExecutorDisposedError
+==========================================
 
-.. currentmodule:: sghi.task.concurrent
+.. currentmodule:: sghi.tasks
 
 .. autoexception:: ConcurrentExecutorDisposedError
    :members:

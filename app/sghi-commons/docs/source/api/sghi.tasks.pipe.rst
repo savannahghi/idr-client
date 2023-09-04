@@ -1,9 +1,9 @@
-﻿sghi.task.common.Consumer
-=========================
+sghi.tasks.pipe
+===============
 
-.. currentmodule:: sghi.task.common
+.. currentmodule:: sghi.tasks
 
-.. autoclass:: Consumer
+.. autoclass:: pipe
    :members:
    :special-members: __contains__, __delitem__, __enter__, __exit__, __call__, __getattr__, __setattr__, __getitem__, __setitem__
    :show-inheritance:
@@ -20,13 +20,20 @@
 
    .. autosummary::
 
-      ~Consumer.__init__
-      ~Consumer.execute
+      ~pipe.__init__
+      ~pipe.execute
+      ~pipe.of_callable
 
 
 
 
 
+
+   .. rubric:: Attributes
+
+   .. autosummary::
+
+      ~pipe.tasks
 
 
 

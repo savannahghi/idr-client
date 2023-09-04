@@ -1,9 +1,9 @@
-sghi.disposable.disposable.Disposable
-=====================================
+sghi.tasks.Chain
+================
 
-.. currentmodule:: sghi.disposable.disposable
+.. currentmodule:: sghi.tasks
 
-.. autoclass:: Disposable
+.. autoclass:: Chain
    :members:
    :special-members: __contains__, __delitem__, __enter__, __exit__, __call__, __getattr__, __setattr__, __getitem__, __setitem__
    :show-inheritance:
@@ -20,8 +20,9 @@ sghi.disposable.disposable.Disposable
 
    .. autosummary::
 
-      ~Disposable.__init__
-      ~Disposable.dispose
+      ~Chain.__init__
+      ~Chain.execute
+      ~Chain.of_callable
 
 
 
@@ -32,7 +33,7 @@ sghi.disposable.disposable.Disposable
 
    .. autosummary::
 
-      ~Disposable.is_disposed
+      ~Chain.value
 
 
 

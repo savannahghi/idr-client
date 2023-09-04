@@ -1,9 +1,9 @@
-sghi.disposable.disposable.Disposable
-=====================================
+sghi.tasks.execute\_concurrently
+================================
 
-.. currentmodule:: sghi.disposable.disposable
+.. currentmodule:: sghi.tasks
 
-.. autoclass:: Disposable
+.. autoclass:: execute_concurrently
    :members:
    :special-members: __contains__, __delitem__, __enter__, __exit__, __call__, __getattr__, __setattr__, __getitem__, __setitem__
    :show-inheritance:
@@ -20,8 +20,10 @@ sghi.disposable.disposable.Disposable
 
    .. autosummary::
 
-      ~Disposable.__init__
-      ~Disposable.dispose
+      ~execute_concurrently.__init__
+      ~execute_concurrently.dispose
+      ~execute_concurrently.execute
+      ~execute_concurrently.of_callable
 
 
 
@@ -32,7 +34,8 @@ sghi.disposable.disposable.Disposable
 
    .. autosummary::
 
-      ~Disposable.is_disposed
+      ~execute_concurrently.is_disposed
+      ~execute_concurrently.tasks
 
 
 

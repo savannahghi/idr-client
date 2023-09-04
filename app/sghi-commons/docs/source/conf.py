@@ -53,23 +53,23 @@ nitpick_ignore = [
     ('py:class', 'sghi.disposable.decorators.not_disposed._DE'),  # private type annotations
     ('py:class', 'sghi.disposable.decorators.not_disposed._P'),  # private type annotations
     ('py:class', 'sghi.disposable.decorators.not_disposed._R'),  # private type annotations
-    ('py:class', 'sghi.task.task._IN'),  # private type annotations
-    ('py:class', 'sghi.task.task._RT'),  # private type annotations
-    ('py:class', 'sghi.task.common._IN'),  # private type annotations
-    ('py:class', 'sghi.task.common._RT'),  # private type annotations
-    ('py:class', 'sghi.task.concurrent._IN'),  # private type annotations
-    ('py:class', 'sghi.task.concurrent._RT'),  # private type annotations
+    ('py:class', 'sghi.task.task._IT'),  # private type annotations
+    ('py:class', 'sghi.task.task._OT'),  # private type annotations
+    ('py:class', 'sghi.task.common._IT'),  # private type annotations
+    ('py:class', 'sghi.task.common._OT'),  # private type annotations
+    ('py:class', 'sghi.task.concurrent._IT'),  # private type annotations
+    ('py:class', 'sghi.task.concurrent._OT'),  # private type annotations
     ('py:class', 'sghi.utils.checkers._Comparable'),  # private type annotations
     ('py:class', 'sghi.utils.checkers._S'),  # private type annotations
     ('py:class', 'sghi.utils.checkers._T'),  # private type annotations
     ('py:obj', 'sghi.disposable.decorators.not_disposed._P'),  # private type annotations
     ('py:obj', 'sghi.disposable.decorators.not_disposed._R'),  # private type annotations
-    ('py:obj', 'sghi.task.task._IN'),  # private type annotations
-    ('py:obj', 'sghi.task.task._RT'),  # private type annotations
-    ('py:obj', 'sghi.task.common._IN'),  # private type annotations
-    ('py:obj', 'sghi.task.common._RT'),  # private type annotations
-    ('py:obj', 'sghi.task.concurrent._IN'),  # private type annotations
-    ('py:obj', 'sghi.task.concurrent._RT'),  # private type annotations
+    ('py:obj', 'sghi.task.task._IT'),  # private type annotations
+    ('py:obj', 'sghi.task.task._OT'),  # private type annotations
+    ('py:obj', 'sghi.task.common._IT'),  # private type annotations
+    ('py:obj', 'sghi.task.common._OT'),  # private type annotations
+    ('py:obj', 'sghi.task.concurrent._IT'),  # private type annotations
+    ('py:obj', 'sghi.task.concurrent._OT'),  # private type annotations
 ]
 
 templates_path = ['_templates']

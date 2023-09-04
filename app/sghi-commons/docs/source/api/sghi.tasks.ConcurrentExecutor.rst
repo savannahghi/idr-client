@@ -1,7 +1,7 @@
-﻿sghi.task.concurrent.ConcurrentExecutor
-=======================================
+sghi.tasks.ConcurrentExecutor
+=============================
 
-.. currentmodule:: sghi.task.concurrent
+.. currentmodule:: sghi.tasks
 
 .. autoclass:: ConcurrentExecutor
    :members:
@@ -23,6 +23,7 @@
       ~ConcurrentExecutor.__init__
       ~ConcurrentExecutor.dispose
       ~ConcurrentExecutor.execute
+      ~ConcurrentExecutor.of_callable
 
 
 

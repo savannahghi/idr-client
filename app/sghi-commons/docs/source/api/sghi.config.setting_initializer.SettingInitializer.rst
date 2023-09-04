@@ -1,4 +1,4 @@
-﻿sghi.config.setting\_initializer.SettingInitializer
+sghi.config.setting\_initializer.SettingInitializer
 ===================================================
 
 .. currentmodule:: sghi.config.setting_initializer
@@ -22,6 +22,7 @@
 
       ~SettingInitializer.__init__
       ~SettingInitializer.execute
+      ~SettingInitializer.of_callable
 
 
 

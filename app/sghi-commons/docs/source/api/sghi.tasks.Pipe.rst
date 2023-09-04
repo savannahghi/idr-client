@@ -1,9 +1,9 @@
-﻿sghi.task.task.Task
-===================
+sghi.tasks.Pipe
+===============
 
-.. currentmodule:: sghi.task.task
+.. currentmodule:: sghi.tasks
 
-.. autoclass:: Task
+.. autoclass:: Pipe
    :members:
    :special-members: __contains__, __delitem__, __enter__, __exit__, __call__, __getattr__, __setattr__, __getitem__, __setitem__
    :show-inheritance:
@@ -20,13 +20,20 @@
 
    .. autosummary::
 
-      ~Task.__init__
-      ~Task.execute
+      ~Pipe.__init__
+      ~Pipe.execute
+      ~Pipe.of_callable
 
 
 
 
 
+
+   .. rubric:: Attributes
+
+   .. autosummary::
+
+      ~Pipe.tasks
 
 
 

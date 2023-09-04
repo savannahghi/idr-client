@@ -3,7 +3,7 @@ Global state definitions for SGHI applications/tools.
 
 This module defines global properties important to an application. For all
 intents and purposes, these properties should be treated and thought of as
-immutable. Any modifications to these properties should be done inside the
+constants. Any assignments to these properties should be done inside the
 :func:`setup` function(see below).
 
 This module also defines a single abstract method, :func:`setup` whose main
@@ -26,11 +26,12 @@ from .registry import Registry
 # GLOBAL APPLICATION/TOOL CONSTANTS
 # =============================================================================
 
+
 dispatcher: Final[Dispatcher] = Dispatcher.of()
-"""The main application dispatcher."""
+"""The main application :class:`dispatcher<sghi.dispatch.Dispatcher>`."""
 
 registry: Final[Registry] = Registry.of()
-"""The main application registry."""
+"""The main application :class:`registry<sghi.registry.Registry>`."""
 
 conf: Final[Config] = Config.of_awaiting_setup()
 """The application configurations.
@@ -46,6 +47,7 @@ conf: Final[Config] = Config.of_awaiting_setup()
 # =============================================================================
 # SETUP FUNTION
 # =============================================================================
+
 
 def setup(
     settings: Mapping[str, Any] | None = None,

@@ -18,7 +18,7 @@ They include utilities such as:
 - A dispatcher tool inspired by Django dispatch.
 
 Installation
------------topics/signals-
+------------
 
 We recommend using the latest version of Python. Python 3.10 and newer is
 supported. We also recommend using a `virtual environment`_ in order
@@ -46,7 +46,7 @@ API Reference
      sghi.disposable
      sghi.exceptions
      sghi.registry
-     sghi.task
+     sghi.tasks
      sghi.utils
 
 

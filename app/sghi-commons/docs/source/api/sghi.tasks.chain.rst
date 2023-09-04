@@ -1,9 +1,9 @@
-﻿sghi.task.common.Pipeline
-=========================
+sghi.tasks.chain
+================
 
-.. currentmodule:: sghi.task.common
+.. currentmodule:: sghi.tasks
 
-.. autoclass:: Pipeline
+.. autoclass:: chain
    :members:
    :special-members: __contains__, __delitem__, __enter__, __exit__, __call__, __getattr__, __setattr__, __getitem__, __setitem__
    :show-inheritance:
@@ -20,8 +20,9 @@
 
    .. autosummary::
 
-      ~Pipeline.__init__
-      ~Pipeline.execute
+      ~chain.__init__
+      ~chain.execute
+      ~chain.of_callable
 
 
 
@@ -32,7 +33,7 @@
 
    .. autosummary::
 
-      ~Pipeline.tasks
+      ~chain.value
 
 
 
