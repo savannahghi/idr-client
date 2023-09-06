@@ -9,6 +9,14 @@
 
 
 
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+
+      get_registered_initializer_factories
+      register
+
 
 
 

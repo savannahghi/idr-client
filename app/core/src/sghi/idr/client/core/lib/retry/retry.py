@@ -8,6 +8,7 @@ from typing import Any
 
 import wrapt
 from sghi.idr.client.core.exceptions import IDRClientError
+from sghi.utils import ensure_greater_than
 
 from .constants import (
     DEFAULT_DEADLINE,
@@ -26,12 +27,9 @@ from .types import Predicate, RetryConfig
 
 def _enable_retries() -> bool:
     """Enable or disable retries globally."""
-    from sghi.idr.client.core import settings
+    from sghi.app import conf
 
-    return settings.get("RETRY", DEFAULT_RETRY_CONFIG).get(
-        "enable_retries",
-        True,
-    )
+    return conf.get("RETRY", DEFAULT_RETRY_CONFIG).get("enable_retries", True)
 
 
 def if_exception_type_factory(*exp_types: type[BaseException]) -> Predicate:
@@ -265,9 +263,9 @@ class Retry:
         :raise ValueError: If any of the constraints specified in the
             constructor are violated.
         """
-        from sghi.idr.client.core import settings
+        from sghi.app import conf
 
-        retry_config: RetryConfig = settings.get("RETRY", DEFAULT_RETRY_CONFIG)
+        retry_config: RetryConfig = conf.get("RETRY", DEFAULT_RETRY_CONFIG)
 
         self._initial_delay = self._initial_delay or retry_config.get(
             "default_initial_delay",
@@ -293,8 +291,6 @@ class Retry:
 
     def _check_invariants(self) -> None:
         """Check if the class invariants are observed."""
-        from sghi.idr.client.core.lib import ensure_greater_than
-
         ensure_greater_than(
             self._initial_delay,
             0.0,

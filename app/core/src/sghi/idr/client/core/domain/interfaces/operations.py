@@ -2,7 +2,8 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Iterator
 from typing import Any, Generic, Self, TypeVar
 
-from ...mixins import Disposable
+from sghi.disposable import Disposable
+
 from .base import NamedDomainObject
 from .metadata import (
     DataSinkMetadata,

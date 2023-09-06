@@ -5,15 +5,75 @@ from __future__ import annotations
 
 import logging
 from abc import ABCMeta, abstractmethod
+from collections.abc import Callable
 from logging import Logger
-from typing import TYPE_CHECKING, Any, Never, final
+from typing import TYPE_CHECKING, Any, Final, Never, final
 
 from ..exceptions import SGHIError
 from ..tasks import Pipe, Task
-from ..utils import type_fqn
+from ..utils import ensure_not_none, type_fqn
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
+
+
+# =============================================================================
+# TYPES
+# =============================================================================
+
+
+_Initializer_Factory = Callable[[], "SettingInitializer"]
+
+
+# =============================================================================
+# CONSTANTS
+# =============================================================================
+
+
+_INITIALIZERS_REGISTRY: Final[set[_Initializer_Factory]] = set()
+
+
+# =============================================================================
+# HELPERS
+# =============================================================================
+
+
+def get_registered_initializer_factories() -> Sequence[_Initializer_Factory]:
+    """
+    Return a ``Sequence`` of all registered :class:`SettingInitializer` types
+    or factories.
+
+    ``SettingInitializer`` types or their factories can be registered using
+    the :func:`register` decorator.
+
+    :return: A ``Sequence`` of all registered ``SettingInitializer`` types or
+        factories.
+    """
+    return tuple(_INITIALIZERS_REGISTRY)
+
+
+def register(f: _Initializer_Factory) -> _Initializer_Factory:
+    """
+    A decorator used to mark :class:`setting initializers <SettingInitializer>`
+    or their factories.
+
+    The registered initializer factories can be accessed using the
+    :func:`get_registered_initializer_factories` function.
+
+    .. note::
+
+        When used on a ``SettingInitializer`` type, the type's constructor
+        MUST support zero args invocation.
+
+    :param f: A ``SettingInitializer`` type or a factor function that returns
+        ``SettingInitializer`` instances. This MUST not be ``None``.
+
+    :return: The decorated target.
+
+    :raises ValueError: If ``f`` is ``None``.
+    """
+    _INITIALIZERS_REGISTRY.add(ensure_not_none(f, "'f' MUST not be None."))
+    return f
 
 
 # =============================================================================
@@ -214,6 +274,7 @@ class Config(metaclass=ABCMeta):
     def of(
         settings: Mapping[str, Any],
         settings_initializers: Sequence[SettingInitializer] | None = None,
+        skip_registered_initializers: bool = False,
     ) -> Config:
         """Create a new :class:`Config` instance.
 
@@ -221,8 +282,8 @@ class Config(metaclass=ABCMeta):
         the keys and the setting values as the values of the mapping.
 
         Optional initializers can also be passed to the factory to perform
-        additional initialization tasks such as set up of addition components
-        or validating that required settings were provided, etc. Initializers
+        additional initialization tasks such as, set up of addition components,
+        validating that required settings were provided, etc. Initializers
         can also be used to remap settings values to more appropriate runtime
         values by taking a raw setting value and returning the desired or
         appropriate value. The value is then set as the new value of the
@@ -232,13 +293,29 @@ class Config(metaclass=ABCMeta):
         initializer becoming the input of the next initializer. The output of
         the last initializer is then set as the final value of the setting.
 
+        This factory will also include initializers marked using the
+        :func:`register` decorator by default, .i.e, those returned by the
+        :func:`get_registered_initializer_factories`. This can be disabled by
+        setting the ``skip_registered_initializers`` parameter to ``True``.
+
         :param settings: The configurations/settings to use as a mapping.
         :param settings_initializers: Optional initializers to perform
             post-initialization tasks.
+        :param skip_registered_initializers: If ``True``, do not include
+            initializers marked using the ``register`` decorator. Defaults to
+            ``False``.
 
         :return: A `Config` instance.
         """
-        return _ConfigImp(settings, settings_initializers)
+        initializers: list[SettingInitializer] = []
+        if not skip_registered_initializers:
+            initializers.extend(
+                initializer_factory()
+                for initializer_factory in
+                get_registered_initializer_factories()
+            )
+        initializers.extend(settings_initializers or ())
+        return _ConfigImp(settings, settings_initializers=initializers)
 
     @staticmethod
     def of_awaiting_setup(err_msg: str | None = None) -> Config:
@@ -445,4 +522,6 @@ __all__ = [
     "NoSuchSettingError",
     "NotSetupError",
     "SettingInitializer",
+    "get_registered_initializer_factories",
+    "register",
 ]

@@ -1,10 +1,12 @@
 from typing import Any
 
-from ..config import ImproperlyConfiguredError, SettingInitializer
+from sghi.config import ImproperlyConfiguredError, SettingInitializer, register
+
 from .constants import DEFAULT_RETRY_CONFIG, RETRY_CONFIG_KEY
 from .types import RetryConfig
 
 
+@register
 class RetryInitializer(SettingInitializer):
     """
     A :class:`SettingInitializer` that initializes and validates the global

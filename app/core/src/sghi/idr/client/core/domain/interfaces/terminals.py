@@ -2,7 +2,8 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Iterable
 from typing import Generic, TypeVar
 
-from ...mixins import Disposable
+from sghi.disposable import Disposable
+
 from .base import NamedDomainObject
 from .metadata import (
     DataSinkMetadata,
@@ -81,7 +82,7 @@ class MetadataConsumer(
     Generic[_UM],
     metaclass=ABCMeta,
 ):
-    """Drain related metadata consumer.
+    """Drain related metadata accept.
 
     An interface representing entities that take/accept metadata relating to
     uploaded/drained data.
