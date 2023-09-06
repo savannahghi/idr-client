@@ -29,6 +29,7 @@ if TYPE_CHECKING:
 # TYPES
 # =============================================================================
 
+
 _ST_contra = TypeVar("_ST_contra", bound="Signal", contravariant=True)
 
 
@@ -159,6 +160,7 @@ class Dispatcher(metaclass=ABCMeta):
 # DECORATORS
 # =============================================================================
 
+
 class connect(Generic[_ST_contra]):  # noqa :N801
     """
     A decorator for registering :class:`receivers<Receiver>` to be notified
@@ -175,7 +177,7 @@ class connect(Generic[_ST_contra]):  # noqa :N801
     def __init__(
         self,
         signal_type: type[_ST_contra],
-        /,
+        *,
         dispatcher: Dispatcher | None = None,
         weak: bool = True,
     ) -> None:
@@ -214,6 +216,7 @@ class connect(Generic[_ST_contra]):  # noqa :N801
 # =============================================================================
 # DISPATCH IMPLEMENTATIONS
 # =============================================================================
+
 
 class _DispatcherImp(Dispatcher):
     """The default implementation of the :class:`Dispatcher` interface."""
@@ -320,6 +323,7 @@ class _DispatcherImp(Dispatcher):
         return not (
             isinstance(receiver, weakref.ReferenceType) and receiver() is None,
         )
+
 
 # =============================================================================
 # MODULE EXPORTS
