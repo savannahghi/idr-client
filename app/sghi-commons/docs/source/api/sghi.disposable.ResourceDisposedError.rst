@@ -1,7 +1,7 @@
-sghi.disposable.exceptions.ResourceDisposedError
-================================================
+sghi.disposable.ResourceDisposedError
+=====================================
 
-.. currentmodule:: sghi.disposable.exceptions
+.. currentmodule:: sghi.disposable
 
 .. autoexception:: ResourceDisposedError
    :members:

@@ -1,7 +1,7 @@
-sghi.disposable.disposable.Disposable
-=====================================
+sghi.disposable.Disposable
+==========================
 
-.. currentmodule:: sghi.disposable.disposable
+.. currentmodule:: sghi.disposable
 
 .. autoclass:: Disposable
    :members:

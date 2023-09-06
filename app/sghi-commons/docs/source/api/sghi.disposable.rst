@@ -9,25 +9,33 @@
 
 
 
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+
+      not_disposed
 
 
 
 
 
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: class.rst
+
+      Disposable
 
 
 
 
 
+   .. rubric:: Exceptions
 
+   .. autosummary::
+      :toctree:
+      :template: exception.rst
 
-.. rubric:: Modules
-
-.. autosummary::
-   :toctree:
-   :template: module.rst
-   :recursive:
-
-   sghi.disposable.decorators
-   sghi.disposable.disposable
-   sghi.disposable.exceptions
+      ResourceDisposedError

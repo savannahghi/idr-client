@@ -44,7 +44,7 @@ def ensure_greater_than(
     :raise ValueError: If the given ``value`` is less than or equal to the
          given ``base_value``.
     """
-    if base_value < value:
+    if not base_value < value:
         raise ValueError(message)
     return value
 
