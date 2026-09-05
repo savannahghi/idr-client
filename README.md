@@ -118,3 +118,6 @@ project. These are:
 [MIT License](https://github.com/savannahghi/idr-client/blob/develop/LICENSE)
 
 Copyright (c) 2022, Savannah Informatics Global Health Institute
+
+
+<!-- Security scan triggered at 2026-09-05 07:57:12 -->
